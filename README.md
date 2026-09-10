@@ -166,16 +166,23 @@ En las pruebas, un aviso de Python es un fallo. Es la forma barata de enterarse 
 
 En el backend, Import Linter verifica cuatro contratos: las capas hexagonales dentro de cada módulo, que el dominio no conozca la tecnología, que los módulos de dominio no se importen entre sí, y que el núcleo compartido no dependa del dominio.
 
+Los cuatro se escriben con comodines sobre `gestvet.*` en lugar de nombrar los módulos uno por uno. La diferencia importa: un módulo nuevo queda cubierto el día que se crea, sin que nadie tenga que acordarse de editar `pyproject.toml`. La regla de independencia usa un contrato `independence`, que es simétrico, y no uno `forbidden`, que solo mira en una dirección y dejaría que el módulo nuevo importara a los que ya estaban.
+
+La lista de tecnología prohibida en el dominio incluye toda dependencia de tercero del proyecto, no solo el ORM y el framework web. El dominio es Python puro: tampoco puede conocer Pydantic, ni la librería de cifrado, ni la de tokens.
+
 En el frontend, ESLint aplica:
 
 | Regla | Principio |
 | --- | --- |
 | Una característica no importa otra característica | Bajo acoplamiento |
+| Ninguna capa importa un archivo fuera de la arquitectura | Bajo acoplamiento |
 | Un solo componente de React por archivo | Responsabilidad única |
 | Carpetas en kebab-case, componentes en PascalCase | Nombrado consistente |
 | Complejidad cognitiva, profundidad y largo acotados | KISS |
 | Funciones idénticas y literales repetidos prohibidos | DRY |
 | Tipado estricto con verificación de tipos | Corrección |
+
+El análisis de límites abarca todo `src`, no la lista de capas conocidas. Enumerarlas dejaba fuera cualquier carpeta nueva: un `src/utils/` recién creado no era una violación, era invisible, y todas las capas podían importarlo. La raíz de composición sigue exenta, que es lo único que debe estarlo.
 
 ## Acceso y autorización
 
