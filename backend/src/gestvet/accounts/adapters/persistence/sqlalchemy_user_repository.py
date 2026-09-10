@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from sqlalchemy import Select, func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from gestvet.accounts.adapters.persistence.mappers import entity_to_row, row_to_entity
 from gestvet.accounts.adapters.persistence.models import UserRow
 from gestvet.accounts.domain.entities import Role, User
+from gestvet.accounts.domain.exceptions import EmailAlreadyRegistered
 from gestvet.accounts.ports.user_repository import ClientQuery, Page
 
 _SORTABLE_COLUMNS = {
@@ -26,7 +28,14 @@ class SqlAlchemyUserRepository:
     async def add(self, user: User) -> User:
         row = entity_to_row(user)
         self._session.add(row)
-        await self._session.flush()
+        try:
+            await self._session.flush()
+        except IntegrityError as error:
+            # Entre la comprobación del caso de uso y esta inserción cabe otro
+            # registro con el mismo correo. La restricción única de la tabla es
+            # el único árbitro real, así que su error se traduce al del dominio.
+            await self._session.rollback()
+            raise EmailAlreadyRegistered(user.email) from error
         await self._session.refresh(row)
         return row_to_entity(row)
 
