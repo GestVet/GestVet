@@ -59,54 +59,74 @@ ban-relative-imports = "parents"
 # Se verifican con `uv run lint-imports`. Import Linter construye el grafo real
 # de importaciones, así que una violación falla aunque el nombre de la carpeta
 # parezca correcto.
+#
+# Todos los contratos usan comodines sobre `gestvet.*` en vez de nombrar los
+# módulos uno por uno. Es deliberado: un módulo nuevo queda cubierto el día que
+# se crea, sin que nadie tenga que acordarse de editar este archivo.
 # ---------------------------------------------------------------------------
 [tool.importlinter]
 root_package = "gestvet"
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
-name = "Capas hexagonales dentro de cada módulo de dominio"
+name = "Capas hexagonales dentro de cada modulo"
 type = "layers"
-# El orden va de fuera hacia dentro. Una capa solo puede importar las que
-# están por debajo de ella.
+# El orden va de fuera hacia dentro. Una capa solo puede importar las que están
+# por debajo de ella. Los paréntesis las hacen opcionales, para que el contrato
+# valga también para un módulo compartido que no tenga las cuatro.
 layers = [
-    "adapters",
-    "use_cases",
-    "ports",
-    "domain",
+    "(adapters)",
+    "(use_cases)",
+    "(ports)",
+    "(domain)",
 ]
 containers = [
-    "gestvet.accounts",
+    "gestvet.*",
 ]
 
 [[tool.importlinter.contracts]]
 name = "El dominio y los casos de uso no conocen la tecnologia"
 type = "forbidden"
 source_modules = [
-    "gestvet.accounts.domain",
-    "gestvet.accounts.ports",
-    "gestvet.accounts.use_cases",
+    "gestvet.*.domain",
+    "gestvet.*.ports",
+    "gestvet.*.use_cases",
 ]
+# La lista incluye toda dependencia de tercero del proyecto, no solo el ORM y
+# el framework web. El dominio es Python puro: tampoco puede conocer Pydantic,
+# ni la librería de cifrado, ni la de tokens.
 forbidden_modules = [
-    "fastapi",
-    "sqlalchemy",
     "alembic",
     "asyncpg",
+    "bcrypt",
+    "fastapi",
+    "httpx",
+    "jwt",
+    "pydantic",
+    "pydantic_settings",
+    "sqlalchemy",
     "starlette",
+    "uvicorn",
     "gestvet.core.database",
+    "gestvet.core.security",
 ]
 
 [[tool.importlinter.contracts]]
 name = "Los modulos de dominio no se importan entre si"
-type = "forbidden"
-source_modules = [
-    "gestvet.accounts",
+type = "independence"
+# `independence` es simétrico, a diferencia de `forbidden`: cubre las dos
+# direcciones, así que un módulo nuevo tampoco puede importar a los que ya
+# existían.
+modules = [
+    "gestvet.*",
 ]
-forbidden_modules = [
-    "gestvet.pets",
-    "gestvet.veterinarians",
-    "gestvet.availability",
-    "gestvet.appointments",
+ignore_imports = [
+    # El núcleo compartido está para ser usado: la prohibición corre en el otro
+    # sentido y la declara el contrato siguiente.
+    "gestvet.** -> gestvet.core.**",
+    # `main` es la raíz de composición. Su trabajo es conocer a todos los
+    # módulos para montar sus routers.
+    "gestvet.main -> gestvet.**",
 ]
 
 [[tool.importlinter.contracts]]
@@ -116,9 +136,5 @@ source_modules = [
     "gestvet.core",
 ]
 forbidden_modules = [
-    "gestvet.accounts",
-    "gestvet.pets",
-    "gestvet.veterinarians",
-    "gestvet.availability",
-    "gestvet.appointments",
+    "gestvet.*",
 ]
