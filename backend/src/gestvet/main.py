@@ -15,7 +15,7 @@ from pydantic import BaseModel
 
 from gestvet.accounts.adapters.api.router import router as clients_router
 from gestvet.core.config import get_settings
-from gestvet.core.database import Base, engine
+from gestvet.core.database import engine
 
 API_PREFIX = "/api/v1"
 
@@ -36,11 +36,9 @@ class HealthResponse(BaseModel):
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    # En desarrollo se crean las tablas al arrancar. Es provisional, hasta que
-    # el proyecto tenga migraciones.
-    if settings.debug:
-        async with engine.begin() as connection:
-            await connection.run_sync(Base.metadata.create_all)
+    # El esquema lo crean las migraciones de Alembic, también en desarrollo.
+    # Crearlo al arrancar dejaba que la base local se apartara del historial de
+    # migraciones sin que nadie se enterara hasta el despliegue.
     yield
     await engine.dispose()
 
