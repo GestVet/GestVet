@@ -1,12 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { api } from '../../services/api'
-
-interface HealthResponse {
-  status: string
-  service: string
-  version: string
-}
+import { fetchHealth, healthQueryKey } from '../../api/health'
 
 type ConnectionState = 'checking' | 'online' | 'offline'
 
@@ -40,11 +34,8 @@ function resolveConnectionState(isPending: boolean, isOnline: boolean): Connecti
 
 export default function HomeView() {
   const health = useQuery({
-    queryKey: ['health'],
-    queryFn: async () => {
-      const { data } = await api.get<HealthResponse>('/health')
-      return data
-    },
+    queryKey: healthQueryKey,
+    queryFn: fetchHealth,
   })
 
   const isOnline = health.data?.status === 'ok'

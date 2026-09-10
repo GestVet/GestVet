@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "generate:api": "openapi-typescript http://127.0.0.1:8000/api/v1/openapi.json -o src/api/schema.d.ts"
+    "generate:api": "openapi-typescript ../backend/openapi.json -o src/api/schema.d.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

@@ -241,3 +241,7 @@ backend/media/
 # Local Python environments
 backend/.venv/
 .venv/
+
+# Volcado del esquema OpenAPI. Es un intermedio de `pnpm generate:api`: lo que
+# se versiona es el tipo derivado, frontend/src/api/schema.d.ts.
+backend/openapi.json
