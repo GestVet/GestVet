@@ -8,7 +8,8 @@
     "prepare": "husky",
     "lint:backend": "uv run --directory backend ruff check .",
     "format:backend": "uv run --directory backend ruff format .",
-    "arch:backend": "uv run --directory backend lint-imports"
+    "arch:backend": "uv run --directory backend lint-imports",
+    "test:backend": "uv run --directory backend pytest -q"
   },
   "devDependencies": {
     "husky": "^9.1.7",
