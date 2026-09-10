@@ -47,6 +47,9 @@ async def test_el_registro_crea_un_cliente(client: AsyncClient) -> None:
     assert body["email"] == "ana.quispe@example.com"
     assert "password" not in body
     assert "password_hash" not in body
+    # La marca de tiempo viaja con su zona, que Pydantic escribe como "Z". Sin
+    # ella el navegador la interpreta como hora local y la fecha se corre.
+    assert body["created_at"].endswith("Z")
 
 
 async def test_el_registro_ignora_un_rol_pedido_por_el_cliente(client: AsyncClient) -> None:

@@ -7,6 +7,8 @@ quedan cubiertos aquí, contra una base real.
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -154,3 +156,24 @@ async def test_buscar_por_correo_normaliza_y_encuentra(
 
     assert encontrado is not None
     assert encontrado.full_name == "Ana Quispe"
+
+
+async def test_la_fecha_vuelve_de_la_base_con_su_zona_horaria(
+    session: AsyncSession,
+    users: SqlAlchemyUserRepository,
+) -> None:
+    """SQLite no guarda la zona; el adaptador la repone al leer.
+
+    Sin esto el API serializa una marca sin desplazamiento, el navegador la
+    toma como hora local y la fecha se corre. Solo ocurre contra SQLite, asi
+    que el error viaja hasta produccion sin que nadie lo vea.
+    """
+    creado = await users.add(build_user("ana@example.com"))
+    await session.commit()
+
+    recuperado = await users.get_by_email("ana@example.com")
+
+    assert creado.created_at.tzinfo is not None
+    assert recuperado is not None
+    assert recuperado.created_at.tzinfo is not None
+    assert recuperado.created_at.utcoffset() == timedelta(0)
