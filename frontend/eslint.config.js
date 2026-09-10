@@ -132,18 +132,13 @@ export default tseslint.config(
       'import/resolver': {
         typescript: { project: './tsconfig.json' },
       },
-      // La raiz de composicion (src/main.tsx y src/App.tsx) queda fuera a
-      // proposito: su trabajo es precisamente conocer todas las capas para
-      // ensamblarlas. Todo lo demas si esta restringido.
-      'boundaries/include': [
-        'src/router/**/*',
-        'src/features/**/*',
-        'src/components/**/*',
-        'src/hooks/**/*',
-        'src/store/**/*',
-        'src/api/**/*',
-        'src/services/**/*',
-      ],
+      // Se incluye TODO src. Listar las capas una por una dejaba fuera del
+      // analisis cualquier carpeta nueva: un src/utils/ recien creado no era
+      // una violacion, era invisible, y todas las capas podian importarlo.
+      'boundaries/include': ['src/**/*.{ts,tsx}'],
+      // La raiz de composicion queda fuera a proposito: su trabajo es
+      // precisamente conocer todas las capas para ensamblarlas.
+      'boundaries/ignore': ['src/main.tsx', 'src/App.tsx', 'src/vite-env.d.ts'],
       // El patron nombra la carpeta raiz del elemento, no sus archivos.
       'boundaries/elements': [
         { type: 'router', pattern: 'src/router' },
@@ -156,11 +151,18 @@ export default tseslint.config(
       ],
     },
     rules: {
+      // Rechaza importar un archivo bajo src que no pertenece a ninguna capa
+      // declarada. Desde la version 7 esta regla absorbio a 'no-unknown'.
       'boundaries/no-unknown-dependencies': 'error',
       'boundaries/dependencies': [
         'error',
         {
           default: 'disallow',
+          // El mensaje del rechazo. Va aqui y no en cada politica: las
+          // politicas son de permiso, asi que su `message` no llegaba nunca a
+          // mostrarse.
+          message:
+            'La capa "{{from.element.types.[0]}}" no puede depender de "{{to.element.types.[0]}}". La direccion de dependencia esta en el README: sube lo compartido a components, hooks o api.',
           policies: [
             {
               from: [{ element: { type: 'router' } }],
@@ -180,8 +182,6 @@ export default tseslint.config(
                 { to: { element: { type: 'services' } } },
                 { to: { element: { type: 'api' } } },
               ],
-              message:
-                'Una caracteristica no puede depender de otra caracteristica. Sube lo compartido a components, hooks o api.',
             },
             {
               from: [{ element: { type: 'components' } }],
@@ -189,7 +189,6 @@ export default tseslint.config(
                 { to: { element: { type: 'components' } } },
                 { to: { element: { type: 'hooks' } } },
               ],
-              message: 'Los componentes compartidos no pueden depender de logica de dominio.',
             },
             {
               from: [{ element: { type: 'hooks' } }],
