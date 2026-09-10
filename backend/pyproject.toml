@@ -43,3 +43,73 @@ select = ["E", "F", "I", "UP", "B", "TID"]
 # Las importaciones relativas cruzando paquetes esconden las dependencias que
 # Import Linter debe poder ver, así que solo se permiten dentro de un módulo.
 ban-relative-imports = "parents"
+
+# ---------------------------------------------------------------------------
+# Contratos de arquitectura hexagonal.
+#
+# Se verifican con `uv run lint-imports`. Import Linter construye el grafo real
+# de importaciones, así que una violación falla aunque el nombre de la carpeta
+# parezca correcto.
+# ---------------------------------------------------------------------------
+[tool.importlinter]
+root_package = "gestvet"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Capas hexagonales dentro de cada módulo de dominio"
+type = "layers"
+# El orden va de fuera hacia dentro. Una capa solo puede importar las que
+# están por debajo de ella.
+layers = [
+    "adapters",
+    "use_cases",
+    "ports",
+    "domain",
+]
+containers = [
+    "gestvet.accounts",
+]
+
+[[tool.importlinter.contracts]]
+name = "El dominio y los casos de uso no conocen la tecnologia"
+type = "forbidden"
+source_modules = [
+    "gestvet.accounts.domain",
+    "gestvet.accounts.ports",
+    "gestvet.accounts.use_cases",
+]
+forbidden_modules = [
+    "fastapi",
+    "sqlalchemy",
+    "alembic",
+    "asyncpg",
+    "starlette",
+    "gestvet.core.database",
+]
+
+[[tool.importlinter.contracts]]
+name = "Los modulos de dominio no se importan entre si"
+type = "forbidden"
+source_modules = [
+    "gestvet.accounts",
+]
+forbidden_modules = [
+    "gestvet.pets",
+    "gestvet.veterinarians",
+    "gestvet.availability",
+    "gestvet.appointments",
+]
+
+[[tool.importlinter.contracts]]
+name = "El nucleo compartido no depende de los modulos de dominio"
+type = "forbidden"
+source_modules = [
+    "gestvet.core",
+]
+forbidden_modules = [
+    "gestvet.accounts",
+    "gestvet.pets",
+    "gestvet.veterinarians",
+    "gestvet.availability",
+    "gestvet.appointments",
+]

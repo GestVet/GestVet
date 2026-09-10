@@ -1,0 +1,10 @@
+set -e
+
+# 1. Linters sobre los archivos preparados para el commit.
+pnpm exec lint-staged
+
+# 2. Contratos de arquitectura hexagonal del backend.
+#    Se ejecutan completos, no archivo por archivo, porque una violacion nace
+#    de la relacion entre dos archivos y no siempre ambos estan en el commit.
+echo "Verificando contratos de arquitectura del backend..."
+uv run --directory backend lint-imports
