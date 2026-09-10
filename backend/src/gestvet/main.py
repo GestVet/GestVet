@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from gestvet.accounts.adapters.api.router import router as clients_router
 from gestvet.core.config import get_settings
 from gestvet.core.database import Base, engine
 
@@ -73,6 +74,7 @@ def create_app() -> FastAPI:
             version=settings.app_version,
         )
 
+    app.include_router(clients_router, prefix=f"{API_PREFIX}/clients", tags=["clients"])
     return app
 
 
