@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from gestvet.accounts.adapters.api.auth_router import router as auth_router
 from gestvet.accounts.adapters.api.router import router as clients_router
 from gestvet.core.config import get_settings
 from gestvet.core.database import engine
@@ -26,7 +27,7 @@ class HealthResponse(BaseModel):
     """Respuesta del sondeo de vida.
 
     Está tipada, y no devuelta como diccionario suelto, para que el esquema
-    OpenAPI describa los campos y quien consuma el API derive el tipo exacto.
+    OpenAPI describa los campos y el frontend derive el tipo exacto.
     """
 
     status: str
@@ -49,8 +50,8 @@ def create_app() -> FastAPI:
         version=settings.app_version,
         description="API modular para la gestión veterinaria.",
         lifespan=lifespan,
-        # Todo cuelga del prefijo versionado para que un proxy que solo reenvíe
-        # `/api` alcance también el esquema y la documentación.
+        # Todo cuelga del prefijo versionado para que el proxy del frontend, que
+        # solo reenvía `/api`, alcance también el esquema y la documentación.
         openapi_url=f"{API_PREFIX}/openapi.json",
         docs_url=f"{API_PREFIX}/docs",
         redoc_url=f"{API_PREFIX}/redoc",
@@ -72,6 +73,7 @@ def create_app() -> FastAPI:
             version=settings.app_version,
         )
 
+    app.include_router(auth_router, prefix=f"{API_PREFIX}/auth", tags=["auth"])
     app.include_router(clients_router, prefix=f"{API_PREFIX}/clients", tags=["clients"])
     return app
 
