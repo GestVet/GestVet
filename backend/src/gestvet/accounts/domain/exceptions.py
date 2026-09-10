@@ -32,3 +32,28 @@ class UserNotFound(AccountsError):
     def __init__(self, user_id: int) -> None:
         super().__init__(f"No existe la cuenta {user_id}.")
         self.user_id = user_id
+
+
+class InvalidCredentials(AccountsError):
+    """No se dice si falló el correo o la contraseña: eso enumera cuentas."""
+
+    def __init__(self) -> None:
+        super().__init__("El correo o la contraseña no son correctos.")
+
+
+class InactiveAccount(AccountsError):
+    def __init__(self, email: str) -> None:
+        super().__init__(f"La cuenta {email!r} está desactivada.")
+        self.email = email
+
+
+class InvalidToken(AccountsError):
+    def __init__(self, reason: str = "El token no es válido o ya expiró.") -> None:
+        super().__init__(reason)
+        self.reason = reason
+
+
+class PermissionDenied(AccountsError):
+    def __init__(self, required: tuple[str, ...]) -> None:
+        super().__init__(f"Se requiere uno de estos roles: {', '.join(required)}.")
+        self.required = required

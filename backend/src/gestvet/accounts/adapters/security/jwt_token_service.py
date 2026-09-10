@@ -1,0 +1,51 @@
+"""Implementación del puerto `TokenService` sobre JWT firmado con HMAC.
+
+Es un adaptador del módulo de cuentas y no del núcleo compartido, porque
+construye tipos que declara el puerto. El núcleo tiene prohibido conocerlos.
+"""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime, timedelta
+
+import jwt
+
+from gestvet.accounts.domain.entities import Role
+from gestvet.accounts.domain.exceptions import InvalidToken
+from gestvet.accounts.ports.token_service import AccessToken, TokenClaims
+
+
+class JwtTokenService:
+    def __init__(self, secret_key: str, algorithm: str, ttl_seconds: int) -> None:
+        self._secret_key = secret_key
+        self._algorithm = algorithm
+        self._ttl_seconds = ttl_seconds
+
+    def issue(self, user_id: int, role: Role) -> AccessToken:
+        issued_at = datetime.now(UTC)
+        payload = {
+            "sub": str(user_id),
+            "role": role.value,
+            "iat": issued_at,
+            "exp": issued_at + timedelta(seconds=self._ttl_seconds),
+        }
+        token = jwt.encode(payload, self._secret_key, algorithm=self._algorithm)
+        return AccessToken(value=token, expires_in_seconds=self._ttl_seconds)
+
+    def decode(self, token: str) -> TokenClaims:
+        try:
+            payload = jwt.decode(token, self._secret_key, algorithms=[self._algorithm])
+        except jwt.PyJWTError as error:
+            raise InvalidToken() from error
+        return self._to_claims(payload)
+
+    @staticmethod
+    def _to_claims(payload: dict[str, object]) -> TokenClaims:
+        raw_subject = payload.get("sub")
+        raw_role = payload.get("role")
+        if not isinstance(raw_subject, str) or not isinstance(raw_role, str):
+            raise InvalidToken("El token no trae sujeto ni rol.")
+        try:
+            return TokenClaims(user_id=int(raw_subject), role=Role(raw_role))
+        except ValueError as error:
+            raise InvalidToken("El token trae un sujeto o un rol desconocido.") from error

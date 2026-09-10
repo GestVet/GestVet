@@ -11,6 +11,7 @@ dependencies = [
     "fastapi==0.141.1",
     "pydantic[email]==2.13.5",
     "pydantic-settings==2.15.0",
+    "pyjwt==2.13.0",
     "sqlalchemy==2.0.52",
     "uvicorn[standard]==0.52.4",
 ]
@@ -32,9 +33,12 @@ build-backend = "hatchling.build"
 packages = ["src/gestvet"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+# Un aviso es un fallo. Es la forma barata de enterarse de una deprecación
+# cuando todavía queda una versión de margen para atenderla.
+filterwarnings = ["error"]
 
 [tool.ruff]
 line-length = 100

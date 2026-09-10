@@ -52,6 +52,9 @@ class FakeHasher:
     def verify(self, plain_password: str, password_hash: str) -> bool:
         return password_hash == f"fake${plain_password}"
 
+    def dummy_hash(self) -> str:
+        return "fake$ninguna-contrasena-produce-esto"
+
 
 async def test_registro_crea_un_cliente_y_nunca_otro_rol() -> None:
     users = InMemoryUserRepository()

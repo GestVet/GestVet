@@ -11,7 +11,11 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
 
-from gestvet.accounts.domain.exceptions import InvalidEmail, RoleNotSelfAssignable
+from gestvet.accounts.domain.exceptions import (
+    InvalidEmail,
+    PermissionDenied,
+    RoleNotSelfAssignable,
+)
 
 
 class Role(StrEnum):
@@ -77,3 +81,13 @@ def ensure_role_is_self_assignable(role: Role) -> None:
     """Protege el autorregistro. Solo se puede pedir un rol de esta lista."""
     if role not in SELF_ASSIGNABLE_ROLES:
         raise RoleNotSelfAssignable(role.value)
+
+
+def ensure_role_is_allowed(role: Role, allowed: frozenset[Role]) -> None:
+    """Decide si un rol alcanza para una operación.
+
+    La regla vive en el dominio y no en el adaptador HTTP para que la misma
+    comprobación sirva a un consumidor que no hable HTTP.
+    """
+    if role not in allowed:
+        raise PermissionDenied(tuple(sorted(candidate.value for candidate in allowed)))

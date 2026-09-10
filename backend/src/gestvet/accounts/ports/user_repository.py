@@ -47,3 +47,12 @@ class PasswordHasher(Protocol):
     def hash(self, plain_password: str) -> str: ...
 
     def verify(self, plain_password: str, password_hash: str) -> bool: ...
+
+    def dummy_hash(self) -> str:
+        """Hash válido que ninguna contraseña reproduce.
+
+        Lo pide el negocio, no la criptografía: al autenticar un correo que no
+        existe hay que gastar el mismo tiempo que con uno real, o la latencia
+        de la respuesta delata qué cuentas están registradas.
+        """
+        ...
