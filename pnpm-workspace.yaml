@@ -1,0 +1,4 @@
+# Un solo espacio de trabajo para todo el repositorio. Los paquetes se van
+# sumando a medida que aparecen.
+minimumReleaseAgeExclude:
+  - lint-staged@17.5.1

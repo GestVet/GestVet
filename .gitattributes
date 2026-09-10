@@ -1,0 +1,10 @@
+# Normalización de fin de línea. Sin esto, un archivo generado en Windows llega
+# con CRLF y la comprobación de contrato en Linux ve una diferencia que no
+# existe.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary
+*.woff2 binary

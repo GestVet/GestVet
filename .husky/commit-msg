@@ -1,0 +1,6 @@
+# Regla heredada de .githooks/commit-msg, que Husky reemplaza porque Git solo
+# admite una ruta de hooks.
+if grep -Eiq '^[[:space:]]*co-authored-by:' "$1"; then
+  echo "Commit rechazado: GestVet no permite lineas Co-authored-by." >&2
+  exit 1
+fi

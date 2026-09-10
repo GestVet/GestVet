@@ -1,0 +1,14 @@
+{
+  "name": "gestvet",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Raíz del monorepositorio. Aloja los hooks de Git compartidos y los atajos de verificación.",
+  "packageManager": "pnpm@12.3.4",
+  "scripts": {
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1"
+  }
+}
