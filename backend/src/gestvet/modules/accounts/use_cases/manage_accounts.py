@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from gestvet.core.activity import ActivityKind, ActivityRecorder
 from gestvet.core.identity import Role
 from gestvet.modules.accounts.domain.entities import (
     User,
@@ -24,6 +25,7 @@ from gestvet.modules.accounts.ports.user_repository import PasswordHasher, UserR
 
 @dataclass(frozen=True, slots=True)
 class RegisterStaffCommand:
+    actor_id: int
     email: str
     password: str
     first_name: str
@@ -35,9 +37,15 @@ class RegisterStaffCommand:
 class RegisterStaff:
     """Alta de un veterinario. Solo la administración llega hasta acá."""
 
-    def __init__(self, users: UserRepository, hasher: PasswordHasher) -> None:
+    def __init__(
+        self,
+        users: UserRepository,
+        hasher: PasswordHasher,
+        activity: ActivityRecorder,
+    ) -> None:
         self._users = users
         self._hasher = hasher
+        self._activity = activity
 
     async def __call__(self, command: RegisterStaffCommand) -> User:
         # El rol llega del cuerpo, pero acotado: la lista no incluye ADMIN, así
@@ -56,7 +64,10 @@ class RegisterStaff:
         if await self._users.exists_with_email(candidate.email):
             raise EmailAlreadyRegistered(candidate.email)
 
-        return await self._users.add(candidate)
+        creado = await self._users.add(candidate)
+        # El asiento lo firma quien da el alta, no la cuenta recien creada.
+        await self._activity.record(command.actor_id, ActivityKind.STAFF_REGISTERED, creado.email)
+        return creado
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,8 +78,9 @@ class ChangeUserStatusCommand:
 
 
 class ChangeUserStatus:
-    def __init__(self, users: UserRepository) -> None:
+    def __init__(self, users: UserRepository, activity: ActivityRecorder) -> None:
         self._users = users
+        self._activity = activity
 
     async def __call__(self, command: ChangeUserStatusCommand) -> User:
         # Desactivarse a uno mismo deja la clínica sin quien reactive la
@@ -84,12 +96,21 @@ class ChangeUserStatus:
             user.activate()
         else:
             user.deactivate()
-        return await self._users.save(user)
+
+        guardado = await self._users.save(user)
+        estado = "activada" if command.is_active else "desactivada"
+        await self._activity.record(
+            command.actor_id,
+            ActivityKind.USER_STATUS_CHANGED,
+            f"{guardado.email}: cuenta {estado}",
+        )
+        return guardado
 
 
 @dataclass(frozen=True, slots=True)
 class ToggleGuardDutyCommand:
     user_id: int
+    actor_id: int
 
 
 class ToggleGuardDuty:
@@ -100,8 +121,9 @@ class ToggleGuardDuty:
     convertir a un cliente en administrador.
     """
 
-    def __init__(self, users: UserRepository) -> None:
+    def __init__(self, users: UserRepository, activity: ActivityRecorder) -> None:
         self._users = users
+        self._activity = activity
 
     async def __call__(self, command: ToggleGuardDutyCommand) -> User:
         user = await self._users.get(command.user_id)
@@ -109,7 +131,13 @@ class ToggleGuardDuty:
             raise UserNotFound(command.user_id)
 
         user.role = swapped_guard_role(user.role)
-        return await self._users.save(user)
+        guardado = await self._users.save(user)
+        await self._activity.record(
+            command.actor_id,
+            ActivityKind.GUARD_DUTY_TOGGLED,
+            f"{guardado.email}: {guardado.role.label}",
+        )
+        return guardado
 
 
 @dataclass(frozen=True, slots=True)
@@ -128,9 +156,15 @@ class UpdateProfile:
     accede y el rol lo fija el servidor.
     """
 
-    def __init__(self, users: UserRepository, hasher: PasswordHasher) -> None:
+    def __init__(
+        self,
+        users: UserRepository,
+        hasher: PasswordHasher,
+        activity: ActivityRecorder,
+    ) -> None:
         self._users = users
         self._hasher = hasher
+        self._activity = activity
 
     async def __call__(self, command: UpdateProfileCommand) -> User:
         user = await self._users.get(command.user_id)
@@ -140,7 +174,14 @@ class UpdateProfile:
         user.first_name = command.first_name.strip()
         user.last_name = command.last_name.strip()
         user.phone = command.phone.strip()
-        if command.new_password:
-            user.password_hash = self._hasher.hash(command.new_password)
+        cambio_clave = bool(command.new_password)
+        if cambio_clave:
+            user.password_hash = self._hasher.hash(command.new_password or "")
 
-        return await self._users.save(user)
+        guardado = await self._users.save(user)
+        await self._activity.record(
+            command.user_id,
+            ActivityKind.PROFILE_UPDATED,
+            "con cambio de contraseña" if cambio_clave else "",
+        )
+        return guardado

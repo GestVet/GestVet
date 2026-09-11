@@ -109,6 +109,22 @@ class VeterinarianListResponse(BaseModel):
     total: int
 
 
+class ActivityResponse(BaseModel):
+    id: int
+    kind: str
+    kind_label: str
+    detail: str
+    occurred_at: datetime
+    user_id: int
+    user_name: str
+    user_role: Role
+
+
+class ActivityPageResponse(BaseModel):
+    items: list[ActivityResponse]
+    total: int
+
+
 class ClientPageResponse(BaseModel):
     items: list[UserResponse]
     total: int

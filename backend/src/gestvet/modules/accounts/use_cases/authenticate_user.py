@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from gestvet.core.activity import ActivityKind, ActivityRecorder
 from gestvet.core.identity import AccessToken, TokenService
 from gestvet.modules.accounts.domain.entities import User, normalize_email
 from gestvet.modules.accounts.domain.exceptions import (
@@ -31,10 +32,12 @@ class AuthenticateUser:
         users: UserRepository,
         hasher: PasswordHasher,
         tokens: TokenService,
+        activity: ActivityRecorder,
     ) -> None:
         self._users = users
         self._hasher = hasher
         self._tokens = tokens
+        self._activity = activity
 
     async def __call__(self, command: AuthenticateUserCommand) -> AuthenticatedSession:
         user = await self._find(command.email)
@@ -54,6 +57,7 @@ class AuthenticateUser:
             # persistidos, y esos siempre tienen identificador.
             raise AccountsError(f"La cuenta {user.email!r} llegó sin identificador.")
 
+        await self._activity.record(user.id, ActivityKind.SIGNED_IN)
         return AuthenticatedSession(user=user, token=self._tokens.issue(user.id, user.role))
 
     async def _find(self, raw_email: str) -> User | None:

@@ -1,5 +1,6 @@
 import { api } from '../services/api'
 import type {
+  ActivityPageResponse,
   ClientPageResponse,
   RegisterStaffRequest,
   UserResponse,
@@ -9,6 +10,16 @@ import type {
 export const clientsQueryKey = ['clients'] as const
 export const staffQueryKey = ['staff'] as const
 export const veterinariansQueryKey = ['veterinarians'] as const
+
+export function activityQueryKey(role: string) {
+  return ['activity', role] as const
+}
+
+export async function fetchActivity(role: string): Promise<ActivityPageResponse> {
+  const params = role === '' ? { limit: 100 } : { role, limit: 100 }
+  const { data } = await api.get<ActivityPageResponse>('/activity', { params })
+  return data
+}
 
 export async function fetchVeterinarians(): Promise<VeterinarianListResponse> {
   const { data } = await api.get<VeterinarianListResponse>('/veterinarians')

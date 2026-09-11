@@ -11,6 +11,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from gestvet.core.activity import ActivityKind
+from gestvet.core.activity_log import ActivityReaderDep, ActivityRecorderDep
 from gestvet.core.auth import PrincipalDep, require_roles
 from gestvet.core.identity import Role
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
@@ -19,6 +21,8 @@ from gestvet.modules.accounts.adapters.api.dependencies import (
     UserRepositoryDep,
 )
 from gestvet.modules.accounts.adapters.api.schemas import (
+    ActivityPageResponse,
+    ActivityResponse,
     ChangeUserStatusRequest,
     ClientPageResponse,
     RegisterStaffRequest,
@@ -42,6 +46,7 @@ from gestvet.modules.accounts.use_cases.manage_accounts import (
     ToggleGuardDuty,
     ToggleGuardDutyCommand,
 )
+from gestvet.modules.accounts.use_cases.read_activity import ReadActivity, ReadActivityQuery
 
 router = APIRouter(dependencies=[Depends(require_roles(Role.ADMIN))])
 
@@ -54,12 +59,15 @@ router = APIRouter(dependencies=[Depends(require_roles(Role.ADMIN))])
 )
 async def register_staff(
     payload: RegisterStaffRequest,
+    principal: PrincipalDep,
     users: UserRepositoryDep,
     hasher: PasswordHasherDep,
+    activity: ActivityRecorderDep,
 ) -> UserResponse:
     try:
-        user = await RegisterStaff(users, hasher)(
+        user = await RegisterStaff(users, hasher, activity)(
             RegisterStaffCommand(
+                actor_id=principal.user_id,
                 email=str(payload.email),
                 password=payload.password,
                 first_name=payload.first_name,
@@ -109,9 +117,10 @@ async def change_user_status(
     payload: ChangeUserStatusRequest,
     principal: PrincipalDep,
     users: UserRepositoryDep,
+    activity: ActivityRecorderDep,
 ) -> UserResponse:
     try:
-        user = await ChangeUserStatus(users)(
+        user = await ChangeUserStatus(users, activity)(
             ChangeUserStatusCommand(
                 user_id=user_id,
                 actor_id=principal.user_id,
@@ -130,11 +139,60 @@ async def change_user_status(
     response_model=UserResponse,
     summary="Poner o sacar del turno de guardia",
 )
-async def toggle_guard_duty(user_id: int, users: UserRepositoryDep) -> UserResponse:
+async def toggle_guard_duty(
+    user_id: int,
+    principal: PrincipalDep,
+    users: UserRepositoryDep,
+    activity: ActivityRecorderDep,
+) -> UserResponse:
     try:
-        user = await ToggleGuardDuty(users)(ToggleGuardDutyCommand(user_id=user_id))
+        user = await ToggleGuardDuty(users, activity)(
+            ToggleGuardDutyCommand(user_id=user_id, actor_id=principal.user_id)
+        )
     except UserNotFound as error:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
     except RoleNotSwappable as error:
         raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
     return UserResponse.from_entity(user)
+
+
+@router.get(
+    "/activity",
+    response_model=ActivityPageResponse,
+    summary="Movimientos de las cuentas",
+)
+async def read_activity(
+    activity: ActivityReaderDep,
+    users: UserRepositoryDep,
+    role: Annotated[list[Role] | None, Query(description="Filtra por rol")] = None,
+    kind: Annotated[list[ActivityKind] | None, Query(description="Filtra por acción")] = None,
+    limit: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = DEFAULT_PAGE_SIZE,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> ActivityPageResponse:
+    # El original escondia las acciones del administrador con un `id_rol != 1`
+    # fijo en la consulta. Una bitacora que oculta al actor mas poderoso no
+    # sirve para auditar, asi que aca el rol es un filtro y no una exclusion.
+    page = await ReadActivity(activity, users)(
+        ReadActivityQuery(
+            roles=frozenset(role) if role else None,
+            kinds=frozenset(kind) if kind else None,
+            limit=limit,
+            offset=offset,
+        )
+    )
+    return ActivityPageResponse(
+        items=[
+            ActivityResponse(
+                id=entrada.record.id or 0,
+                kind=entrada.record.kind.value,
+                kind_label=entrada.record.kind.label,
+                detail=entrada.record.detail,
+                occurred_at=entrada.record.occurred_at,
+                user_id=entrada.user.id or 0,
+                user_name=entrada.user.full_name,
+                user_role=entrada.user.role,
+            )
+            for entrada in page.items
+        ],
+        total=page.total,
+    )

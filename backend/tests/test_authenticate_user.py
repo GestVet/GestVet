@@ -11,6 +11,7 @@ from gestvet.modules.accounts.use_cases.authenticate_user import (
     AuthenticateUser,
     AuthenticateUserCommand,
 )
+from tests.conftest import RecordingActivity
 from tests.test_register_client import FakeHasher, InMemoryUserRepository
 
 PASSWORD = "contrasena-larga"
@@ -60,7 +61,7 @@ async def test_las_credenciales_correctas_emiten_un_token() -> None:
     users = await _repository_with(_account())
     tokens = FakeTokenService()
 
-    session = await AuthenticateUser(users, FakeHasher(), tokens)(
+    session = await AuthenticateUser(users, FakeHasher(), tokens, RecordingActivity())(
         AuthenticateUserCommand(email="Ana@Example.com", password=PASSWORD)
     )
 
@@ -80,7 +81,7 @@ async def test_toda_credencial_fallida_da_el_mismo_error(email: str, password: s
     users = await _repository_with(_account())
 
     with pytest.raises(InvalidCredentials):
-        await AuthenticateUser(users, FakeHasher(), FakeTokenService())(
+        await AuthenticateUser(users, FakeHasher(), FakeTokenService(), RecordingActivity())(
             AuthenticateUserCommand(email=email, password=password)
         )
 
@@ -92,7 +93,7 @@ async def test_la_verificacion_corre_aunque_el_correo_no_exista(email: str) -> N
     hasher = CountingHasher()
 
     with pytest.raises(InvalidCredentials):
-        await AuthenticateUser(users, hasher, FakeTokenService())(
+        await AuthenticateUser(users, hasher, FakeTokenService(), RecordingActivity())(
             AuthenticateUserCommand(email=email, password="otra-contrasena")
         )
 
@@ -103,6 +104,6 @@ async def test_una_cuenta_desactivada_no_accede() -> None:
     users = await _repository_with(_account(is_active=False))
 
     with pytest.raises(InactiveAccount):
-        await AuthenticateUser(users, FakeHasher(), FakeTokenService())(
+        await AuthenticateUser(users, FakeHasher(), FakeTokenService(), RecordingActivity())(
             AuthenticateUserCommand(email="ana@example.com", password=PASSWORD)
         )

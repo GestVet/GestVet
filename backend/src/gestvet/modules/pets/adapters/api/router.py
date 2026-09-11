@@ -11,6 +11,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from gestvet.core.activity_log import ActivityRecorderDep
 from gestvet.core.auth import require_roles
 from gestvet.core.identity import STAFF_ROLES, Principal, Role
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
@@ -43,9 +44,10 @@ async def register_pet(
     payload: RegisterPetRequest,
     client: ClientDep,
     pets: PetRepositoryDep,
+    activity: ActivityRecorderDep,
 ) -> PetResponse:
     try:
-        pet = await RegisterPet(pets)(
+        pet = await RegisterPet(pets, activity)(
             RegisterPetCommand(
                 name=payload.name,
                 species=payload.species,
@@ -111,9 +113,10 @@ async def change_pet_status(
     payload: ChangePetStatusRequest,
     client: ClientDep,
     pets: PetRepositoryDep,
+    activity: ActivityRecorderDep,
 ) -> PetResponse:
     try:
-        pet = await ChangePetStatus(pets)(
+        pet = await ChangePetStatus(pets, activity)(
             ChangePetStatusCommand(
                 pet_id=pet_id, owner_id=client.user_id, is_active=payload.is_active
             )

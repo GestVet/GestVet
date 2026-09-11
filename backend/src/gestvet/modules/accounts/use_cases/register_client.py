@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from gestvet.core.activity import ActivityKind, ActivityRecorder
 from gestvet.modules.accounts.domain.entities import Role, User, ensure_role_is_self_assignable
 from gestvet.modules.accounts.domain.exceptions import EmailAlreadyRegistered
 from gestvet.modules.accounts.ports.user_repository import PasswordHasher, UserRepository
@@ -17,9 +18,15 @@ class RegisterClientCommand:
 
 
 class RegisterClient:
-    def __init__(self, users: UserRepository, hasher: PasswordHasher) -> None:
+    def __init__(
+        self,
+        users: UserRepository,
+        hasher: PasswordHasher,
+        activity: ActivityRecorder,
+    ) -> None:
         self._users = users
         self._hasher = hasher
+        self._activity = activity
 
     async def __call__(self, command: RegisterClientCommand) -> User:
         # El rol se fija aquí, en el servidor. Nunca llega desde el cliente.
@@ -38,4 +45,6 @@ class RegisterClient:
         if await self._users.exists_with_email(candidate.email):
             raise EmailAlreadyRegistered(candidate.email)
 
-        return await self._users.add(candidate)
+        creado = await self._users.add(candidate)
+        await self._activity.record(creado.id or 0, ActivityKind.CLIENT_REGISTERED)
+        return creado

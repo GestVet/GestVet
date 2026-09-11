@@ -18,6 +18,8 @@ from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
+from gestvet.core.activity import ActivityKind
+from gestvet.core.activity_log import ActivityRow
 from gestvet.core.auth import get_token_service
 from gestvet.core.database import Base, get_session
 from gestvet.core.identity import Role
@@ -48,7 +50,13 @@ TEST_TOKEN_SERVICE = JwtTokenService(
 )
 # Los modelos se importan para que sus tablas queden registradas en
 # `Base.metadata` antes de crearlas. La tupla hace explicita esa intencion.
-REGISTERED_MODELS = (accounts_models, appointments_models, availability_models, pets_models)
+REGISTERED_MODELS = (
+    ActivityRow,
+    accounts_models,
+    appointments_models,
+    availability_models,
+    pets_models,
+)
 
 VALID_PASSWORD = "contrasena-larga"
 
@@ -173,3 +181,16 @@ def build_pet(
         owner_id=owner_id,
         is_active=is_active,
     )
+
+
+class RecordingActivity:
+    """Bitácora en memoria, para afirmar qué asientos dejó un caso de uso."""
+
+    def __init__(self) -> None:
+        self.entries: list[tuple[int, ActivityKind, str]] = []
+
+    async def record(self, user_id: int, kind: ActivityKind, detail: str = "") -> None:
+        self.entries.append((user_id, kind, detail))
+
+    def kinds(self) -> list[ActivityKind]:
+        return [kind for _, kind, _ in self.entries]

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, status
 
+from gestvet.core.activity_log import ActivityRecorderDep
 from gestvet.core.auth import UNAUTHENTICATED_HEADERS, PrincipalDep, TokenServiceDep
 from gestvet.modules.accounts.adapters.api.dependencies import (
     PasswordHasherDep,
@@ -47,8 +48,9 @@ async def register_client(
     payload: RegisterClientRequest,
     users: UserRepositoryDep,
     hasher: PasswordHasherDep,
+    activity: ActivityRecorderDep,
 ) -> UserResponse:
-    use_case = RegisterClient(users, hasher)
+    use_case = RegisterClient(users, hasher, activity)
     try:
         user = await use_case(
             RegisterClientCommand(
@@ -72,8 +74,9 @@ async def login(
     users: UserRepositoryDep,
     hasher: PasswordHasherDep,
     tokens: TokenServiceDep,
+    activity: ActivityRecorderDep,
 ) -> AccessTokenResponse:
-    use_case = AuthenticateUser(users, hasher, tokens)
+    use_case = AuthenticateUser(users, hasher, tokens, activity)
     try:
         session = await use_case(
             AuthenticateUserCommand(email=str(payload.email), password=payload.password)
@@ -108,11 +111,12 @@ async def update_current_user(
     principal: PrincipalDep,
     users: UserRepositoryDep,
     hasher: PasswordHasherDep,
+    activity: ActivityRecorderDep,
 ) -> UserResponse:
     # No entran ni el correo ni el rol: el correo es la identidad con la que se
     # accede y el rol lo fija el servidor.
     try:
-        user = await UpdateProfile(users, hasher)(
+        user = await UpdateProfile(users, hasher, activity)(
             UpdateProfileCommand(
                 user_id=principal.user_id,
                 first_name=payload.first_name,

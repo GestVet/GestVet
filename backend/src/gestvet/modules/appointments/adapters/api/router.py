@@ -12,6 +12,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from gestvet.core.activity_log import ActivityRecorderDep
 from gestvet.core.auth import PrincipalDep, require_roles
 from gestvet.core.identity import VETERINARIAN_ROLES, Principal, Role
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
@@ -91,8 +92,9 @@ async def book_appointment(
     types: AppointmentTypeRepositoryDep,
     pets: PetDirectoryDep,
     schedule: ScheduleDirectoryDep,
+    activity: ActivityRecorderDep,
 ) -> AppointmentResponse:
-    use_case = BookAppointment(appointments, types, pets, schedule)
+    use_case = BookAppointment(appointments, types, pets, schedule, activity)
     try:
         appointment = await use_case(
             BookAppointmentCommand(
@@ -126,8 +128,9 @@ async def open_emergency(
     types: AppointmentTypeRepositoryDep,
     pets: PetDirectoryDep,
     schedule: ScheduleDirectoryDep,
+    activity: ActivityRecorderDep,
 ) -> AppointmentResponse:
-    use_case = OpenEmergency(appointments, types, pets, schedule)
+    use_case = OpenEmergency(appointments, types, pets, schedule, activity)
     try:
         appointment = await use_case(
             OpenEmergencyCommand(
@@ -182,11 +185,12 @@ async def _change_status(
     appointment_id: int,
     principal: Principal,
     appointments: AppointmentRepositoryDep,
+    activity: ActivityRecorderDep,
     target: AppointmentStatus,
     reason: str = "",
 ) -> AppointmentResponse:
     try:
-        appointment = await ChangeAppointmentStatus(appointments)(
+        appointment = await ChangeAppointmentStatus(appointments, activity)(
             ChangeStatusCommand(
                 appointment_id=appointment_id,
                 actor_id=principal.user_id,
@@ -213,9 +217,10 @@ async def confirm_appointment(
     appointment_id: int,
     veterinarian: VeterinarianDep,
     appointments: AppointmentRepositoryDep,
+    activity: ActivityRecorderDep,
 ) -> AppointmentResponse:
     return await _change_status(
-        appointment_id, veterinarian, appointments, AppointmentStatus.CONFIRMED
+        appointment_id, veterinarian, appointments, activity, AppointmentStatus.CONFIRMED
     )
 
 
@@ -228,9 +233,10 @@ async def complete_appointment(
     appointment_id: int,
     veterinarian: VeterinarianDep,
     appointments: AppointmentRepositoryDep,
+    activity: ActivityRecorderDep,
 ) -> AppointmentResponse:
     return await _change_status(
-        appointment_id, veterinarian, appointments, AppointmentStatus.COMPLETED
+        appointment_id, veterinarian, appointments, activity, AppointmentStatus.COMPLETED
     )
 
 
@@ -244,6 +250,7 @@ async def cancel_appointment(
     payload: CancelAppointmentRequest,
     principal: PrincipalDep,
     appointments: AppointmentRepositoryDep,
+    activity: ActivityRecorderDep,
 ) -> AppointmentResponse:
     # Cancelar lo pueden hacer las dos partes, así que acá basta con estar
     # autenticado: el caso de uso comprueba que participe en esa cita.
@@ -251,6 +258,7 @@ async def cancel_appointment(
         appointment_id,
         principal,
         appointments,
+        activity,
         AppointmentStatus.CANCELLED,
         reason=payload.reason,
     )

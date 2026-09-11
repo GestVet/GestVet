@@ -44,6 +44,7 @@ backend/
     │   ├── identity.py           # rol, principal y puerto de tokens
     │   ├── auth.py               # autenticación del borde HTTP
     │   ├── pagination.py         # forma de una página
+    │   ├── activity.py           # bitácora: tipos de acción y puertos
     │   ├── config.py             # configuración por entorno
     │   ├── database.py           # motor y sesión
     │   ├── security.py           # cifrado de contraseñas
@@ -66,6 +67,8 @@ Los módulos de dominio cuelgan de `modules/` y no de la raíz del paquete. Es l
 Quién es el usuario y qué rol tiene lo posee el núcleo, no `accounts`. Todos los módulos necesitan esa respuesta para autorizar, y si la tuviera un módulo de dominio el resto tendría que importarlo. El núcleo posee la autenticación; `accounts` posee la gestión de usuarios.
 
 Cuando un módulo necesita un dato de otro, declara la pregunta como un puerto de lectura y un adaptador la responde leyendo la tabla ajena. Las citas preguntan si la mascota es del cliente y si el veterinario publicó esa hora. Se lee, nunca se escribe.
+
+La bitácora de movimientos vive en el núcleo por la misma razón que la identidad: la escriben todos los módulos. El núcleo guarda quién, qué y cuándo; el nombre y el rol los pone `accounts` al leerla, porque son suyos.
 
 `domain`, `ports` y `use_cases` tienen prohibido importar FastAPI, SQLAlchemy o cualquier otro detalle de infraestructura. Eso no es una convención: es un contrato que falla el commit si se rompe.
 
@@ -272,6 +275,20 @@ La identidad visual viene del proyecto original: el azul institucional, el verde
 
 Las guardas de ruta son una comodidad de la interfaz, no una medida de seguridad: quien llegue igual a una pantalla se encuentra con un 401 o un 403 del servidor. La autorización de verdad vive en el backend y está cubierta por pruebas.
 
+## Movimientos
+
+Cada acción que completa una cuenta deja un asiento: quién, qué, cuándo y un detalle corto. La administración los consulta en `/movimientos`, con filtro por rol y por tipo de acción.
+
+Quien escribe el asiento es el caso de uso, no el endpoint. Registrar forma parte de la operación, y va en su misma transacción: si la operación se deshace, el asiento se va con ella.
+
+Dos diferencias con el sistema original:
+
+El tipo de acción es un código estable y no una frase armada a mano. El original guardaba textos como *"Reservó cita de tipo Consulta general"*, y cada variante de la redacción era un valor distinto, así que no se podía filtrar ni contar. Acá la frase legible se arma al mostrarla y cambiarla no rompe el historial.
+
+Las acciones de la administración también se registran y se muestran. El original las escondía con un `id_rol != 1` fijo en la consulta, y una bitácora que oculta al actor más poderoso no sirve para auditar.
+
+Lo que la bitácora no guarda son los intentos fallidos. Un acceso con contraseña equivocada no deja rastro, porque el asiento se escribe recién cuando la operación sale bien.
+
 ## Acceso y autorización
 
 El registro es público y siempre crea un cliente. El campo `role` no existe en el cuerpo de la petición, así que ningún visitante puede pedir un rol privilegiado: el servidor lo fija.
@@ -288,6 +305,7 @@ El padrón de clientes es dato personal: solo lo ve el personal de la clínica.
 | `POST /api/v1/auth/login` | cualquiera |
 | `GET /api/v1/auth/me` | cuenta autenticada |
 | `GET /api/v1/clients` | administración y veterinarios |
+| `GET /api/v1/activity` | administración |
 
 ## Convenciones iniciales
 

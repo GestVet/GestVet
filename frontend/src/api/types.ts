@@ -14,6 +14,8 @@ export type RegisterStaffRequest = components['schemas']['RegisterStaffRequest']
 export type UpdateProfileRequest = components['schemas']['UpdateProfileRequest']
 export type VeterinarianResponse = components['schemas']['VeterinarianResponse']
 export type VeterinarianListResponse = components['schemas']['VeterinarianListResponse']
+export type ActivityResponse = components['schemas']['ActivityResponse']
+export type ActivityPageResponse = components['schemas']['ActivityPageResponse']
 
 export type PetResponse = components['schemas']['PetResponse']
 export type PetPageResponse = components['schemas']['PetPageResponse']

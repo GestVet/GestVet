@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/v1/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Movimientos de las cuentas */
+        get: operations["read_activity_api_v1_activity_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/appointments": {
         parameters: {
             query?: never;
@@ -383,6 +400,46 @@ export interface components {
             token_type: string;
             user: components["schemas"]["UserResponse"];
         };
+        /**
+         * ActivityKind
+         * @description Qué ocurrió.
+         *
+         *     El original guardaba una frase armada a mano, del estilo "Reservó cita de
+         *     tipo Consulta general". Eso impide filtrar y contar: cada variante del
+         *     texto es un valor distinto. Acá el tipo es un código estable y la frase
+         *     legible se arma al mostrarla, así que cambiar la redacción no rompe el
+         *     historial.
+         * @enum {string}
+         */
+        ActivityKind: "signed_in" | "client_registered" | "profile_updated" | "staff_registered" | "user_status_changed" | "guard_duty_toggled" | "pet_registered" | "pet_status_changed" | "slot_published" | "slot_withdrawn" | "appointment_booked" | "emergency_opened" | "appointment_confirmed" | "appointment_completed" | "appointment_cancelled";
+        /** ActivityPageResponse */
+        ActivityPageResponse: {
+            /** Items */
+            items: components["schemas"]["ActivityResponse"][];
+            /** Total */
+            total: number;
+        };
+        /** ActivityResponse */
+        ActivityResponse: {
+            /** Detail */
+            detail: string;
+            /** Id */
+            id: number;
+            /** Kind */
+            kind: string;
+            /** Kind Label */
+            kind_label: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** User Id */
+            user_id: number;
+            /** User Name */
+            user_name: string;
+            user_role: components["schemas"]["Role"];
+        };
         /** AppointmentPageResponse */
         AppointmentPageResponse: {
             /** Items */
@@ -744,6 +801,42 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    read_activity_api_v1_activity_get: {
+        parameters: {
+            query?: {
+                /** @description Filtra por rol */
+                role?: components["schemas"]["Role"][] | null;
+                /** @description Filtra por acción */
+                kind?: components["schemas"]["ActivityKind"][] | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityPageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_appointments_api_v1_appointments_get: {
         parameters: {
             query?: {

@@ -32,6 +32,7 @@ export const NAV_ENTRIES: readonly NavEntry[] = [
   { to: '/agenda', label: 'Mi agenda', icon: 'agenda', roles: VETERINARIOS },
   { to: '/clientes', label: 'Clientes', icon: 'cliente', roles: PERSONAL },
   { to: '/personal', label: 'Personal', icon: 'personal', roles: ['admin'] },
+  { to: '/movimientos', label: 'Movimientos', icon: 'buscar', roles: ['admin'] },
 ]
 
 export function entriesForRole(role: UserRole): readonly NavEntry[] {

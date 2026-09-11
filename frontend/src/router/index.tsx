@@ -6,6 +6,7 @@ import LoginView from '../features/auth/LoginView'
 import ProfileView from '../features/auth/ProfileView'
 import RegisterView from '../features/auth/RegisterView'
 import AvailabilityView from '../features/availability/AvailabilityView'
+import ActivityView from '../features/directory/ActivityView'
 import ClientsView from '../features/directory/ClientsView'
 import StaffView from '../features/directory/StaffView'
 import HomeView from '../features/home/HomeView'
@@ -56,7 +57,10 @@ const router = createBrowserRouter(
         },
         {
           element: <RequireSession roles={ADMIN} />,
-          children: [{ path: 'personal', Component: StaffView }],
+          children: [
+            { path: 'personal', Component: StaffView },
+            { path: 'movimientos', Component: ActivityView },
+          ],
         },
       ],
     },

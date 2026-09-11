@@ -23,6 +23,7 @@ class UserQuery:
     parecidas: el original tenía una por rol, con sus JOIN repetidos.
     """
 
+    ids: frozenset[int] | None = None
     roles: frozenset[Role] | None = None
     search: str | None = None
     is_active: bool | None = None

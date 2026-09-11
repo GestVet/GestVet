@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from gestvet.core.activity import ActivityKind, ActivityRecorder
 from gestvet.modules.appointments.domain.entities import Appointment, AppointmentType
 from gestvet.modules.appointments.domain.exceptions import (
     AppointmentTypeNotFound,
@@ -42,11 +43,13 @@ class BookAppointment:
         types: AppointmentTypeRepository,
         pets: PetDirectory,
         schedule: ScheduleDirectory,
+        activity: ActivityRecorder,
     ) -> None:
         self._appointments = appointments
         self._types = types
         self._pets = pets
         self._schedule = schedule
+        self._activity = activity
 
     async def __call__(self, command: BookAppointmentCommand) -> Appointment:
         appointment_type = await self._require_bookable_type(command.appointment_type_id)
@@ -67,7 +70,11 @@ class BookAppointment:
         )
 
         await self._require_free_slot(appointment)
-        return await self._appointments.add(appointment)
+        reservada = await self._appointments.add(appointment)
+        await self._activity.record(
+            command.client_id, ActivityKind.APPOINTMENT_BOOKED, appointment_type.name
+        )
+        return reservada
 
     async def _require_bookable_type(self, type_id: int) -> AppointmentType:
         appointment_type = await self._types.get(type_id)

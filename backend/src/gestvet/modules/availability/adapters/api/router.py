@@ -11,6 +11,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from gestvet.core.activity_log import ActivityRecorderDep
 from gestvet.core.auth import PrincipalDep, require_roles
 from gestvet.core.identity import VETERINARIAN_ROLES, Principal
 from gestvet.modules.availability.adapters.api.dependencies import AvailabilityRepositoryDep
@@ -49,9 +50,10 @@ async def publish_slot(
     payload: PublishSlotRequest,
     veterinarian: VeterinarianDep,
     slots: AvailabilityRepositoryDep,
+    activity: ActivityRecorderDep,
 ) -> SlotResponse:
     try:
-        slot = await PublishSlot(slots)(
+        slot = await PublishSlot(slots, activity)(
             PublishSlotCommand(
                 veterinarian_id=veterinarian.user_id,
                 starts_at=payload.starts_at,
@@ -111,9 +113,10 @@ async def withdraw_slot(
     slot_id: int,
     veterinarian: VeterinarianDep,
     slots: AvailabilityRepositoryDep,
+    activity: ActivityRecorderDep,
 ) -> None:
     try:
-        await WithdrawSlot(slots)(
+        await WithdrawSlot(slots, activity)(
             WithdrawSlotCommand(slot_id=slot_id, veterinarian_id=veterinarian.user_id)
         )
     except SlotNotFound as error:

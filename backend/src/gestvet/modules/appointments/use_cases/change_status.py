@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from gestvet.core.activity import ActivityKind, ActivityRecorder
 from gestvet.core.identity import Role
 from gestvet.modules.appointments.domain.entities import Appointment, AppointmentStatus
 from gestvet.modules.appointments.domain.exceptions import AppointmentNotFound, InvalidAppointment
@@ -16,6 +17,12 @@ from gestvet.modules.appointments.ports.repositories import AppointmentRepositor
 
 # Confirmar y completar son actos clínicos: los hace quien atiende.
 _CLINICAL_TRANSITIONS = frozenset({AppointmentStatus.CONFIRMED, AppointmentStatus.COMPLETED})
+
+_ASIENTO_POR_ESTADO: dict[AppointmentStatus, ActivityKind] = {
+    AppointmentStatus.CONFIRMED: ActivityKind.APPOINTMENT_CONFIRMED,
+    AppointmentStatus.COMPLETED: ActivityKind.APPOINTMENT_COMPLETED,
+    AppointmentStatus.CANCELLED: ActivityKind.APPOINTMENT_CANCELLED,
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,8 +35,9 @@ class ChangeStatusCommand:
 
 
 class ChangeAppointmentStatus:
-    def __init__(self, appointments: AppointmentRepository) -> None:
+    def __init__(self, appointments: AppointmentRepository, activity: ActivityRecorder) -> None:
         self._appointments = appointments
+        self._activity = activity
 
     async def __call__(self, command: ChangeStatusCommand) -> Appointment:
         appointment = await self._appointments.get(command.appointment_id)
@@ -47,7 +55,11 @@ class ChangeAppointmentStatus:
         else:
             appointment.complete(command.actor_id)
 
-        return await self._appointments.save(appointment)
+        guardada = await self._appointments.save(appointment)
+        await self._activity.record(
+            command.actor_id, _ASIENTO_POR_ESTADO[command.target], appointment.cancellation_reason
+        )
+        return guardada
 
     @staticmethod
     def _may_see(appointment: Appointment, command: ChangeStatusCommand) -> bool:

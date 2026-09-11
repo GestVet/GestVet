@@ -23,6 +23,7 @@ from gestvet.modules.accounts.use_cases.list_clients import (
     resolve_ordering,
 )
 from gestvet.modules.accounts.use_cases.register_client import RegisterClient, RegisterClientCommand
+from tests.conftest import RecordingActivity
 
 
 class InMemoryUserRepository:
@@ -69,7 +70,7 @@ class FakeHasher:
 
 async def test_registro_crea_un_cliente_y_nunca_otro_rol() -> None:
     users = InMemoryUserRepository()
-    register = RegisterClient(users, FakeHasher())
+    register = RegisterClient(users, FakeHasher(), RecordingActivity())
 
     created = await register(
         RegisterClientCommand(
@@ -87,7 +88,7 @@ async def test_registro_crea_un_cliente_y_nunca_otro_rol() -> None:
 
 async def test_registro_rechaza_un_correo_repetido() -> None:
     users = InMemoryUserRepository()
-    register = RegisterClient(users, FakeHasher())
+    register = RegisterClient(users, FakeHasher(), RecordingActivity())
     command = RegisterClientCommand(
         email="ana@example.com",
         password="contrasena-larga",

@@ -80,6 +80,8 @@ class SqlAlchemyUserRepository:
         return Page(items=[row_to_entity(row) for row in page.scalars().all()], total=total)
 
     def _apply_filters(self, statement: Select[tuple[UserRow]], query: UserQuery):
+        if query.ids is not None:
+            statement = statement.where(UserRow.id.in_(query.ids))
         if query.roles:
             statement = statement.where(UserRow.role.in_([role.value for role in query.roles]))
         if query.search:

@@ -94,6 +94,12 @@ const ACCESOS: Record<UserRole, readonly Acceso[]> = {
       title: 'Citas',
       description: 'Todas las citas de la clínica.',
     },
+    {
+      to: '/movimientos',
+      icon: 'buscar',
+      title: 'Movimientos',
+      description: 'Qué hizo cada cuenta y cuándo, la administración incluida.',
+    },
   ],
 }
 

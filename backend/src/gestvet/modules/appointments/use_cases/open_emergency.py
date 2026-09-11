@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from gestvet.core.activity import ActivityKind, ActivityRecorder
 from gestvet.modules.appointments.domain.entities import Appointment
 from gestvet.modules.appointments.domain.exceptions import (
     AppointmentTypeNotFound,
@@ -38,11 +39,13 @@ class OpenEmergency:
         types: AppointmentTypeRepository,
         pets: PetDirectory,
         schedule: ScheduleDirectory,
+        activity: ActivityRecorder,
     ) -> None:
         self._appointments = appointments
         self._types = types
         self._pets = pets
         self._schedule = schedule
+        self._activity = activity
 
     async def __call__(self, command: OpenEmergencyCommand) -> Appointment:
         emergency_type = await self._types.get_emergency()
@@ -55,7 +58,7 @@ class OpenEmergency:
         now = datetime.now(UTC)
         veterinarian_id = await self._pick_veterinarian(now)
 
-        return await self._appointments.add(
+        abierta = await self._appointments.add(
             Appointment(
                 scheduled_at=now,
                 duration=emergency_type.duration,
@@ -66,6 +69,8 @@ class OpenEmergency:
                 description=command.description or "Cita de emergencia",
             )
         )
+        await self._activity.record(command.client_id, ActivityKind.EMERGENCY_OPENED)
+        return abierta
 
     async def _pick_veterinarian(self, moment: datetime) -> int:
         on_duty = await self._schedule.veterinarians_on_duty(moment)
