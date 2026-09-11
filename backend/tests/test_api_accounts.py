@@ -15,7 +15,7 @@ from gestvet.accounts.adapters.persistence.models import UserRow
 from gestvet.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
-from gestvet.accounts.domain.entities import Role
+from gestvet.core.identity import Role
 from tests.conftest import VALID_PASSWORD, authorization_for, build_user
 
 REGISTER_URL = "/api/v1/auth/register"

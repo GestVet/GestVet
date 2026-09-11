@@ -9,32 +9,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from enum import StrEnum
 
-from gestvet.accounts.domain.exceptions import (
-    InvalidEmail,
-    PermissionDenied,
-    RoleNotSelfAssignable,
-)
+from gestvet.accounts.domain.exceptions import InvalidEmail, RoleNotSelfAssignable
 
-
-class Role(StrEnum):
-    ADMIN = "admin"
-    CLIENT = "client"
-    VETERINARIAN = "veterinarian"
-    EMERGENCY_VETERINARIAN = "emergency_veterinarian"
-
-    @property
-    def label(self) -> str:
-        return _ROLE_LABELS[self]
-
-
-_ROLE_LABELS: dict[Role, str] = {
-    Role.ADMIN: "Administrador",
-    Role.CLIENT: "Cliente",
-    Role.VETERINARIAN: "Veterinario",
-    Role.EMERGENCY_VETERINARIAN: "Veterinario de emergencia",
-}
+# El rol vive en el núcleo compartido, no acá: lo necesitan todos los módulos
+# para autorizar, y si lo poseyera `accounts` todos tendrían que importarlo.
+from gestvet.core.identity import Role
 
 # El hallazgo P0 de la auditoría de CitasVet fue que un visitante podía pedir
 # rol de administrador al registrarse. La regla vive aquí, en el dominio, para
@@ -81,13 +61,3 @@ def ensure_role_is_self_assignable(role: Role) -> None:
     """Protege el autorregistro. Solo se puede pedir un rol de esta lista."""
     if role not in SELF_ASSIGNABLE_ROLES:
         raise RoleNotSelfAssignable(role.value)
-
-
-def ensure_role_is_allowed(role: Role, allowed: frozenset[Role]) -> None:
-    """Decide si un rol alcanza para una operación.
-
-    La regla vive en el dominio y no en el adaptador HTTP para que la misma
-    comprobación sirva a un consumidor que no hable HTTP.
-    """
-    if role not in allowed:
-        raise PermissionDenied(tuple(sorted(candidate.value for candidate in allowed)))

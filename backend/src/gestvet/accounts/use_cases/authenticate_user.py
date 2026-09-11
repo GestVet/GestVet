@@ -11,8 +11,8 @@ from gestvet.accounts.domain.exceptions import (
     InvalidCredentials,
     InvalidEmail,
 )
-from gestvet.accounts.ports.token_service import AccessToken, TokenService
 from gestvet.accounts.ports.user_repository import PasswordHasher, UserRepository
+from gestvet.core.identity import AccessToken, TokenService
 
 
 @dataclass(frozen=True, slots=True)

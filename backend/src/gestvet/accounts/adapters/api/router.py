@@ -10,19 +10,18 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
-from gestvet.accounts.adapters.api.dependencies import UserRepositoryDep, require_roles
+from gestvet.accounts.adapters.api.dependencies import UserRepositoryDep
 from gestvet.accounts.adapters.api.schemas import ClientPageResponse, UserResponse
-from gestvet.accounts.domain.entities import Role
 from gestvet.accounts.ports.user_repository import ClientQuery
 from gestvet.accounts.use_cases.list_clients import ListClients
+from gestvet.core.auth import require_roles
+from gestvet.core.identity import STAFF_ROLES
 
 DEFAULT_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 100
 
 # El padrón de clientes es dato personal. Solo lo ve quien atiende la clínica,
 # nunca un cliente autenticado mirando el listado de los demás.
-STAFF_ROLES = (Role.ADMIN, Role.VETERINARIAN, Role.EMERGENCY_VETERINARIAN)
-
 router = APIRouter(dependencies=[Depends(require_roles(*STAFF_ROLES))])
 
 

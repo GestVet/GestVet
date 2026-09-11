@@ -107,8 +107,10 @@ forbidden_modules = [
     "sqlalchemy",
     "starlette",
     "uvicorn",
+    "gestvet.core.auth",
     "gestvet.core.database",
     "gestvet.core.security",
+    "gestvet.core.tokens",
 ]
 
 [[tool.importlinter.contracts]]

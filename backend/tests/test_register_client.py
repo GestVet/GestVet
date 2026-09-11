@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from gestvet.accounts.domain.entities import Role, User, normalize_email
+from gestvet.accounts.domain.entities import User, normalize_email
 from gestvet.accounts.domain.exceptions import (
     EmailAlreadyRegistered,
     InvalidEmail,
@@ -17,6 +17,7 @@ from gestvet.accounts.domain.exceptions import (
 from gestvet.accounts.ports.user_repository import ClientQuery, Page
 from gestvet.accounts.use_cases.list_clients import ListClients, resolve_ordering
 from gestvet.accounts.use_cases.register_client import RegisterClient, RegisterClientCommand
+from gestvet.core.identity import Role
 
 
 class InMemoryUserRepository:

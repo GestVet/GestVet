@@ -9,7 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from gestvet.accounts.domain.entities import Role, User
+from gestvet.accounts.domain.entities import User
+from gestvet.core.identity import Role
 
 
 @dataclass(frozen=True, slots=True)

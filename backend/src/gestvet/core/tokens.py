@@ -1,8 +1,4 @@
-"""Implementación del puerto `TokenService` sobre JWT firmado con HMAC.
-
-Es un adaptador del módulo de cuentas y no del núcleo compartido, porque
-construye tipos que declara el puerto. El núcleo tiene prohibido conocerlos.
-"""
+"""Adaptador del puerto `TokenService` sobre JWT firmado con HMAC."""
 
 from __future__ import annotations
 
@@ -10,9 +6,7 @@ from datetime import UTC, datetime, timedelta
 
 import jwt
 
-from gestvet.accounts.domain.entities import Role
-from gestvet.accounts.domain.exceptions import InvalidToken
-from gestvet.accounts.ports.token_service import AccessToken, TokenClaims
+from gestvet.core.identity import AccessToken, InvalidToken, Role, TokenClaims
 
 
 class JwtTokenService:

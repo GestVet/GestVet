@@ -9,10 +9,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 
 from gestvet.accounts.adapters.api.dependencies import (
-    UNAUTHENTICATED_HEADERS,
-    CurrentUserDep,
     PasswordHasherDep,
-    TokenServiceDep,
     UserRepositoryDep,
 )
 from gestvet.accounts.adapters.api.schemas import (
@@ -32,6 +29,7 @@ from gestvet.accounts.use_cases.authenticate_user import (
     AuthenticateUserCommand,
 )
 from gestvet.accounts.use_cases.register_client import RegisterClient, RegisterClientCommand
+from gestvet.core.auth import UNAUTHENTICATED_HEADERS, PrincipalDep, TokenServiceDep
 
 router = APIRouter()
 
@@ -92,5 +90,10 @@ async def login(
 
 
 @router.get("/me", response_model=UserResponse, summary="Cuenta que emitió la petición")
-async def read_current_user(current_user: CurrentUserDep) -> UserResponse:
-    return UserResponse.from_entity(current_user)
+async def read_current_user(principal: PrincipalDep, users: UserRepositoryDep) -> UserResponse:
+    # El principal solo trae identificador y rol. El perfil completo lo posee
+    # este módulo, así que acá sí se lee la entidad entera.
+    user = await users.get(principal.user_id)
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "La cuenta ya no existe.")
+    return UserResponse.from_entity(user)

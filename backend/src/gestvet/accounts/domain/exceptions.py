@@ -45,15 +45,3 @@ class InactiveAccount(AccountsError):
     def __init__(self, email: str) -> None:
         super().__init__(f"La cuenta {email!r} está desactivada.")
         self.email = email
-
-
-class InvalidToken(AccountsError):
-    def __init__(self, reason: str = "El token no es válido o ya expiró.") -> None:
-        super().__init__(reason)
-        self.reason = reason
-
-
-class PermissionDenied(AccountsError):
-    def __init__(self, required: tuple[str, ...]) -> None:
-        super().__init__(f"Se requiere uno de estos roles: {', '.join(required)}.")
-        self.required = required

@@ -15,18 +15,17 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
-from gestvet.accounts.adapters.api.dependencies import (
-    get_password_hasher,
-    get_token_service,
-)
+from gestvet.accounts.adapters.api.dependencies import get_password_hasher
 from gestvet.accounts.adapters.persistence import models as accounts_models  # noqa: F401
 from gestvet.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
-from gestvet.accounts.adapters.security.jwt_token_service import JwtTokenService
-from gestvet.accounts.domain.entities import Role, User
+from gestvet.accounts.domain.entities import User
+from gestvet.core.auth import get_token_service
 from gestvet.core.database import Base, get_session
+from gestvet.core.identity import Role
 from gestvet.core.security import BcryptPasswordHasher
+from gestvet.core.tokens import JwtTokenService
 from gestvet.main import create_app
 
 # Cuatro rondas en vez de doce. El algoritmo es el mismo que en producción, que

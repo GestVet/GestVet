@@ -15,9 +15,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from gestvet.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
-from gestvet.accounts.domain.entities import Role
 from gestvet.accounts.domain.exceptions import EmailAlreadyRegistered
 from gestvet.accounts.ports.user_repository import ClientQuery
+from gestvet.core.identity import Role
 from tests.conftest import build_user
 
 

@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from gestvet.accounts.domain.entities import Role, User
+from gestvet.accounts.domain.entities import User
 from gestvet.accounts.domain.exceptions import InactiveAccount, InvalidCredentials
-from gestvet.accounts.ports.token_service import AccessToken, TokenClaims
 from gestvet.accounts.use_cases.authenticate_user import (
     AuthenticateUser,
     AuthenticateUserCommand,
 )
+from gestvet.core.identity import AccessToken, Role, TokenClaims
 from tests.test_register_client import FakeHasher, InMemoryUserRepository
 
 PASSWORD = "contrasena-larga"
