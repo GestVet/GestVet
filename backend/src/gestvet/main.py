@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from gestvet.accounts.adapters.api.auth_router import router as auth_router
 from gestvet.accounts.adapters.api.router import router as clients_router
+from gestvet.appointments.adapters.api.router import router as appointments_router
 from gestvet.availability.adapters.api.router import router as availability_router
 from gestvet.core.config import get_settings
 from gestvet.core.database import engine
@@ -80,6 +81,9 @@ def create_app() -> FastAPI:
     app.include_router(pets_router, prefix=f"{API_PREFIX}/pets", tags=["pets"])
     app.include_router(
         availability_router, prefix=f"{API_PREFIX}/availability", tags=["availability"]
+    )
+    app.include_router(
+        appointments_router, prefix=f"{API_PREFIX}/appointments", tags=["appointments"]
     )
     return app
 

@@ -10,9 +10,11 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from datetime import date
+from decimal import Decimal
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
@@ -22,6 +24,7 @@ from gestvet.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
 from gestvet.accounts.domain.entities import User
+from gestvet.appointments.adapters.persistence.models import AppointmentTypeRow
 from gestvet.availability.adapters.persistence import models as availability_models  # noqa: F401
 from gestvet.core.auth import get_token_service
 from gestvet.core.database import Base, get_session
@@ -42,6 +45,34 @@ TEST_TOKEN_SERVICE = JwtTokenService(
 )
 VALID_PASSWORD = "contrasena-larga"
 
+# Copia de lo que siembra la migracion 0004.
+REFERENCE_TYPES = [
+    {
+        "name": "Consulta general",
+        "duration_minutes": 30,
+        "price": Decimal("60.00"),
+        "is_emergency": False,
+        "is_active": True,
+    },
+    {
+        "name": "Cirugia menor",
+        "duration_minutes": 90,
+        "price": Decimal("350.00"),
+        "is_emergency": False,
+        "is_active": True,
+    },
+    {
+        "name": "Emergencia",
+        "duration_minutes": 60,
+        "price": Decimal("150.00"),
+        "is_emergency": True,
+        "is_active": True,
+    },
+]
+GENERAL_TYPE_ID = 1
+SURGERY_TYPE_ID = 2
+EMERGENCY_TYPE_ID = 3
+
 
 @pytest.fixture
 async def session() -> AsyncIterator[AsyncSession]:
@@ -52,6 +83,9 @@ async def session() -> AsyncIterator[AsyncSession]:
     )
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
+        # Los motivos de consulta son datos de referencia que en produccion
+        # siembra la migracion. Sin ellos no se puede reservar nada.
+        await connection.execute(insert(AppointmentTypeRow), REFERENCE_TYPES)
 
     factory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     async with factory() as open_session:

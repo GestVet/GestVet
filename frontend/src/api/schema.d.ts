@@ -4,6 +4,109 @@
  */
 
 export interface paths {
+    "/api/v1/appointments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar citas */
+        get: operations["list_appointments_api_v1_appointments_get"];
+        put?: never;
+        /** Reservar una cita */
+        post: operations["book_appointment_api_v1_appointments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/appointments/emergency": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Abrir una emergencia ahora */
+        post: operations["open_emergency_api_v1_appointments_emergency_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/appointments/types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Motivos de consulta reservables */
+        get: operations["list_types_api_v1_appointments_types_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/appointments/{appointment_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancelar una cita */
+        post: operations["cancel_appointment_api_v1_appointments__appointment_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/appointments/{appointment_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dar por completada una cita */
+        post: operations["complete_appointment_api_v1_appointments__appointment_id__complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/appointments/{appointment_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirmar una cita */
+        post: operations["confirm_appointment_api_v1_appointments__appointment_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -210,6 +313,101 @@ export interface components {
             token_type: string;
             user: components["schemas"]["UserResponse"];
         };
+        /** AppointmentPageResponse */
+        AppointmentPageResponse: {
+            /** Items */
+            items: components["schemas"]["AppointmentResponse"][];
+            /** Total */
+            total: number;
+        };
+        /** AppointmentResponse */
+        AppointmentResponse: {
+            /** Appointment Type Id */
+            appointment_type_id: number;
+            /** Cancellation Reason */
+            cancellation_reason: string;
+            /** Client Id */
+            client_id: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Description */
+            description: string;
+            /** Duration Minutes */
+            duration_minutes: number;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /** Id */
+            id: number;
+            /** Pet Id */
+            pet_id: number;
+            /**
+             * Scheduled At
+             * Format: date-time
+             */
+            scheduled_at: string;
+            status: components["schemas"]["AppointmentStatus"];
+            /** Status Label */
+            status_label: string;
+            /** Updated By */
+            updated_by: number | null;
+            /** Veterinarian Id */
+            veterinarian_id: number;
+        };
+        /**
+         * AppointmentStatus
+         * @enum {string}
+         */
+        AppointmentStatus: "pending" | "confirmed" | "completed" | "cancelled";
+        /** AppointmentTypeListResponse */
+        AppointmentTypeListResponse: {
+            /** Items */
+            items: components["schemas"]["AppointmentTypeResponse"][];
+            /** Total */
+            total: number;
+        };
+        /** AppointmentTypeResponse */
+        AppointmentTypeResponse: {
+            /** Duration Minutes */
+            duration_minutes: number;
+            /** Id */
+            id: number;
+            /** Is Emergency */
+            is_emergency: boolean;
+            /** Name */
+            name: string;
+            /** Price */
+            price: string;
+        };
+        /** BookAppointmentRequest */
+        BookAppointmentRequest: {
+            /** Appointment Type Id */
+            appointment_type_id: number;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Pet Id */
+            pet_id: number;
+            /**
+             * Scheduled At
+             * Format: date-time
+             */
+            scheduled_at: string;
+            /** Veterinarian Id */
+            veterinarian_id: number;
+        };
+        /** CancelAppointmentRequest */
+        CancelAppointmentRequest: {
+            /** Reason */
+            reason: string;
+        };
         /** ChangePetStatusRequest */
         ChangePetStatusRequest: {
             /** Is Active */
@@ -251,6 +449,16 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+        };
+        /** OpenEmergencyRequest */
+        OpenEmergencyRequest: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Pet Id */
+            pet_id: number;
         };
         /** PetPageResponse */
         PetPageResponse: {
@@ -406,6 +614,230 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_appointments_api_v1_appointments_get: {
+        parameters: {
+            query?: {
+                /** @description Filtra por estado */
+                status?: components["schemas"]["AppointmentStatus"][] | null;
+                /** @description Solo emergencias */
+                is_emergency?: boolean | null;
+                pet_id?: number | null;
+                /** @description Desde */
+                starts_after?: string | null;
+                /** @description Hasta */
+                ends_before?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentPageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    book_appointment_api_v1_appointments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookAppointmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_emergency_api_v1_appointments_emergency_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenEmergencyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_types_api_v1_appointments_types_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentTypeListResponse"];
+                };
+            };
+        };
+    };
+    cancel_appointment_api_v1_appointments__appointment_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelAppointmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_appointment_api_v1_appointments__appointment_id__complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_appointment_api_v1_appointments__appointment_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     login_api_v1_auth_login_post: {
         parameters: {
             query?: never;
