@@ -22,6 +22,7 @@ from gestvet.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
 from gestvet.accounts.domain.entities import User
+from gestvet.availability.adapters.persistence import models as availability_models  # noqa: F401
 from gestvet.core.auth import get_token_service
 from gestvet.core.database import Base, get_session
 from gestvet.core.identity import Role
