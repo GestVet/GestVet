@@ -23,7 +23,7 @@
   },
   "lint-staged": {
     "frontend/src/**/*.{ts,tsx}": [
-      "pnpm --filter gestvet-frontend exec eslint --max-warnings 0"
+      "pnpm --filter gestvet-frontend exec eslint --max-warnings 0 --no-warn-ignored"
     ],
     "backend/**/*.py": [
       "uv run --directory backend ruff check --force-exclude",
