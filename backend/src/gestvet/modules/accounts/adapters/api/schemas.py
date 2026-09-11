@@ -88,6 +88,27 @@ class AccessTokenResponse(BaseModel):
     user: UserResponse
 
 
+class VeterinarianResponse(BaseModel):
+    """Proyección mínima para elegir veterinario al reservar.
+
+    No trae correo ni teléfono: un cliente necesita el nombre para reservar, no
+    los datos de contacto del personal.
+    """
+
+    id: int
+    full_name: str
+    role: Role
+
+    @classmethod
+    def from_entity(cls, user: User) -> VeterinarianResponse:
+        return cls(id=user.id or 0, full_name=user.full_name, role=user.role)
+
+
+class VeterinarianListResponse(BaseModel):
+    items: list[VeterinarianResponse]
+    total: int
+
+
 class ClientPageResponse(BaseModel):
     items: list[UserResponse]
     total: int

@@ -76,9 +76,9 @@ El frontend usa **arquitectura por características**, con límites verificados 
 ```text
 frontend/src/
 ├── api/          contrato generado desde OpenAPI y funciones de consulta
-├── components/   piezas de interfaz compartidas
-├── features/     un módulo por dominio; no pueden importarse entre sí
-├── hooks/        hooks transversales
+├── components/   piezas de interfaz compartidas, incluido el registro de iconos
+├── features/     un módulo por pantalla; no pueden importarse entre sí
+├── hooks/        ayudas transversales
 ├── router/       rutas y guardas
 ├── services/     cliente HTTP centralizado
 └── store/        estado de cliente
@@ -205,6 +205,34 @@ En el frontend, ESLint aplica:
 | Tipado estricto con verificación de tipos | Corrección |
 
 El análisis de límites abarca todo `src`, no la lista de capas conocidas. Enumerarlas dejaba fuera cualquier carpeta nueva: un `src/utils/` recién creado no era una violación, era invisible, y todas las capas podían importarlo. La raíz de composición sigue exenta, que es lo único que debe estarlo.
+
+## Iconos
+
+Todos los iconos salen de un registro único, `src/components/icons.ts`. Un icono es un dato, no un componente: el trazo vive en ese archivo y lo dibuja `Icon.tsx`, que es el único componente que emite un `<svg>` en todo el frontend.
+
+```tsx
+<Icon name="mascota" size={20} />
+```
+
+Cambiar el icono de citas por otro es editar una línea del registro y verlo en cada pantalla. El nombre está tipado contra el propio registro, así que pedir uno que no existe no compila. Tres nombres comparten trazo a propósito, porque lo que los separa es el significado: el día que el perfil propio necesite un dibujo distinto del listado de clientes, se cambia una sola línea.
+
+El menú de la aplicación sigue la misma idea. `src/features/shell/navigation.ts` declara cada entrada con su ruta, su etiqueta, su icono y los roles que la ven, así que agregar una pantalla es agregar una línea.
+
+## Interfaz
+
+La identidad visual viene del proyecto original: el azul institucional, el verde de las acciones afirmativas y las tarjetas blancas sobre gris. Allá estaban repetidos a mano en veintiséis hojas de estilo; acá viven una sola vez como variables CSS.
+
+| Pantalla | Quién |
+| --- | --- |
+| Portada, acceso y registro | cualquiera |
+| Panel y perfil | cuenta autenticada |
+| Citas | cuenta autenticada, recortado por rol |
+| Mis mascotas y reservar | cliente |
+| Mi agenda | veterinarios |
+| Clientes | personal de la clínica |
+| Personal | administración |
+
+Las guardas de ruta son una comodidad de la interfaz, no una medida de seguridad: quien llegue igual a una pantalla se encuentra con un 401 o un 403 del servidor. La autorización de verdad vive en el backend y está cubierta por pruebas.
 
 ## Acceso y autorización
 

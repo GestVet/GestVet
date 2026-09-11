@@ -13,7 +13,10 @@ from fastapi import APIRouter, Depends, Query
 from gestvet.core.auth import require_roles
 from gestvet.core.identity import STAFF_ROLES
 from gestvet.modules.accounts.adapters.api.dependencies import UserRepositoryDep
-from gestvet.modules.accounts.adapters.api.schemas import ClientPageResponse, UserResponse
+from gestvet.modules.accounts.adapters.api.schemas import (
+    ClientPageResponse,
+    UserResponse,
+)
 from gestvet.modules.accounts.ports.user_repository import UserQuery
 from gestvet.modules.accounts.use_cases.list_clients import CLIENT_ROLES, ListUsers
 

@@ -18,6 +18,9 @@ from gestvet.core.database import engine
 from gestvet.modules.accounts.adapters.api.admin_router import router as admin_router
 from gestvet.modules.accounts.adapters.api.auth_router import router as auth_router
 from gestvet.modules.accounts.adapters.api.router import router as clients_router
+from gestvet.modules.accounts.adapters.api.veterinarians_router import (
+    router as veterinarians_router,
+)
 from gestvet.modules.appointments.adapters.api.router import router as appointments_router
 from gestvet.modules.availability.adapters.api.router import router as availability_router
 from gestvet.modules.pets.adapters.api.router import router as pets_router
@@ -80,6 +83,9 @@ def create_app() -> FastAPI:
     app.include_router(auth_router, prefix=f"{API_PREFIX}/auth", tags=["auth"])
     app.include_router(clients_router, prefix=f"{API_PREFIX}/clients", tags=["clients"])
     app.include_router(admin_router, prefix=API_PREFIX, tags=["admin"])
+    app.include_router(
+        veterinarians_router, prefix=f"{API_PREFIX}/veterinarians", tags=["veterinarians"]
+    )
     app.include_router(pets_router, prefix=f"{API_PREFIX}/pets", tags=["pets"])
     app.include_router(
         availability_router, prefix=f"{API_PREFIX}/availability", tags=["availability"]

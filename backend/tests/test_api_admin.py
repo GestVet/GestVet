@@ -212,3 +212,39 @@ async def test_el_perfil_no_se_edita_sin_credencial(client: AsyncClient) -> None
     response = await client.patch(ME_URL, json={"first_name": "X", "last_name": "Y"})
 
     assert response.status_code == 401
+
+
+async def test_un_cliente_ve_los_veterinarios_para_reservar(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """Necesita el nombre para elegir, no los datos de contacto del personal."""
+    ana = await _cuenta(session, Role.CLIENT, "ana@example.com")
+    await _cuenta(session, Role.VETERINARIAN, "vet@example.com")
+    await _cuenta(session, Role.ADMIN)
+
+    response = await client.get("/api/v1/veterinarians", headers=authorization_for(ana))
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 1
+    assert set(body["items"][0]) == {"id", "full_name", "role"}
+
+
+async def test_los_veterinarios_no_se_listan_sin_credencial(client: AsyncClient) -> None:
+    assert (await client.get("/api/v1/veterinarians")).status_code == 401
+
+
+async def test_una_cuenta_desactivada_no_aparece_para_reservar(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    jefa = await _cuenta(session, Role.ADMIN)
+    vet = await _cuenta(session, Role.VETERINARIAN, "vet@example.com")
+    await client.patch(
+        f"{USERS_URL}/{vet.id}/status",
+        json={"is_active": False},
+        headers=authorization_for(jefa),
+    )
+
+    response = await client.get("/api/v1/veterinarians", headers=authorization_for(jefa))
+
+    assert response.json()["total"] == 0

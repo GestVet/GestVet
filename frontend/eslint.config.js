@@ -109,6 +109,7 @@ export default tseslint.config(
           'src/features/**/*.tsx': 'PASCAL_CASE',
           // Todo lo demas nombra un modulo, no un componente.
           'src/{api,hooks,services,store}/**/*.ts': 'CAMEL_CASE',
+          'src/components/**/*.ts': 'CAMEL_CASE',
           'src/features/**/*.ts': 'CAMEL_CASE',
         },
         { ignoreMiddleExtensions: true },

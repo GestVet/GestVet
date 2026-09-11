@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router'
 
 import { fetchHealth, healthQueryKey } from '../../api/health'
+import Icon from '../../components/Icon'
+import type { IconName } from '../../components/icons'
 
 type ConnectionState = 'checking' | 'online' | 'offline'
 
@@ -10,18 +13,27 @@ const CONNECTION_LABELS: Record<ConnectionState, string> = {
   offline: 'API no disponible',
 }
 
-const MODULES = [
+interface Modulo {
+  readonly icon: IconName
+  readonly title: string
+  readonly description: string
+}
+
+const MODULOS: readonly Modulo[] = [
   {
-    title: 'Operación',
-    description: 'Usuarios, mascotas, horarios y citas con reglas de propiedad y asignación.',
+    icon: 'mascota',
+    title: 'Tus mascotas',
+    description: 'Registrá a cada una con su especie, su raza y su fecha de nacimiento.',
   },
   {
-    title: 'Analítica',
-    description: 'Indicadores para decidir sobre demanda, estados y carga veterinaria.',
+    icon: 'agenda',
+    title: 'Citas con hora real',
+    description: 'La agenda muestra solo lo que el veterinario publicó y todavía está libre.',
   },
   {
-    title: 'Inteligencia',
-    description: 'Funciones de IA controladas, explicables y separadas del núcleo.',
+    icon: 'emergencia',
+    title: 'Emergencias 24 horas',
+    description: 'Se abre en el momento y el sistema asigna al veterinario de guardia.',
   },
 ]
 
@@ -33,10 +45,7 @@ function resolveConnectionState(isPending: boolean, isOnline: boolean): Connecti
 }
 
 export default function HomeView() {
-  const health = useQuery({
-    queryKey: healthQueryKey,
-    queryFn: fetchHealth,
-  })
+  const health = useQuery({ queryKey: healthQueryKey, queryFn: fetchHealth })
 
   const isOnline = health.data?.status === 'ok'
   const connection = resolveConnectionState(health.isPending, isOnline)
@@ -46,19 +55,28 @@ export default function HomeView() {
   const showDetail = health.data !== undefined || health.isError
 
   return (
-    <>
-      <section className="hero">
+    <div className="stack">
+      <section className="hero card">
         <div>
-          <span className="eyebrow">Sistema integral de gestión veterinaria</span>
-          <h1>Una base sólida para cuidar mejor.</h1>
+          <span className="eyebrow">Clínica veterinaria en Trujillo</span>
+          <h1>Bienvenido a GestVet</h1>
           <p className="hero-copy">
-            GestVet centralizará clientes, mascotas, disponibilidad, citas, analítica e inteligencia
-            asistida en una experiencia clara y responsive.
+            Como clínica líder en la ciudad, ampliamos nuestros servicios para darte la
+            seguridad y el cuidado que tu mascota merece. Atendemos las 24 horas del día.
           </p>
+          <div className="inline">
+            <Link className="btn btn-green" to="/registro">
+              <Icon name="agregar" size={16} />
+              <span>Crear una cuenta</span>
+            </Link>
+            <Link className="btn btn-blue" to="/acceso">
+              <span>Ya tengo cuenta</span>
+            </Link>
+          </div>
         </div>
 
-        <aside className="status-card" aria-live="polite">
-          <h2>Estado del backend</h2>
+        <aside className="card" aria-live="polite">
+          <h2>Estado del sistema</h2>
           <div className="status">
             <span className={isOnline ? 'status-dot is-online' : 'status-dot'} />
             <strong>{CONNECTION_LABELS[connection]}</strong>
@@ -67,14 +85,15 @@ export default function HomeView() {
         </aside>
       </section>
 
-      <section className="features" aria-label="Módulos base">
-        {MODULES.map((module) => (
-          <article className="feature-card" key={module.title}>
-            <h2>{module.title}</h2>
-            <p>{module.description}</p>
+      <section className="card-grid" aria-label="Qué ofrece el sistema">
+        {MODULOS.map((modulo) => (
+          <article className="tile" key={modulo.title}>
+            <Icon className="tile-icon" name={modulo.icon} size={28} />
+            <h3>{modulo.title}</h3>
+            <p>{modulo.description}</p>
           </article>
         ))}
       </section>
-    </>
+    </div>
   )
 }
