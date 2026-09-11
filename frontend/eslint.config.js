@@ -1,5 +1,6 @@
 import js from '@eslint/js'
 import boundaries from 'eslint-plugin-boundaries'
+import noBarrelFiles from 'eslint-plugin-no-barrel-files'
 import checkFile from 'eslint-plugin-check-file'
 import react from 'eslint-plugin-react'
 import reactHooks from 'eslint-plugin-react-hooks'
@@ -136,9 +137,15 @@ export default tseslint.config(
       // analisis cualquier carpeta nueva: un src/utils/ recien creado no era
       // una violacion, era invisible, y todas las capas podian importarlo.
       'boundaries/include': ['src/**/*.{ts,tsx}'],
-      // La raiz de composicion queda fuera a proposito: su trabajo es
-      // precisamente conocer todas las capas para ensamblarlas.
-      'boundaries/ignore': ['src/main.tsx', 'src/App.tsx', 'src/vite-env.d.ts'],
+      // La raiz de composicion se declara por archivo y no por carpeta, que
+      // es para lo que sirven los descriptores de fichero. Antes estaba en la
+      // lista de ignorados, que es otra cosa: un archivo ignorado no tiene
+      // reglas, y este las tiene, solo que amplias.
+      //
+      // Es un unico archivo: main.tsx. El armazon de la interfaz vive en
+      // components porque es lo que es, un componente compartido, y asi el
+      // router puede usarlo sin romper la direccion de dependencia.
+      'boundaries/files': [{ pattern: 'src/main.tsx', category: 'composition' }],
       // El patron nombra la carpeta raiz del elemento, no sus archivos.
       'boundaries/elements': [
         { type: 'router', pattern: 'src/router' },
@@ -164,6 +171,21 @@ export default tseslint.config(
           message:
             'La capa "{{from.element.types.[0]}}" no puede depender de "{{to.element.types.[0]}}". La direccion de dependencia esta en el README: sube lo compartido a components, hooks o api.',
           policies: [
+            {
+              // Su trabajo es precisamente conocer todas las capas para
+              // ensamblarlas, asi que las alcanza a todas. Va enumerado y no
+              // con un comodin para que se lea que toca.
+              from: [{ file: { categories: 'composition' } }],
+              allow: [
+                { to: { element: { type: 'router' } } },
+                { to: { element: { type: 'features' } } },
+                { to: { element: { type: 'components' } } },
+                { to: { element: { type: 'hooks' } } },
+                { to: { element: { type: 'store' } } },
+                { to: { element: { type: 'services' } } },
+                { to: { element: { type: 'api' } } },
+              ],
+            },
             {
               from: [{ element: { type: 'router' } }],
               allow: [
@@ -221,6 +243,15 @@ export default tseslint.config(
       ],
     },
   },
+
+  // ---------------------------------------------------------------------
+  // Barrel files: un archivo que solo reexporta.
+  //
+  // Enturbian los limites, esconden dependencias circulares y hacen que un
+  // import arrastre modulos que nadie pidio. Cada modulo se importa por su
+  // ruta real.
+  // ---------------------------------------------------------------------
+  ...noBarrelFiles.configs['flat/recommended'],
 
   // ---------------------------------------------------------------------
   // Archivos de configuracion.

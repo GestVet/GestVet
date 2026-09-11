@@ -6,8 +6,8 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from gestvet.availability.domain.entities import AvailabilitySlot
-from gestvet.availability.domain.exceptions import InvalidSlot
+from gestvet.modules.availability.domain.entities import AvailabilitySlot
+from gestvet.modules.availability.domain.exceptions import InvalidSlot
 
 BASE = datetime(2026, 9, 14, 9, 0, tzinfo=UTC)
 
@@ -33,13 +33,23 @@ def test_un_tramo_demasiado_largo_se_rechaza() -> None:
         _slot(horas=13)
 
 
-@pytest.mark.parametrize("campo", ["starts_at", "ends_at"])
-def test_una_marca_sin_zona_horaria_se_rechaza(campo: str) -> None:
+def test_un_inicio_sin_zona_horaria_se_rechaza() -> None:
     """La ambigüedad en una agenda se paga con citas a la hora equivocada."""
-    datos = {"veterinarian_id": 1, "starts_at": BASE, "ends_at": BASE + timedelta(hours=2)}
-    datos[campo] = datos[campo].replace(tzinfo=None)  # type: ignore[union-attr]
     with pytest.raises(InvalidSlot):
-        AvailabilitySlot(**datos)  # type: ignore[arg-type]
+        AvailabilitySlot(
+            veterinarian_id=1,
+            starts_at=BASE.replace(tzinfo=None),
+            ends_at=BASE + timedelta(hours=2),
+        )
+
+
+def test_un_fin_sin_zona_horaria_se_rechaza() -> None:
+    with pytest.raises(InvalidSlot):
+        AvailabilitySlot(
+            veterinarian_id=1,
+            starts_at=BASE,
+            ends_at=(BASE + timedelta(hours=2)).replace(tzinfo=None),
+        )
 
 
 def test_la_hora_se_normaliza_a_utc() -> None:

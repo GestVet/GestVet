@@ -7,30 +7,29 @@ from decimal import Decimal
 
 import pytest
 
-from gestvet.appointments.domain.entities import (
+from gestvet.modules.appointments.domain.entities import (
     TURNAROUND,
     Appointment,
     AppointmentStatus,
     AppointmentType,
 )
-from gestvet.appointments.domain.exceptions import IllegalStatusChange, InvalidAppointment
+from gestvet.modules.appointments.domain.exceptions import IllegalStatusChange, InvalidAppointment
 
 BASE = datetime(2026, 9, 14, 10, 0, tzinfo=UTC)
 CLIENTE = 10
 VETERINARIO = 20
 
 
-def _cita(inicio: datetime = BASE, minutos: int = 30, **extra: object) -> Appointment:
-    datos: dict[str, object] = {
-        "scheduled_at": inicio,
-        "duration": timedelta(minutes=minutos),
-        "client_id": CLIENTE,
-        "pet_id": 1,
-        "veterinarian_id": VETERINARIO,
-        "appointment_type_id": 1,
-    }
-    datos.update(extra)
-    return Appointment(**datos)  # type: ignore[arg-type]
+def _cita(inicio: datetime = BASE, minutos: int = 30, description: str = "") -> Appointment:
+    return Appointment(
+        scheduled_at=inicio,
+        duration=timedelta(minutes=minutos),
+        client_id=CLIENTE,
+        pet_id=1,
+        veterinarian_id=VETERINARIO,
+        appointment_type_id=1,
+        description=description,
+    )
 
 
 def test_la_fecha_debe_traer_zona_horaria() -> None:

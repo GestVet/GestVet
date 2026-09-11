@@ -8,10 +8,10 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from gestvet.accounts.adapters.persistence.sqlalchemy_user_repository import (
+from gestvet.core.identity import Role
+from gestvet.modules.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
-from gestvet.core.identity import Role
 from tests.conftest import authorization_for, build_user
 
 URL = "/api/v1/availability"

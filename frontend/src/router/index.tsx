@@ -1,13 +1,13 @@
 import { createBrowserRouter } from 'react-router'
 
-import App from '../App'
+import AppShell from '../components/AppShell'
 import HomeView from '../features/home/HomeView'
 
 const router = createBrowserRouter(
   [
     {
       path: '/',
-      Component: App,
+      Component: AppShell,
       children: [
         {
           index: true,

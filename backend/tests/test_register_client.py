@@ -8,17 +8,21 @@ from __future__ import annotations
 
 import pytest
 
-from gestvet.accounts.domain.entities import User, normalize_email
-from gestvet.accounts.domain.exceptions import (
+from gestvet.core.identity import Role
+from gestvet.core.pagination import Page
+from gestvet.modules.accounts.domain.entities import User, normalize_email
+from gestvet.modules.accounts.domain.exceptions import (
     EmailAlreadyRegistered,
     InvalidEmail,
     RoleNotSelfAssignable,
 )
-from gestvet.accounts.ports.user_repository import ClientQuery
-from gestvet.accounts.use_cases.list_clients import ListClients, resolve_ordering
-from gestvet.accounts.use_cases.register_client import RegisterClient, RegisterClientCommand
-from gestvet.core.identity import Role
-from gestvet.core.pagination import Page
+from gestvet.modules.accounts.ports.user_repository import UserQuery
+from gestvet.modules.accounts.use_cases.list_clients import (
+    CLIENT_ROLES,
+    ListUsers,
+    resolve_ordering,
+)
+from gestvet.modules.accounts.use_cases.register_client import RegisterClient, RegisterClientCommand
 
 
 class InMemoryUserRepository:
@@ -41,8 +45,13 @@ class InMemoryUserRepository:
     async def exists_with_email(self, email: str) -> bool:
         return any(row.email == email for row in self.rows)
 
-    async def search_by_role(self, role: Role, query: ClientQuery) -> Page[User]:
-        matches = [row for row in self.rows if row.role is role]
+    async def save(self, user: User) -> User:
+        self.rows = [user if row.id == user.id else row for row in self.rows]
+        return user
+
+    async def search(self, query: UserQuery) -> Page[User]:
+        roles = query.roles or set()
+        matches = [row for row in self.rows if row.role in roles]
         window = matches[query.offset : query.offset + query.limit]
         return Page(items=window, total=len(matches))
 
@@ -103,7 +112,7 @@ def test_correo_invalido(raw: str) -> None:
 )
 def test_ningun_rol_privilegiado_es_autoasignable(role: Role) -> None:
     """Cierra el hallazgo P0 de la auditoría de CitasVet."""
-    from gestvet.accounts.domain.entities import ensure_role_is_self_assignable
+    from gestvet.modules.accounts.domain.entities import ensure_role_is_self_assignable
 
     with pytest.raises(RoleNotSelfAssignable):
         ensure_role_is_self_assignable(role)
@@ -146,7 +155,7 @@ async def test_listado_solo_devuelve_clientes() -> None:
         )
     )
 
-    page = await ListClients(users)(ClientQuery())
+    page = await ListUsers(users, CLIENT_ROLES)(UserQuery())
 
     assert page.total == 1
     assert page.items[0].email == "ana@example.com"

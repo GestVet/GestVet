@@ -12,12 +12,12 @@ from datetime import timedelta
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from gestvet.accounts.adapters.persistence.sqlalchemy_user_repository import (
+from gestvet.core.identity import Role
+from gestvet.modules.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
-from gestvet.accounts.domain.exceptions import EmailAlreadyRegistered
-from gestvet.accounts.ports.user_repository import ClientQuery
-from gestvet.core.identity import Role
+from gestvet.modules.accounts.domain.exceptions import EmailAlreadyRegistered
+from gestvet.modules.accounts.ports.user_repository import UserQuery
 from tests.conftest import build_user
 
 
@@ -62,7 +62,7 @@ async def test_buscar_por_rol_ignora_a_quien_no_es_cliente(
 ) -> None:
     await _seed(session, users)
 
-    page = await users.search_by_role(Role.CLIENT, ClientQuery())
+    page = await users.search(UserQuery(roles=frozenset({Role.CLIENT})))
 
     assert page.total == 3
     assert all(user.role is Role.CLIENT for user in page.items)
@@ -74,9 +74,9 @@ async def test_la_busqueda_alcanza_nombre_correo_y_telefono(
 ) -> None:
     await _seed(session, users)
 
-    por_nombre = await users.search_by_role(Role.CLIENT, ClientQuery(search="Carla"))
-    por_correo = await users.search_by_role(Role.CLIENT, ClientQuery(search="beto@"))
-    por_telefono = await users.search_by_role(Role.CLIENT, ClientQuery(search="98765"))
+    por_nombre = await users.search(UserQuery(roles=frozenset({Role.CLIENT}), search="Carla"))
+    por_correo = await users.search(UserQuery(roles=frozenset({Role.CLIENT}), search="beto@"))
+    por_telefono = await users.search(UserQuery(roles=frozenset({Role.CLIENT}), search="98765"))
 
     assert [user.email for user in por_nombre.items] == ["carla@example.com"]
     assert [user.email for user in por_correo.items] == ["beto@example.com"]
@@ -89,8 +89,8 @@ async def test_el_filtro_de_estado_separa_activos_de_inactivos(
 ) -> None:
     await _seed(session, users)
 
-    activos = await users.search_by_role(Role.CLIENT, ClientQuery(is_active=True))
-    inactivos = await users.search_by_role(Role.CLIENT, ClientQuery(is_active=False))
+    activos = await users.search(UserQuery(roles=frozenset({Role.CLIENT}), is_active=True))
+    inactivos = await users.search(UserQuery(roles=frozenset({Role.CLIENT}), is_active=False))
 
     assert activos.total == 2
     assert [user.email for user in inactivos.items] == ["ada@example.com"]
@@ -113,7 +113,7 @@ async def test_el_ordenamiento_traduce_a_la_columna_correcta(
 ) -> None:
     await _seed(session, users)
 
-    page = await users.search_by_role(Role.CLIENT, ClientQuery(ordering=ordering))
+    page = await users.search(UserQuery(roles=frozenset({Role.CLIENT}), ordering=ordering))
 
     assert [user.email for user in page.items] == esperado
 
@@ -124,7 +124,7 @@ async def test_una_columna_desconocida_cae_al_orden_predeterminado(
 ) -> None:
     await _seed(session, users)
 
-    page = await users.search_by_role(Role.CLIENT, ClientQuery(ordering="password_hash"))
+    page = await users.search(UserQuery(roles=frozenset({Role.CLIENT}), ordering="password_hash"))
 
     assert [user.email for user in page.items] == [
         "beto@example.com",
@@ -139,7 +139,9 @@ async def test_la_paginacion_recorta_sin_perder_el_total(
 ) -> None:
     await _seed(session, users)
 
-    page = await users.search_by_role(Role.CLIENT, ClientQuery(ordering="email", limit=2, offset=1))
+    page = await users.search(
+        UserQuery(roles=frozenset({Role.CLIENT}), ordering="email", limit=2, offset=1)
+    )
 
     assert page.total == 3
     assert [user.email for user in page.items] == ["beto@example.com", "carla@example.com"]

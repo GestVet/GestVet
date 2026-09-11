@@ -138,7 +138,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Editar el perfil propio */
+        patch: operations["update_current_user_api_v1_auth_me_patch"];
         trace?: never;
     };
     "/api/v1/auth/register": {
@@ -296,6 +297,58 @@ export interface paths {
         patch: operations["change_pet_status_api_v1_pets__pet_id__status_patch"];
         trace?: never;
     };
+    "/api/v1/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar el personal */
+        get: operations["list_staff_api_v1_staff_get"];
+        put?: never;
+        /** Dar de alta un veterinario */
+        post: operations["register_staff_api_v1_staff_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/{user_id}/guard-duty": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Poner o sacar del turno de guardia */
+        post: operations["toggle_guard_duty_api_v1_staff__user_id__guard_duty_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Activar o desactivar una cuenta */
+        patch: operations["change_user_status_api_v1_users__user_id__status_patch"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -410,6 +463,11 @@ export interface components {
         };
         /** ChangePetStatusRequest */
         ChangePetStatusRequest: {
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** ChangeUserStatusRequest */
+        ChangeUserStatusRequest: {
             /** Is Active */
             is_active: boolean;
         };
@@ -540,6 +598,26 @@ export interface components {
             /** Species */
             species: string;
         };
+        /** RegisterStaffRequest */
+        RegisterStaffRequest: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Password */
+            password: string;
+            /**
+             * Phone
+             * @default
+             */
+            phone: string;
+            role: components["schemas"]["Role"];
+        };
         /**
          * Role
          * @enum {string}
@@ -570,6 +648,20 @@ export interface components {
             starts_at: string;
             /** Veterinarian Id */
             veterinarian_id: number;
+        };
+        /** UpdateProfileRequest */
+        UpdateProfileRequest: {
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** New Password */
+            new_password?: string | null;
+            /**
+             * Phone
+             * @default
+             */
+            phone: string;
         };
         /** UserResponse */
         UserResponse: {
@@ -887,6 +979,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+        };
+    };
+    update_current_user_api_v1_auth_me_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1241,6 +1366,143 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PetResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_staff_api_v1_staff_get: {
+        parameters: {
+            query?: {
+                /** @description Busca en nombre, correo y teléfono */
+                search?: string | null;
+                /** @description Filtra por estado */
+                is_active?: boolean | null;
+                /** @description Columna, '-' invierte */
+                ordering?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientPageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_staff_api_v1_staff_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterStaffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    toggle_guard_duty_api_v1_staff__user_id__guard_duty_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_user_status_api_v1_users__user_id__status_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeUserStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
                 };
             };
             /** @description Validation Error */

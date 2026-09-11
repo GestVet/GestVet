@@ -2,34 +2,49 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
-from gestvet.pets.domain.entities import MAX_PLAUSIBLE_AGE_YEARS, Pet
-from gestvet.pets.domain.exceptions import InvalidPetData
+from gestvet.modules.pets.domain.entities import MAX_PLAUSIBLE_AGE_YEARS, Pet
+from gestvet.modules.pets.domain.exceptions import InvalidPetData
 
 
-def _pet(**overrides: object) -> Pet:
-    datos: dict[str, object] = {
-        "name": "  Rocco  ",
-        "species": "Perro",
-        "breed": "Mestizo",
-        "birth_date": date(2020, 5, 17),
-        "owner_id": 1,
-    }
-    datos.update(overrides)
-    return Pet(**datos)  # type: ignore[arg-type]
+def _pet(
+    name: str = "  Rocco  ",
+    species: str = "Perro",
+    breed: str = "Mestizo",
+    birth_date: date = date(2020, 5, 17),
+    owner_id: int = 1,
+) -> Pet:
+    return Pet(
+        name=name,
+        species=species,
+        breed=breed,
+        birth_date=birth_date,
+        owner_id=owner_id,
+    )
 
 
 def test_los_textos_se_recortan() -> None:
     assert _pet().name == "Rocco"
 
 
-@pytest.mark.parametrize("campo", ["name", "species", "breed"])
-def test_los_textos_obligatorios_no_pueden_venir_vacios(campo: str) -> None:
+@pytest.mark.parametrize(
+    "construir",
+    [
+        lambda: _pet(name="   "),
+        lambda: _pet(species="   "),
+        lambda: _pet(breed="   "),
+    ],
+    ids=["nombre", "especie", "raza"],
+)
+def test_los_textos_obligatorios_no_pueden_venir_vacios(
+    construir: Callable[[], Pet],
+) -> None:
     with pytest.raises(InvalidPetData):
-        _pet(**{campo: "   "})
+        construir()
 
 
 def test_el_nombre_no_puede_exceder_su_largo() -> None:

@@ -18,22 +18,25 @@ from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
-from gestvet.accounts.adapters.api.dependencies import get_password_hasher
-from gestvet.accounts.adapters.persistence import models as accounts_models  # noqa: F401
-from gestvet.accounts.adapters.persistence.sqlalchemy_user_repository import (
-    SqlAlchemyUserRepository,
-)
-from gestvet.accounts.domain.entities import User
-from gestvet.appointments.adapters.persistence.models import AppointmentTypeRow
-from gestvet.availability.adapters.persistence import models as availability_models  # noqa: F401
 from gestvet.core.auth import get_token_service
 from gestvet.core.database import Base, get_session
 from gestvet.core.identity import Role
 from gestvet.core.security import BcryptPasswordHasher
 from gestvet.core.tokens import JwtTokenService
 from gestvet.main import create_app
-from gestvet.pets.adapters.persistence import models as pets_models  # noqa: F401
-from gestvet.pets.domain.entities import Pet
+from gestvet.modules.accounts.adapters.api.dependencies import get_password_hasher
+from gestvet.modules.accounts.adapters.persistence import models as accounts_models
+from gestvet.modules.accounts.adapters.persistence.sqlalchemy_user_repository import (
+    SqlAlchemyUserRepository,
+)
+from gestvet.modules.accounts.domain.entities import User
+from gestvet.modules.appointments.adapters.persistence import models as appointments_models
+from gestvet.modules.appointments.adapters.persistence.models import AppointmentTypeRow
+from gestvet.modules.availability.adapters.persistence import (
+    models as availability_models,
+)
+from gestvet.modules.pets.adapters.persistence import models as pets_models
+from gestvet.modules.pets.domain.entities import Pet
 
 # Cuatro rondas en vez de doce. El algoritmo es el mismo que en producción, que
 # es lo que interesa probar; el costo deliberado no aporta nada a una prueba.
@@ -43,6 +46,10 @@ TEST_TOKEN_SERVICE = JwtTokenService(
     algorithm="HS256",
     ttl_seconds=3600,
 )
+# Los modelos se importan para que sus tablas queden registradas en
+# `Base.metadata` antes de crearlas. La tupla hace explicita esa intencion.
+REGISTERED_MODELS = (accounts_models, appointments_models, availability_models, pets_models)
+
 VALID_PASSWORD = "contrasena-larga"
 
 # Copia de lo que siembra la migracion 0004.

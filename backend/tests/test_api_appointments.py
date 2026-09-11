@@ -13,15 +13,17 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from gestvet.accounts.adapters.persistence.sqlalchemy_user_repository import (
+from gestvet.core.identity import Role
+from gestvet.modules.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
-from gestvet.availability.adapters.persistence.sqlalchemy_availability_repository import (
+from gestvet.modules.availability.adapters.persistence.sqlalchemy_availability_repository import (
     SqlAlchemyAvailabilityRepository,
 )
-from gestvet.availability.domain.entities import AvailabilitySlot
-from gestvet.core.identity import Role
-from gestvet.pets.adapters.persistence.sqlalchemy_pet_repository import SqlAlchemyPetRepository
+from gestvet.modules.availability.domain.entities import AvailabilitySlot
+from gestvet.modules.pets.adapters.persistence.sqlalchemy_pet_repository import (
+    SqlAlchemyPetRepository,
+)
 from tests.conftest import (
     EMERGENCY_TYPE_ID,
     GENERAL_TYPE_ID,

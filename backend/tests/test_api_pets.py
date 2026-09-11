@@ -10,11 +10,13 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from gestvet.accounts.adapters.persistence.sqlalchemy_user_repository import (
+from gestvet.core.identity import Role
+from gestvet.modules.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
-from gestvet.core.identity import Role
-from gestvet.pets.adapters.persistence.sqlalchemy_pet_repository import SqlAlchemyPetRepository
+from gestvet.modules.pets.adapters.persistence.sqlalchemy_pet_repository import (
+    SqlAlchemyPetRepository,
+)
 from tests.conftest import authorization_for, build_pet, build_user
 
 PETS_URL = "/api/v1/pets"

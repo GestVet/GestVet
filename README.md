@@ -39,16 +39,33 @@ backend/
 ├── alembic/                      # migraciones del esquema
 ├── scripts/                      # utilidades fuera de la aplicación
 └── src/gestvet/
-    ├── core/                     # configuración, base de datos, cifrado
-    └── accounts/                 # módulo de dominio
-        ├── domain/               # Python puro: entidades y reglas
-        ├── ports/                # interfaces que el negocio exige
-        ├── use_cases/            # orquestación de las reglas
-        └── adapters/             # única capa que toca tecnología
-            ├── api/              # FastAPI
-            ├── persistence/      # SQLAlchemy
-            └── security/         # emisión y lectura de tokens
+    ├── main.py                   # raíz de composición
+    ├── core/                     # núcleo compartido
+    │   ├── identity.py           # rol, principal y puerto de tokens
+    │   ├── auth.py               # autenticación del borde HTTP
+    │   ├── pagination.py         # forma de una página
+    │   ├── config.py             # configuración por entorno
+    │   ├── database.py           # motor y sesión
+    │   ├── security.py           # cifrado de contraseñas
+    │   └── tokens.py             # adaptador JWT
+    └── modules/                  # módulos de dominio
+        ├── accounts/             # cuentas, acceso y administración
+        ├── pets/                 # mascotas
+        ├── availability/         # agenda de los veterinarios
+        └── appointments/         # citas y motivos de consulta
+            ├── domain/           # Python puro: entidades y reglas
+            ├── ports/            # interfaces que el negocio exige
+            ├── use_cases/        # orquestación de las reglas
+            └── adapters/         # única capa que toca tecnología
+                ├── api/          # FastAPI
+                └── persistence/  # SQLAlchemy
 ```
+
+Los módulos de dominio cuelgan de `modules/` y no de la raíz del paquete. Es lo que permite que los contratos los nombren con un comodín exacto y no lleven ni una excepción: el núcleo compartido y la raíz de composición quedan fuera por estar en otro sitio del árbol, no por estar exentos.
+
+Quién es el usuario y qué rol tiene lo posee el núcleo, no `accounts`. Todos los módulos necesitan esa respuesta para autorizar, y si la tuviera un módulo de dominio el resto tendría que importarlo. El núcleo posee la autenticación; `accounts` posee la gestión de usuarios.
+
+Cuando un módulo necesita un dato de otro, declara la pregunta como un puerto de lectura y un adaptador la responde leyendo la tabla ajena. Las citas preguntan si la mascota es del cliente y si el veterinario publicó esa hora. Se lee, nunca se escribe.
 
 `domain`, `ports` y `use_cases` tienen prohibido importar FastAPI, SQLAlchemy o cualquier otro detalle de infraestructura. Eso no es una convención: es un contrato que falla el commit si se rompe.
 
@@ -67,7 +84,9 @@ frontend/src/
 └── store/        estado de cliente
 ```
 
-`main.tsx` y `App.tsx` quedan exentos de los límites: son la raíz de composición y su trabajo es conocer todas las capas para ensamblarlas.
+`main.tsx` es la raíz de composición y está declarada como tal, con una política propia que le permite alcanzar todas las capas. No está exenta: un archivo exento no tiene reglas, y este las tiene, solo que amplias. El armazón de la interfaz vive en `components` porque es lo que es, un componente compartido.
+
+Ningún archivo puede ser un *barrel file*, es decir uno que solo reexporta. Enturbian los límites, esconden dependencias circulares y hacen que un import arrastre módulos que nadie pidió.
 
 ## Requisitos
 
@@ -166,7 +185,9 @@ En las pruebas, un aviso de Python es un fallo. Es la forma barata de enterarse 
 
 En el backend, Import Linter verifica cuatro contratos: las capas hexagonales dentro de cada módulo, que el dominio no conozca la tecnología, que los módulos de dominio no se importen entre sí, y que el núcleo compartido no dependa del dominio.
 
-Los cuatro se escriben con comodines sobre `gestvet.*` en lugar de nombrar los módulos uno por uno. La diferencia importa: un módulo nuevo queda cubierto el día que se crea, sin que nadie tenga que acordarse de editar `pyproject.toml`. La regla de independencia usa un contrato `independence`, que es simétrico, y no uno `forbidden`, que solo mira en una dirección y dejaría que el módulo nuevo importara a los que ya estaban.
+Los cuatro se escriben con comodines sobre `gestvet.modules.*` en lugar de nombrar los módulos uno por uno. La diferencia importa: un módulo nuevo queda cubierto el día que se crea, sin que nadie tenga que acordarse de editar `pyproject.toml`. La regla de independencia usa un contrato `independence`, que es simétrico, y no uno `forbidden`, que solo mira en una dirección y dejaría que el módulo nuevo importara a los que ya estaban.
+
+Ninguno de los cuatro lleva excepciones, y tampoco hay un solo `noqa` en el backend. Una excepción escrita al lado de una regla la vacía en silencio: quien lee el contrato cree que se cumple. Cuando hizo falta una, se cambió la estructura hasta que dejó de hacer falta.
 
 La lista de tecnología prohibida en el dominio incluye toda dependencia de tercero del proyecto, no solo el ORM y el framework web. El dominio es Python puro: tampoco puede conocer Pydantic, ni la librería de cifrado, ni la de tokens.
 
@@ -176,6 +197,7 @@ En el frontend, ESLint aplica:
 | --- | --- |
 | Una característica no importa otra característica | Bajo acoplamiento |
 | Ninguna capa importa un archivo fuera de la arquitectura | Bajo acoplamiento |
+| Ningún archivo reexporta lo de otro | Límites explícitos |
 | Un solo componente de React por archivo | Responsabilidad única |
 | Carpetas en kebab-case, componentes en PascalCase | Nombrado consistente |
 | Complejidad cognitiva, profundidad y largo acotados | KISS |

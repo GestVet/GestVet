@@ -20,11 +20,15 @@ from alembic.config import Config
 from alembic.migration import MigrationContext
 from sqlalchemy import create_engine
 
-from gestvet.accounts.adapters.persistence import models as accounts_models  # noqa: F401
 from gestvet.core.config import get_settings
 from gestvet.core.database import Base
+from tests.conftest import REGISTERED_MODELS
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
+
+# El metadata tiene que estar completo antes de comparar: sin los modelos
+# registrados, la comparacion no veria ninguna tabla y pasaria siempre.
+assert REGISTERED_MODELS
 
 
 @pytest.fixture

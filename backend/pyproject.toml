@@ -60,9 +60,13 @@ ban-relative-imports = "parents"
 # de importaciones, así que una violación falla aunque el nombre de la carpeta
 # parezca correcto.
 #
-# Todos los contratos usan comodines sobre `gestvet.*` en vez de nombrar los
+# Los cuatro usan comodines sobre `gestvet.modules.*` en vez de nombrar los
 # módulos uno por uno. Es deliberado: un módulo nuevo queda cubierto el día que
 # se crea, sin que nadie tenga que acordarse de editar este archivo.
+#
+# Ninguno lleva excepciones. Los módulos de dominio cuelgan de `gestvet.modules`
+# justamente para eso: el núcleo compartido y la raíz de composición quedan
+# fuera del comodín por estar en otro sitio del árbol, y no por estar exentos.
 # ---------------------------------------------------------------------------
 [tool.importlinter]
 root_package = "gestvet"
@@ -73,7 +77,7 @@ name = "Capas hexagonales dentro de cada modulo"
 type = "layers"
 # El orden va de fuera hacia dentro. Una capa solo puede importar las que están
 # por debajo de ella. Los paréntesis las hacen opcionales, para que el contrato
-# valga también para un módulo compartido que no tenga las cuatro.
+# valga también para un módulo que todavía no tenga las cuatro.
 layers = [
     "(adapters)",
     "(use_cases)",
@@ -81,16 +85,16 @@ layers = [
     "(domain)",
 ]
 containers = [
-    "gestvet.*",
+    "gestvet.modules.*",
 ]
 
 [[tool.importlinter.contracts]]
 name = "El dominio y los casos de uso no conocen la tecnologia"
 type = "forbidden"
 source_modules = [
-    "gestvet.*.domain",
-    "gestvet.*.ports",
-    "gestvet.*.use_cases",
+    "gestvet.modules.*.domain",
+    "gestvet.modules.*.ports",
+    "gestvet.modules.*.use_cases",
 ]
 # La lista incluye toda dependencia de tercero del proyecto, no solo el ORM y
 # el framework web. El dominio es Python puro: tampoco puede conocer Pydantic,
@@ -120,15 +124,7 @@ type = "independence"
 # direcciones, así que un módulo nuevo tampoco puede importar a los que ya
 # existían.
 modules = [
-    "gestvet.*",
-]
-ignore_imports = [
-    # El núcleo compartido está para ser usado: la prohibición corre en el otro
-    # sentido y la declara el contrato siguiente.
-    "gestvet.** -> gestvet.core.**",
-    # `main` es la raíz de composición. Su trabajo es conocer a todos los
-    # módulos para montar sus routers.
-    "gestvet.main -> gestvet.**",
+    "gestvet.modules.*",
 ]
 
 [[tool.importlinter.contracts]]
@@ -138,5 +134,5 @@ source_modules = [
     "gestvet.core",
 ]
 forbidden_modules = [
-    "gestvet.*",
+    "gestvet.modules.**",
 ]

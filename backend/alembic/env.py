@@ -15,12 +15,17 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from sqlalchemy.pool import NullPool
 
-from gestvet.accounts.adapters.persistence import models as accounts_models  # noqa: F401
-from gestvet.appointments.adapters.persistence import models as appointments_models  # noqa: F401
-from gestvet.availability.adapters.persistence import models as availability_models  # noqa: F401
 from gestvet.core.config import get_settings
 from gestvet.core.database import Base
-from gestvet.pets.adapters.persistence import models as pets_models  # noqa: F401
+from gestvet.modules.accounts.adapters.persistence import models as accounts_models
+from gestvet.modules.appointments.adapters.persistence import models as appointments_models
+from gestvet.modules.availability.adapters.persistence import models as availability_models
+from gestvet.modules.pets.adapters.persistence import models as pets_models
+
+# Los modelos se importan para que sus tablas queden registradas en
+# `Base.metadata`. La tupla existe para que la intención sea explícita: sin
+# ella son cuatro importaciones aparentemente sin uso, y hacen falta las cuatro.
+REGISTERED_MODELS = (accounts_models, appointments_models, availability_models, pets_models)
 
 config = context.config
 
