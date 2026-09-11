@@ -1,5 +1,3 @@
-"""Modelo de persistencia de disponibilidad."""
-
 from __future__ import annotations
 
 from datetime import UTC, datetime

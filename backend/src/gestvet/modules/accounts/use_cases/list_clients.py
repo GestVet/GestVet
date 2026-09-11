@@ -1,5 +1,3 @@
-"""Caso de uso: listado paginado de clientes."""
-
 from __future__ import annotations
 
 from gestvet.core.identity import Role

@@ -9,7 +9,6 @@ interface StaffRowActionsProps {
   readonly onError: (error: unknown) => void
 }
 
-/** Los dos botones de una fila del equipo: turno de guardia y activación. */
 export default function StaffRowActions({ account, onError }: StaffRowActionsProps) {
   const queryClient = useQueryClient()
 

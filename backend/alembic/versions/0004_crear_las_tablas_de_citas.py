@@ -1,4 +1,4 @@
-"""crear las tablas de citas y sembrar los motivos de consulta
+"""crear las tablas de citas y sembrar los motivos de consulta.
 
 Revision ID: 0004
 Revises: 0003

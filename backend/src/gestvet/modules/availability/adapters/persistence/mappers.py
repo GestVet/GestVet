@@ -1,25 +1,17 @@
-"""Traducción entre la fila y la entidad."""
-
 from __future__ import annotations
 
-from datetime import UTC, datetime
-
+from gestvet.core.timestamps import as_utc
 from gestvet.modules.availability.adapters.persistence.models import AvailabilitySlotRow
 from gestvet.modules.availability.domain.entities import AvailabilitySlot
-
-
-def _as_utc(moment: datetime) -> datetime:
-    """SQLite no guarda la zona horaria; se repone al leer."""
-    return moment if moment.tzinfo is not None else moment.replace(tzinfo=UTC)
 
 
 def row_to_entity(row: AvailabilitySlotRow) -> AvailabilitySlot:
     return AvailabilitySlot(
         id=row.id,
         veterinarian_id=row.veterinarian_id,
-        starts_at=_as_utc(row.starts_at),
-        ends_at=_as_utc(row.ends_at),
-        created_at=_as_utc(row.created_at),
+        starts_at=as_utc(row.starts_at),
+        ends_at=as_utc(row.ends_at),
+        created_at=as_utc(row.created_at),
     )
 
 

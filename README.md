@@ -198,6 +198,7 @@ En el frontend, ESLint aplica:
 | Una característica no importa otra característica | Bajo acoplamiento |
 | Ninguna capa importa un archivo fuera de la arquitectura | Bajo acoplamiento |
 | Ningún archivo reexporta lo de otro | Límites explícitos |
+| Comentarios sin código muerto ni tareas pendientes | Higiene |
 | Un solo componente de React por archivo | Responsabilidad única |
 | Carpetas en kebab-case, componentes en PascalCase | Nombrado consistente |
 | Complejidad cognitiva, profundidad y largo acotados | KISS |
@@ -205,6 +206,43 @@ En el frontend, ESLint aplica:
 | Tipado estricto con verificación de tipos | Corrección |
 
 El análisis de límites abarca todo `src`, no la lista de capas conocidas. Enumerarlas dejaba fuera cualquier carpeta nueva: un `src/utils/` recién creado no era una violación, era invisible, y todas las capas podían importarlo. La raíz de composición sigue exenta, que es lo único que debe estarlo.
+
+## Comentarios
+
+Un comentario se gana su lugar solo si dice algo que el código no puede decir. El código ya dice **qué** hace; el comentario está para lo que no cabe en un nombre.
+
+Se comenta cuando aplica una de estas tres:
+
+- **Por qué está así.** La razón de una decisión que de otro modo parece arbitraria o equivocada: una restricción de afuera, un rodeo, un intercambio deliberado. *"SQLite no almacena la zona, así que una fecha guardada con UTC vuelve ingenua."*
+- **Qué se rompe si lo tocás.** Una invariante que no se ve desde donde está el código. *"Sin la compilación de este resolutor, las reglas de límites quedan inertes y no avisan."*
+- **Un contrato que el nombre no alcanza a expresar.** Sobre todo en los puertos, donde la firma no dice para qué existe la operación. *"Hash válido que ninguna contraseña reproduce: al autenticar un correo que no existe hay que gastar el mismo tiempo que con uno real."*
+
+No se comenta:
+
+- Repetir el nombre del archivo, de la clase o de la función. Un `"""Modelo de persistencia."""` encima de `models.py` no agrega nada y envejece cuando el archivo cambia de rol.
+- Repetir la firma. Los tipos ya están escritos.
+- Escribir una regla del proyecto en cada archivo que la cumple. Una regla se explica una vez, acá, y los archivos la siguen en silencio.
+- Rotular secciones dentro de un archivo de código. Si un archivo necesita separadores para navegarse, lo que quiere es partirse en dos. En una hoja de estilo o en un archivo de configuración sí ayudan, porque son listas largas y planas sin estructura propia.
+- Dejar código comentado, ni tareas pendientes. Lo primero lo guarda el control de versiones; lo segundo, el gestor de incidencias.
+
+En el backend un docstring es opcional a propósito. Obligar a documentar cada módulo y cada función es justo lo que produce la línea que repite el nombre del archivo.
+
+### Qué verifica la herramienta y qué no
+
+Esta distinción importa, porque es fácil creer que un linter resuelve el problema. No lo resuelve: **ninguna herramienta puede decidir si un comentario aporta algo.** Eso queda en la regla escrita y en la revisión. Lo que sí se verifica es la higiene:
+
+| Qué se rechaza | Con qué |
+| --- | --- |
+| Código comentado | `ERA001` de Ruff |
+| Un `TODO` o un `FIXME` en el árbol | `FIX` de Ruff, `no-warning-comments` y `sonarjs` en ESLint |
+| Un docstring mal formado, cuando existe | Las reglas de forma de pydocstyle, `D200` en adelante |
+| Un comentario al final de una línea de código | `no-inline-comments` |
+| Barras sin espacio, bloques de estilo mezclado | `spaced-comment`, `multiline-comment-style` |
+| Desactivar una regla sin decir por qué | `@eslint-community/eslint-comments` |
+
+Las reglas de pydocstyle que **exigen** la presencia de un docstring, de `D100` a `D107`, quedan fuera a propósito. Son las que empujan a escribir relleno.
+
+Las directivas `eslint-disable` no están prohibidas del todo. Prohibirlas empuja la excepción al archivo de configuración, donde vale para el proyecto entero y es mucho peor que una línea acotada. Lo que se exige es que sean estrechas y que digan por qué, que es la misma vara con la que el proyecto trata cualquier otra excepción.
 
 ## Iconos
 

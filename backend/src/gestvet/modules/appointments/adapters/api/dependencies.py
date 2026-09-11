@@ -1,5 +1,3 @@
-"""Cableado del adaptador HTTP de citas."""
-
 from __future__ import annotations
 
 from typing import Annotated

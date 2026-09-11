@@ -1,5 +1,3 @@
-"""Puerto de persistencia de disponibilidad."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass

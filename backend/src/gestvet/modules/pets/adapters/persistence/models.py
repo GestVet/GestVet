@@ -1,5 +1,3 @@
-"""Modelo de persistencia de mascotas. Es una tabla, no una entidad."""
-
 from __future__ import annotations
 
 from datetime import UTC, date, datetime

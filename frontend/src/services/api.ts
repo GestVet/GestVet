@@ -39,7 +39,6 @@ interface ApiErrorBody {
   detail?: string | { msg?: string }[]
 }
 
-/** Mensaje legible de un error del API, con respaldo si no trae detalle. */
 export function errorMessage(error: unknown, fallback: string): string {
   if (!axios.isAxiosError<ApiErrorBody>(error)) {
     return fallback

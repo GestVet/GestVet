@@ -30,8 +30,6 @@ export type AppointmentTypeListResponse = components['schemas']['AppointmentType
 export type BookAppointmentRequest = components['schemas']['BookAppointmentRequest']
 export type OpenEmergencyRequest = components['schemas']['OpenEmergencyRequest']
 
-/** Rol de una cuenta, derivado del contrato y no escrito a mano. */
 export type UserRole = UserResponse['role']
 
-/** Estado de una cita, derivado del contrato. */
 export type AppointmentStatus = AppointmentResponse['status']

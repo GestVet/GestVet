@@ -76,19 +76,16 @@ def normalize_email(raw: str) -> str:
 
 
 def ensure_role_is_self_assignable(role: Role) -> None:
-    """Protege el autorregistro. Solo se puede pedir un rol de esta lista."""
     if role not in SELF_ASSIGNABLE_ROLES:
         raise RoleNotSelfAssignable(role.value)
 
 
 def ensure_role_is_staff_assignable(role: Role) -> None:
-    """Protege el alta de personal."""
     if role not in STAFF_ASSIGNABLE_ROLES:
         raise RoleNotAssignable(role.value)
 
 
 def swapped_guard_role(role: Role) -> Role:
-    """El rol opuesto en el par veterinario / veterinario de guardia."""
     target = ROLE_SWAPS.get(role)
     if target is None:
         raise RoleNotSwappable(role.value)

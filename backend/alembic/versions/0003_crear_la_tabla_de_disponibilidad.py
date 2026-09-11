@@ -1,4 +1,4 @@
-"""crear la tabla de disponibilidad
+"""crear la tabla de disponibilidad.
 
 Revision ID: 0003
 Revises: 0002

@@ -1,5 +1,3 @@
-"""Caso de uso: intercambiar credenciales por un token de acceso."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass

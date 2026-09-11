@@ -1,5 +1,3 @@
-"""Implementación del puerto `AvailabilityRepository` sobre SQLAlchemy."""
-
 from __future__ import annotations
 
 from datetime import datetime

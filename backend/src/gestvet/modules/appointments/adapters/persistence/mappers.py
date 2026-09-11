@@ -1,10 +1,9 @@
-"""Traducción entre las filas y las entidades de citas."""
-
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from decimal import Decimal
 
+from gestvet.core.timestamps import as_utc
 from gestvet.modules.appointments.adapters.persistence.models import (
     AppointmentRow,
     AppointmentTypeRow,
@@ -14,11 +13,6 @@ from gestvet.modules.appointments.domain.entities import (
     AppointmentStatus,
     AppointmentType,
 )
-
-
-def _as_utc(moment: datetime) -> datetime:
-    """SQLite no guarda la zona horaria; se repone al leer."""
-    return moment if moment.tzinfo is not None else moment.replace(tzinfo=UTC)
 
 
 def type_row_to_entity(row: AppointmentTypeRow) -> AppointmentType:
@@ -45,7 +39,7 @@ def type_entity_to_row(appointment_type: AppointmentType) -> AppointmentTypeRow:
 def row_to_entity(row: AppointmentRow) -> Appointment:
     return Appointment(
         id=row.id,
-        scheduled_at=_as_utc(row.scheduled_at),
+        scheduled_at=as_utc(row.scheduled_at),
         duration=timedelta(minutes=row.duration_minutes),
         client_id=row.client_id,
         pet_id=row.pet_id,
@@ -55,7 +49,7 @@ def row_to_entity(row: AppointmentRow) -> Appointment:
         status=AppointmentStatus(row.status),
         cancellation_reason=row.cancellation_reason,
         updated_by=row.updated_by,
-        created_at=_as_utc(row.created_at),
+        created_at=as_utc(row.created_at),
     )
 
 

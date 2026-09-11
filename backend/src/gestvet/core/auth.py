@@ -84,7 +84,6 @@ PrincipalDep = Annotated[Principal, Depends(get_principal)]
 
 
 def require_roles(*allowed: Role) -> Callable[[Principal], Awaitable[Principal]]:
-    """Construye una dependencia que exige uno de estos roles."""
     permitted = frozenset(allowed)
 
     async def dependency(principal: PrincipalDep) -> Principal:

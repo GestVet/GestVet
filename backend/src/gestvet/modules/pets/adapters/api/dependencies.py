@@ -1,5 +1,3 @@
-"""Cableado del adaptador HTTP de mascotas."""
-
 from __future__ import annotations
 
 from typing import Annotated

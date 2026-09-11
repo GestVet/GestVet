@@ -1,3 +1,4 @@
+import comments from '@eslint-community/eslint-plugin-eslint-comments/configs'
 import js from '@eslint/js'
 import boundaries from 'eslint-plugin-boundaries'
 import noBarrelFiles from 'eslint-plugin-no-barrel-files'
@@ -241,6 +242,53 @@ export default tseslint.config(
             },
           ],
         },
+      ],
+    },
+  },
+
+  // ---------------------------------------------------------------------
+  // Comentarios.
+  //
+  // La regla del proyecto es que un comentario solo se gana su lugar si dice
+  // algo que el codigo no puede decir. Eso no se puede verificar con una
+  // herramienta, asi que el linter cubre la higiene y la regla escrita cubre
+  // el resto. Esta en el README.
+  // ---------------------------------------------------------------------
+  {
+    files: ['**/*.{ts,tsx}'],
+    rules: {
+      // Un comentario al final de una linea de codigo se lee mal y envejece
+      // sin que nadie lo note. Va arriba, en su propia linea.
+      'no-inline-comments': 'error',
+      'spaced-comment': ['error', 'always', { markers: ['/'] }],
+      // Un bloque de varias lineas se escribe con barras dobles. Los bloques
+      // /** */ quedan reservados para documentar un contrato publico, que es
+      // lo que lee el editor al pasar el cursor.
+      'multiline-comment-style': ['error', 'separate-lines', { checkJSDoc: false }],
+      // Una tarea pendiente vive en el gestor de incidencias. sonarjs/todo-tag
+      // ya cubre TODO; esto agrega el resto de las marcas.
+      'no-warning-comments': [
+        'error',
+        { terms: ['fixme', 'xxx', 'hack'], location: 'start' },
+      ],
+    },
+  },
+
+  // ---------------------------------------------------------------------
+  // Directivas que desactivan reglas.
+  //
+  // No se prohiben del todo: prohibirlas empuja la excepcion al archivo de
+  // configuracion, donde vale para el proyecto entero y es mucho peor. Se
+  // exige que sean estrechas y que digan por que, que es la misma vara que
+  // el resto del proyecto aplica a las excepciones.
+  // ---------------------------------------------------------------------
+  comments.recommended,
+  {
+    files: ['**/*.{ts,tsx}'],
+    rules: {
+      '@eslint-community/eslint-comments/require-description': [
+        'error',
+        { ignore: [] },
       ],
     },
   },

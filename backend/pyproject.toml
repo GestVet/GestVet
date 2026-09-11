@@ -46,7 +46,36 @@ target-version = "py312"
 src = ["src"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "TID"]
+# ERA rechaza codigo comentado y FIX rechaza cualquier TODO o FIXME que quede
+# en el arbol: una tarea pendiente vive en el gestor de incidencias, no en un
+# comentario que nadie vuelve a leer.
+#
+# De pydocstyle se eligen solo las reglas de FORMA. Las que exigen la presencia
+# de un docstring, D100 a D107, quedan fuera a proposito: obligar a documentar
+# cada modulo y cada funcion es lo que produce la linea que repite el nombre del
+# archivo. Aca un docstring es opcional, y cuando existe tiene que estar bien
+# escrito.
+select = [
+    "B",
+    "D200",
+    "D201",
+    "D202",
+    "D205",
+    "D209",
+    "D210",
+    "D212",
+    "D300",
+    "D400",
+    "D403",
+    "D419",
+    "E",
+    "ERA",
+    "F",
+    "FIX",
+    "I",
+    "TID",
+    "UP",
+]
 
 [tool.ruff.lint.flake8-tidy-imports]
 # Las importaciones relativas cruzando paquetes esconden las dependencias que

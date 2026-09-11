@@ -1,5 +1,3 @@
-"""Implementación de los puertos de citas sobre SQLAlchemy."""
-
 from __future__ import annotations
 
 from datetime import datetime

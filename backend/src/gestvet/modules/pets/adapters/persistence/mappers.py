@@ -1,16 +1,8 @@
-"""Traducción entre la fila de la tabla y la entidad de dominio."""
-
 from __future__ import annotations
 
-from datetime import UTC, datetime
-
+from gestvet.core.timestamps import as_utc
 from gestvet.modules.pets.adapters.persistence.models import PetRow
 from gestvet.modules.pets.domain.entities import Pet
-
-
-def _as_utc(moment: datetime) -> datetime:
-    """SQLite no guarda la zona horaria; se repone al leer."""
-    return moment if moment.tzinfo is not None else moment.replace(tzinfo=UTC)
 
 
 def row_to_entity(row: PetRow) -> Pet:
@@ -22,7 +14,7 @@ def row_to_entity(row: PetRow) -> Pet:
         birth_date=row.birth_date,
         owner_id=row.owner_id,
         is_active=row.is_active,
-        created_at=_as_utc(row.created_at),
+        created_at=as_utc(row.created_at),
     )
 
 

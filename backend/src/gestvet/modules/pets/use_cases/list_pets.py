@@ -1,5 +1,3 @@
-"""Caso de uso: listado paginado de mascotas."""
-
 from __future__ import annotations
 
 from gestvet.core.pagination import Page

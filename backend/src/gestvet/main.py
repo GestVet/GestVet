@@ -57,8 +57,8 @@ def create_app() -> FastAPI:
         version=settings.app_version,
         description="API modular para la gestión veterinaria.",
         lifespan=lifespan,
-        # Todo cuelga del prefijo versionado para que el proxy del frontend, que
-        # solo reenvía `/api`, alcance también el esquema y la documentación.
+        # El esquema y la documentación cuelgan del prefijo versionado para
+        # que el proxy del frontend, que solo reenvía `/api`, los alcance.
         openapi_url=f"{API_PREFIX}/openapi.json",
         docs_url=f"{API_PREFIX}/docs",
         redoc_url=f"{API_PREFIX}/redoc",

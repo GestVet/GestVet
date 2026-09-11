@@ -5,22 +5,9 @@ Este archivo es la razón por la que el dominio puede ignorar SQLAlchemy.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
-
+from gestvet.core.timestamps import as_utc
 from gestvet.modules.accounts.adapters.persistence.models import UserRow
 from gestvet.modules.accounts.domain.entities import Role, User
-
-
-def _as_utc(moment: datetime) -> datetime:
-    """Devuelve la fecha con su zona horaria puesta.
-
-    SQLite no almacena la zona, asi que una fecha guardada con `UTC` vuelve
-    ingenua. Sin esta correccion el API serializa la marca sin desplazamiento y
-    el navegador la interpreta como hora local: la fecha se corre tantas horas
-    como diga el reloj de quien mira. Y solo pasa en local, porque PostgreSQL
-    si conserva la zona, que es la forma mas cara de encontrar el error.
-    """
-    return moment if moment.tzinfo is not None else moment.replace(tzinfo=UTC)
 
 
 def row_to_entity(row: UserRow) -> User:
@@ -33,7 +20,7 @@ def row_to_entity(row: UserRow) -> User:
         role=Role(row.role),
         password_hash=row.password_hash,
         is_active=row.is_active,
-        created_at=_as_utc(row.created_at),
+        created_at=as_utc(row.created_at),
     )
 
 

@@ -1,5 +1,3 @@
-"""Cableado del adaptador HTTP de disponibilidad."""
-
 from __future__ import annotations
 
 from typing import Annotated

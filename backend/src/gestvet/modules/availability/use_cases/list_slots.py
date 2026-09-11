@@ -1,5 +1,3 @@
-"""Caso de uso: consultar la agenda publicada de un veterinario."""
-
 from __future__ import annotations
 
 from gestvet.modules.availability.domain.entities import AvailabilitySlot

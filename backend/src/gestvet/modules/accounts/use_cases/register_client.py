@@ -1,5 +1,3 @@
-"""Caso de uso: autorregistro de un cliente."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass

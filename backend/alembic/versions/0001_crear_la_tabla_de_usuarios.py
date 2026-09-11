@@ -1,4 +1,4 @@
-"""crear la tabla de usuarios
+"""crear la tabla de usuarios.
 
 Revision ID: 0001
 Revises:

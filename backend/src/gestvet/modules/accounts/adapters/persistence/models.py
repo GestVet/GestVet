@@ -1,5 +1,3 @@
-"""Modelo de persistencia. Es una tabla, no una entidad de negocio."""
-
 from __future__ import annotations
 
 from datetime import UTC, datetime

@@ -1,5 +1,3 @@
-"""Caso de uso: alta de una mascota."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass

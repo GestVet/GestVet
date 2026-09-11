@@ -15,7 +15,6 @@ interface SelectFieldProps {
   readonly children: ReactNode
 }
 
-/** Una lista desplegable con su etiqueta, su error y su ayuda. */
 export default function SelectField({
   id,
   label,

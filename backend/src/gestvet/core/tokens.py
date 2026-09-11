@@ -1,5 +1,3 @@
-"""Adaptador del puerto `TokenService` sobre JWT firmado con HMAC."""
-
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta

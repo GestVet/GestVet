@@ -1,5 +1,3 @@
-"""Caso de uso: retirar un tramo de disponibilidad propio."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass

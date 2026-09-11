@@ -1,5 +1,3 @@
-"""Errores de dominio de disponibilidad."""
-
 from __future__ import annotations
 
 

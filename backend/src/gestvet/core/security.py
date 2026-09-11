@@ -26,8 +26,6 @@ def _placeholder_hash(rounds: int) -> str:
 
 
 class BcryptPasswordHasher:
-    """Adaptador del puerto `PasswordHasher`."""
-
     def __init__(self, rounds: int = DEFAULT_ROUNDS) -> None:
         self._rounds = rounds
 

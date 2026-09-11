@@ -1,5 +1,3 @@
-"""Implementación del puerto `PetRepository` sobre SQLAlchemy."""
-
 from __future__ import annotations
 
 from sqlalchemy import Select, func, or_, select
