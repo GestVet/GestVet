@@ -18,6 +18,7 @@ from sqlalchemy.pool import NullPool
 from gestvet.accounts.adapters.persistence import models as accounts_models  # noqa: F401
 from gestvet.core.config import get_settings
 from gestvet.core.database import Base
+from gestvet.pets.adapters.persistence import models as pets_models  # noqa: F401
 
 config = context.config
 

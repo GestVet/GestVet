@@ -11,6 +11,7 @@ from typing import Protocol
 
 from gestvet.accounts.domain.entities import User
 from gestvet.core.identity import Role
+from gestvet.core.pagination import Page
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,12 +23,6 @@ class ClientQuery:
     ordering: str | None = None
     limit: int = 25
     offset: int = 0
-
-
-@dataclass(frozen=True, slots=True)
-class Page[T]:
-    items: list[T]
-    total: int
 
 
 class UserRepository(Protocol):

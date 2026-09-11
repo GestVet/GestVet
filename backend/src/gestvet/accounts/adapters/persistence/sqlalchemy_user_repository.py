@@ -10,7 +10,8 @@ from gestvet.accounts.adapters.persistence.mappers import entity_to_row, row_to_
 from gestvet.accounts.adapters.persistence.models import UserRow
 from gestvet.accounts.domain.entities import Role, User
 from gestvet.accounts.domain.exceptions import EmailAlreadyRegistered
-from gestvet.accounts.ports.user_repository import ClientQuery, Page
+from gestvet.accounts.ports.user_repository import ClientQuery
+from gestvet.core.pagination import Page
 
 _SORTABLE_COLUMNS = {
     "email": UserRow.email,

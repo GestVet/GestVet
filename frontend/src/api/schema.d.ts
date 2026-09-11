@@ -89,6 +89,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar mascotas de un cliente */
+        get: operations["list_pets_of_owner_api_v1_pets_get"];
+        put?: never;
+        /** Registrar una mascota propia */
+        post: operations["register_pet_api_v1_pets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pets/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar mis mascotas */
+        get: operations["list_my_pets_api_v1_pets_mine_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pets/{pet_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Dar de baja o reactivar una mascota propia */
+        patch: operations["change_pet_status_api_v1_pets__pet_id__status_patch"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -105,6 +157,11 @@ export interface components {
              */
             token_type: string;
             user: components["schemas"]["UserResponse"];
+        };
+        /** ChangePetStatusRequest */
+        ChangePetStatusRequest: {
+            /** Is Active */
+            is_active: boolean;
         };
         /** ClientPageResponse */
         ClientPageResponse: {
@@ -143,6 +200,40 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** PetPageResponse */
+        PetPageResponse: {
+            /** Items */
+            items: components["schemas"]["PetResponse"][];
+            /** Total */
+            total: number;
+        };
+        /** PetResponse */
+        PetResponse: {
+            /** Age In Years */
+            age_in_years: number;
+            /**
+             * Birth Date
+             * Format: date
+             */
+            birth_date: string;
+            /** Breed */
+            breed: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: number;
+            /** Is Active */
+            is_active: boolean;
+            /** Name */
+            name: string;
+            /** Owner Id */
+            owner_id: number;
+            /** Species */
+            species: string;
+        };
         /** RegisterClientRequest */
         RegisterClientRequest: {
             /**
@@ -161,6 +252,20 @@ export interface components {
              * @default
              */
             phone: string;
+        };
+        /** RegisterPetRequest */
+        RegisterPetRequest: {
+            /**
+             * Birth Date
+             * Format: date
+             */
+            birth_date: string;
+            /** Breed */
+            breed: string;
+            /** Name */
+            name: string;
+            /** Species */
+            species: string;
         };
         /**
          * Role
@@ -350,6 +455,146 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    list_pets_of_owner_api_v1_pets_get: {
+        parameters: {
+            query: {
+                /** @description Cliente dueño de las mascotas */
+                owner_id: number;
+                /** @description Filtra por estado */
+                is_active?: boolean | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PetPageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_pet_api_v1_pets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterPetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PetResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_my_pets_api_v1_pets_mine_get: {
+        parameters: {
+            query?: {
+                /** @description Filtra por estado */
+                is_active?: boolean | null;
+                /** @description Busca en nombre, especie y raza */
+                search?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PetPageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_pet_status_api_v1_pets__pet_id__status_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pet_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePetStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PetResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

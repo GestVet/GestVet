@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from gestvet.accounts.domain.entities import Role, User
-from gestvet.accounts.ports.user_repository import ClientQuery, Page, UserRepository
+from gestvet.accounts.ports.user_repository import ClientQuery, UserRepository
+from gestvet.core.pagination import Page
 
 # Sólo estas columnas pueden ordenar el listado. Un valor desconocido cae al
 # predeterminado en lugar de viajar hacia la base de datos.

@@ -9,6 +9,7 @@ existirían para la siguiente.
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
+from datetime import date
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -27,6 +28,8 @@ from gestvet.core.identity import Role
 from gestvet.core.security import BcryptPasswordHasher
 from gestvet.core.tokens import JwtTokenService
 from gestvet.main import create_app
+from gestvet.pets.adapters.persistence import models as pets_models  # noqa: F401
+from gestvet.pets.domain.entities import Pet
 
 # Cuatro rondas en vez de doce. El algoritmo es el mismo que en producción, que
 # es lo que interesa probar; el costo deliberado no aporta nada a una prueba.
@@ -110,3 +113,21 @@ def authorization_for(user: User) -> dict[str, str]:
         raise ValueError("El usuario debe estar persistido para emitirle un token.")
     token = TEST_TOKEN_SERVICE.issue(user.id, user.role)
     return {"Authorization": f"Bearer {token.value}"}
+
+
+def build_pet(
+    owner_id: int,
+    name: str = "Rocco",
+    species: str = "Perro",
+    breed: str = "Mestizo",
+    birth_date: date | None = None,
+    is_active: bool = True,
+) -> Pet:
+    return Pet(
+        name=name,
+        species=species,
+        breed=breed,
+        birth_date=birth_date or date(2020, 5, 17),
+        owner_id=owner_id,
+        is_active=is_active,
+    )

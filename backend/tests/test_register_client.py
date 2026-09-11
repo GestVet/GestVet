@@ -14,10 +14,11 @@ from gestvet.accounts.domain.exceptions import (
     InvalidEmail,
     RoleNotSelfAssignable,
 )
-from gestvet.accounts.ports.user_repository import ClientQuery, Page
+from gestvet.accounts.ports.user_repository import ClientQuery
 from gestvet.accounts.use_cases.list_clients import ListClients, resolve_ordering
 from gestvet.accounts.use_cases.register_client import RegisterClient, RegisterClientCommand
 from gestvet.core.identity import Role
+from gestvet.core.pagination import Page
 
 
 class InMemoryUserRepository:

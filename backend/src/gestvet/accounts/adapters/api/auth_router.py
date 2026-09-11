@@ -59,7 +59,7 @@ async def register_client(
     except EmailAlreadyRegistered as error:
         raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
     except InvalidEmail as error:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(error)) from error
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
     return UserResponse.from_entity(user)
 
 

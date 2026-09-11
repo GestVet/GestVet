@@ -17,6 +17,7 @@ from gestvet.accounts.adapters.api.auth_router import router as auth_router
 from gestvet.accounts.adapters.api.router import router as clients_router
 from gestvet.core.config import get_settings
 from gestvet.core.database import engine
+from gestvet.pets.adapters.api.router import router as pets_router
 
 API_PREFIX = "/api/v1"
 
@@ -75,6 +76,7 @@ def create_app() -> FastAPI:
 
     app.include_router(auth_router, prefix=f"{API_PREFIX}/auth", tags=["auth"])
     app.include_router(clients_router, prefix=f"{API_PREFIX}/clients", tags=["clients"])
+    app.include_router(pets_router, prefix=f"{API_PREFIX}/pets", tags=["pets"])
     return app
 
 
