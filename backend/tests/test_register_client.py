@@ -12,7 +12,9 @@ from gestvet.core.identity import Role
 from gestvet.core.pagination import Page
 from gestvet.modules.accounts.domain.entities import User, normalize_email
 from gestvet.modules.accounts.domain.exceptions import (
+    DocumentIdRequired,
     EmailAlreadyRegistered,
+    InvalidDocumentId,
     InvalidEmail,
     RoleNotSelfAssignable,
 )
@@ -78,11 +80,13 @@ async def test_registro_crea_un_cliente_y_nunca_otro_rol() -> None:
             password="contrasena-larga",
             first_name="Ana",
             last_name="Quispe",
+            document_id="87654321",
         )
     )
 
     assert created.role is Role.CLIENT
     assert created.email == "ana.quispe@example.com"
+    assert created.document_id == "87654321"
     assert created.password_hash != "contrasena-larga"
 
 
@@ -94,10 +98,41 @@ async def test_registro_rechaza_un_correo_repetido() -> None:
         password="contrasena-larga",
         first_name="Ana",
         last_name="Quispe",
+        document_id="87654321",
     )
     await register(command)
 
     with pytest.raises(EmailAlreadyRegistered):
+        await register(command)
+
+
+async def test_registro_exige_dni() -> None:
+    users = InMemoryUserRepository()
+    register = RegisterClient(users, FakeHasher(), RecordingActivity())
+    command = RegisterClientCommand(
+        email="ana@example.com",
+        password="contrasena-larga",
+        first_name="Ana",
+        last_name="Quispe",
+        document_id="   ",
+    )
+
+    with pytest.raises(DocumentIdRequired):
+        await register(command)
+
+
+async def test_registro_rechaza_un_dni_con_formato_invalido() -> None:
+    users = InMemoryUserRepository()
+    register = RegisterClient(users, FakeHasher(), RecordingActivity())
+    command = RegisterClientCommand(
+        email="ana@example.com",
+        password="contrasena-larga",
+        first_name="Ana",
+        last_name="Quispe",
+        document_id="123",
+    )
+
+    with pytest.raises(InvalidDocumentId):
         await register(command)
 
 

@@ -75,6 +75,7 @@ async def test_el_autorregistro_deja_asiento(client: AsyncClient, session: Async
             "password": VALID_PASSWORD,
             "first_name": "Nueva",
             "last_name": "Cuenta",
+            "document_id": "87654321",
         },
     )
 

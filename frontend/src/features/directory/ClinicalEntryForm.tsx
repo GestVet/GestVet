@@ -16,11 +16,12 @@ const TIPOS = [
   { value: 'vaccine', label: 'Vacuna' },
   { value: 'surgery', label: 'Cirugía' },
   { value: 'follow_up', label: 'Control' },
+  { value: 'consent_form', label: 'Carta de consentimiento' },
   { value: 'other', label: 'Otro' },
 ] as const
 
 const esquema = z.object({
-  kind: z.enum(['consultation', 'vaccine', 'surgery', 'follow_up', 'other']),
+  kind: z.enum(['consultation', 'vaccine', 'surgery', 'follow_up', 'consent_form', 'other']),
   notes: z.string().min(1, 'Ingresá una nota'),
   diagnosis: z.string().max(300).optional(),
   treatment: z.string().max(300).optional(),

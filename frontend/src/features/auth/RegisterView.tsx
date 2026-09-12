@@ -21,6 +21,7 @@ const esquema = z.object({
   last_name: z.string().min(1, 'Ingresá tu apellido'),
   email: z.email('Ingresá un correo válido'),
   phone: z.string().max(32).optional(),
+  document_id: z.string().regex(/^\d{8}$/, 'El DNI tiene 8 dígitos'),
   password: z.string().min(MIN_PASSWORD, `Usá al menos ${String(MIN_PASSWORD)} caracteres`),
 })
 
@@ -31,7 +32,14 @@ export default function RegisterView() {
   const navigate = useNavigate()
   const { register, handleSubmit, formState } = useForm<Formulario>({
     resolver: zodResolver(esquema),
-    defaultValues: { first_name: '', last_name: '', email: '', phone: '', password: '' },
+    defaultValues: {
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone: '',
+      document_id: '',
+      password: '',
+    },
   })
 
   const crear = useMutation({
@@ -77,6 +85,12 @@ export default function RegisterView() {
         <div className="field">
           <label htmlFor="phone">Teléfono</label>
           <input id="phone" inputMode="tel" {...register('phone')} />
+        </div>
+
+        <div className="field">
+          <label htmlFor="document_id">DNI</label>
+          <input id="document_id" inputMode="numeric" maxLength={8} {...register('document_id')} />
+          <FieldError message={formState.errors.document_id?.message} />
         </div>
 
         <div className="field">

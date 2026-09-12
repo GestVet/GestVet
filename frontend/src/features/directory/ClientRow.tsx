@@ -1,9 +1,15 @@
-import { Fragment } from 'react'
+import { Fragment, useState } from 'react'
 
 import type { UserResponse } from '../../api/types'
-import Icon from '../../components/Icon'
 import StatusBadge from '../../components/StatusBadge'
 import ClientPets from './ClientPets'
+import ClientRowActions from './ClientRowActions'
+import ClientStatusToggle from './ClientStatusToggle'
+import CompleteContactForm from './CompleteContactForm'
+
+// El dominio de relleno que usa el alta exprés de emergencia: mientras el
+// correo de un cliente termine así, esa cuenta no puede entrar por su cuenta.
+const PLACEHOLDER_EMAIL_SUFFIX = '@pendiente.gestvet.local'
 
 interface ClientRowProps {
   readonly cliente: UserResponse
@@ -22,13 +28,23 @@ export default function ClientRow({
   cambiandoEstado,
   onCambiarEstado,
 }: ClientRowProps) {
+  const [completandoContacto, setCompletandoContacto] = useState(false)
+  const contactoPendiente = cliente.email.endsWith(PLACEHOLDER_EMAIL_SUFFIX)
+  const columnas = puedeActivar ? 6 : 5
+
   return (
     <Fragment>
       <tr>
         <td>
           {cliente.first_name} {cliente.last_name}
         </td>
-        <td>{cliente.email}</td>
+        <td>
+          {contactoPendiente ? (
+            <StatusBadge label="Correo pendiente" tone="pending" />
+          ) : (
+            cliente.email
+          )}
+        </td>
         <td>{cliente.phone || '—'}</td>
         <td>
           <StatusBadge
@@ -37,27 +53,36 @@ export default function ClientRow({
           />
         </td>
         <td>
-          <button type="button" className="btn btn-plain" onClick={onToggle}>
-            <Icon name="mascota" size={14} />
-            <span>{expandido ? 'Ocultar' : 'Ver mascotas'}</span>
-          </button>
+          <ClientRowActions
+            expandido={expandido}
+            onToggle={onToggle}
+            contactoPendiente={contactoPendiente}
+            completandoContacto={completandoContacto}
+            onToggleContacto={() => {
+              setCompletandoContacto(!completandoContacto)
+            }}
+          />
         </td>
         {puedeActivar ? (
           <td>
-            <button
-              type="button"
-              className={cliente.is_active ? 'btn btn-plain' : 'btn btn-green'}
+            <ClientStatusToggle
+              isActive={cliente.is_active}
               disabled={cambiandoEstado}
-              onClick={onCambiarEstado}
-            >
-              {cliente.is_active ? 'Desactivar' : 'Activar'}
-            </button>
+              onToggle={onCambiarEstado}
+            />
           </td>
         ) : null}
       </tr>
+      {completandoContacto ? (
+        <tr>
+          <td colSpan={columnas}>
+            <CompleteContactForm clientId={cliente.id} phone={cliente.phone} />
+          </td>
+        </tr>
+      ) : null}
       {expandido ? (
         <tr>
-          <td colSpan={puedeActivar ? 6 : 5}>
+          <td colSpan={columnas}>
             <ClientPets ownerId={cliente.id} />
           </td>
         </tr>

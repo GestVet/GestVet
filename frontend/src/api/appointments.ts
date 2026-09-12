@@ -6,6 +6,7 @@ import type {
   AppointmentTypeListResponse,
   BookAppointmentRequest,
   OpenEmergencyRequest,
+  OpenWalkInEmergencyRequest,
 } from './types'
 
 export interface AppointmentsFilter {
@@ -48,6 +49,13 @@ export async function openEmergency(
   return data
 }
 
+export async function openWalkInEmergency(
+  payload: OpenWalkInEmergencyRequest,
+): Promise<AppointmentResponse> {
+  const { data } = await api.post<AppointmentResponse>('/appointments/emergency/walk-in', payload)
+  return data
+}
+
 export async function confirmAppointment(id: number): Promise<AppointmentResponse> {
   const { data } = await api.post<AppointmentResponse>(`/appointments/${String(id)}/confirm`)
   return data
@@ -55,6 +63,11 @@ export async function confirmAppointment(id: number): Promise<AppointmentRespons
 
 export async function completeAppointment(id: number): Promise<AppointmentResponse> {
   const { data } = await api.post<AppointmentResponse>(`/appointments/${String(id)}/complete`)
+  return data
+}
+
+export async function markAppointmentNoShow(id: number): Promise<AppointmentResponse> {
+  const { data } = await api.post<AppointmentResponse>(`/appointments/${String(id)}/no-show`)
   return data
 }
 

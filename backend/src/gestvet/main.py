@@ -26,8 +26,14 @@ from gestvet.modules.accounts.adapters.api.veterinarians_router import (
 from gestvet.modules.appointments.adapters.api.router import router as appointments_router
 from gestvet.modules.availability.adapters.api.router import router as availability_router
 from gestvet.modules.billing.adapters.api.router import router as billing_router
+from gestvet.modules.complaints.adapters.api.router import router as complaints_router
+from gestvet.modules.hospitalizations.adapters.api.router import (
+    router as hospitalizations_router,
+)
+from gestvet.modules.insights.adapters.api.router import router as insights_router
 from gestvet.modules.medical_records.adapters.api.router import router as medical_records_router
 from gestvet.modules.pets.adapters.api.router import router as pets_router
+from gestvet.modules.reviews.adapters.api.router import router as reviews_router
 
 API_PREFIX = "/api/v1"
 
@@ -111,6 +117,14 @@ def create_app() -> FastAPI:
         medical_records_router, prefix=f"{API_PREFIX}/medical-records", tags=["medical-records"]
     )
     app.include_router(billing_router, prefix=f"{API_PREFIX}/payments", tags=["billing"])
+    app.include_router(reviews_router, prefix=f"{API_PREFIX}/reviews", tags=["reviews"])
+    app.include_router(complaints_router, prefix=f"{API_PREFIX}/complaints", tags=["complaints"])
+    app.include_router(
+        hospitalizations_router,
+        prefix=f"{API_PREFIX}/hospitalizations",
+        tags=["hospitalizations"],
+    )
+    app.include_router(insights_router, prefix=f"{API_PREFIX}/insights", tags=["insights"])
     return app
 
 

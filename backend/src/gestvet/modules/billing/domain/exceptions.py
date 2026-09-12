@@ -44,3 +44,26 @@ class QrChargeNotPending(BillingError):
     def __init__(self, charge_id: int) -> None:
         super().__init__(f"El cobro {charge_id} ya no está pendiente.")
         self.charge_id = charge_id
+
+
+class AppointmentNotCompleted(BillingError):
+    """El precio del QR es fijo: solo corresponde una vez atendida la cita.
+
+    Si el desenlace amerita cobrar distinto, o no cobrar, esa decisión la
+    toma el personal a mano por `RegisterPayment`, no el cliente por QR.
+    """
+
+    def __init__(self, appointment_id: int) -> None:
+        super().__init__(
+            f"La cita {appointment_id} todavía no fue completada. "
+            "El cobro por QR se genera después de la atención."
+        )
+        self.appointment_id = appointment_id
+
+
+class CustomAmountRequiresStaff(BillingError):
+    """Un cliente nunca fija su propio monto: solo el personal puede ajustarlo."""
+
+    def __init__(self, appointment_id: int) -> None:
+        super().__init__("Solo el personal puede fijar un monto distinto al de catálogo.")
+        self.appointment_id = appointment_id

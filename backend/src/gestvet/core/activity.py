@@ -49,11 +49,17 @@ class ActivityKind(StrEnum):
     APPOINTMENT_CONFIRMED = "appointment_confirmed"
     APPOINTMENT_COMPLETED = "appointment_completed"
     APPOINTMENT_CANCELLED = "appointment_cancelled"
+    APPOINTMENT_NO_SHOW = "appointment_no_show"
     CLINICAL_ENTRY_ADDED = "clinical_entry_added"
     ATTACHMENT_UPLOADED = "attachment_uploaded"
     ATTACHMENT_DELETED = "attachment_deleted"
     PAYMENT_REGISTERED = "payment_registered"
     PAYMENT_VOIDED = "payment_voided"
+    REVIEW_SUBMITTED = "review_submitted"
+    COMPLAINT_FILED = "complaint_filed"
+    HOSPITALIZATION_OPENED = "hospitalization_opened"
+    HOSPITALIZATION_NOTE_ADDED = "hospitalization_note_added"
+    HOSPITALIZATION_DISCHARGED = "hospitalization_discharged"
 
     @property
     def label(self) -> str:
@@ -79,11 +85,17 @@ _KIND_LABELS: dict[ActivityKind, str] = {
     ActivityKind.APPOINTMENT_CONFIRMED: "Confirmó una cita",
     ActivityKind.APPOINTMENT_COMPLETED: "Completó una cita",
     ActivityKind.APPOINTMENT_CANCELLED: "Canceló una cita",
+    ActivityKind.APPOINTMENT_NO_SHOW: "Marcó una cita como no asistida",
     ActivityKind.CLINICAL_ENTRY_ADDED: "Agregó una entrada a la historia clínica",
     ActivityKind.ATTACHMENT_UPLOADED: "Adjuntó un archivo a la historia clínica",
     ActivityKind.ATTACHMENT_DELETED: "Quitó un adjunto de la historia clínica",
     ActivityKind.PAYMENT_REGISTERED: "Registró un pago",
     ActivityKind.PAYMENT_VOIDED: "Anuló un pago",
+    ActivityKind.REVIEW_SUBMITTED: "Dejó una reseña",
+    ActivityKind.COMPLAINT_FILED: "Presentó un reclamo",
+    ActivityKind.HOSPITALIZATION_OPENED: "Abrió una internación",
+    ActivityKind.HOSPITALIZATION_NOTE_ADDED: "Agregó una nota de seguimiento",
+    ActivityKind.HOSPITALIZATION_DISCHARGED: "Dio de alta una internación",
 }
 
 

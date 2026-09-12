@@ -3,6 +3,8 @@ import type {
   ActivityPageResponse,
   ClientPageResponse,
   RegisterStaffRequest,
+  RegisterWalkInClientRequest,
+  UpdateClientContactRequest,
   UserResponse,
   VeterinarianListResponse,
 } from './types'
@@ -28,6 +30,21 @@ export async function fetchVeterinarians(): Promise<VeterinarianListResponse> {
 
 export async function fetchClients(): Promise<ClientPageResponse> {
   const { data } = await api.get<ClientPageResponse>('/clients')
+  return data
+}
+
+export async function registerWalkInClient(
+  payload: RegisterWalkInClientRequest,
+): Promise<UserResponse> {
+  const { data } = await api.post<UserResponse>('/clients/walk-in', payload)
+  return data
+}
+
+export async function updateClientContact(
+  clientId: number,
+  payload: UpdateClientContactRequest,
+): Promise<UserResponse> {
+  const { data } = await api.patch<UserResponse>(`/clients/${String(clientId)}/contact`, payload)
   return data
 }
 

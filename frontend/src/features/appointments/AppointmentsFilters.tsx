@@ -5,6 +5,7 @@ const ESTADOS: readonly { value: AppointmentStatus; label: string }[] = [
   { value: 'confirmed', label: 'Confirmada' },
   { value: 'completed', label: 'Completada' },
   { value: 'cancelled', label: 'Cancelada' },
+  { value: 'no_show', label: 'No asistió' },
 ]
 
 interface AppointmentsFiltersProps {

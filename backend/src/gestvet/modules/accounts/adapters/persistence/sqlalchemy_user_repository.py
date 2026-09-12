@@ -57,14 +57,20 @@ class SqlAlchemyUserRepository:
         row = await self._session.get(UserRow, user.id)
         if row is None:
             raise ValueError(f"La cuenta {user.id} ya no existe.")
+        row.email = user.email
         row.first_name = user.first_name
         row.last_name = user.last_name
         row.phone = user.phone
+        row.document_id = user.document_id
         row.role = user.role.value
         row.is_active = user.is_active
         row.can_cover_emergencies = user.can_cover_emergencies
         row.password_hash = user.password_hash
-        await self._session.flush()
+        try:
+            await self._session.flush()
+        except IntegrityError as error:
+            await self._session.rollback()
+            raise EmailAlreadyRegistered(user.email) from error
         return row_to_entity(row)
 
     async def search(self, query: UserQuery) -> Page[User]:

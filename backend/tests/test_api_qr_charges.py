@@ -23,7 +23,13 @@ from gestvet.modules.appointments.domain.entities import Appointment
 from gestvet.modules.pets.adapters.persistence.sqlalchemy_pet_repository import (
     SqlAlchemyPetRepository,
 )
-from tests.conftest import GENERAL_TYPE_ID, authorization_for, build_pet, build_user
+from tests.conftest import (
+    EMERGENCY_TYPE_ID,
+    GENERAL_TYPE_ID,
+    authorization_for,
+    build_pet,
+    build_user,
+)
 
 PAYMENTS_URL = "/api/v1/payments"
 QR_URL = f"{PAYMENTS_URL}/qr-charges"
@@ -57,6 +63,38 @@ async def montar(session: AsyncSession) -> Escenario:
             appointment_type_id=GENERAL_TYPE_ID,
         )
     )
+    # El QR solo se genera después de la atención: la mayoría de las
+    # pruebas de este archivo asumen una cita ya completada.
+    cita.confirm(veterinario.id or 0)
+    cita.complete(veterinario.id or 0)
+    cita = await appointments.save(cita)
+    await session.commit()
+    return Escenario(cliente, veterinario, cita.id or 0)
+
+
+async def montar_emergencia(session: AsyncSession) -> Escenario:
+    users = SqlAlchemyUserRepository(session)
+    cliente = await users.add(build_user("carmen@example.com"))
+    veterinario = await users.add(build_user("guardia@example.com", role=Role.VETERINARIAN))
+    await session.flush()
+
+    pets = SqlAlchemyPetRepository(session)
+    mascota = await pets.add(build_pet(owner_id=cliente.id or 0))
+
+    appointments = SqlAlchemyAppointmentRepository(session)
+    cita = await appointments.add(
+        Appointment(
+            scheduled_at=HORA,
+            duration=timedelta(minutes=60),
+            client_id=cliente.id or 0,
+            pet_id=mascota.id or 0,
+            veterinarian_id=veterinario.id or 0,
+            appointment_type_id=EMERGENCY_TYPE_ID,
+        )
+    )
+    cita.confirm(veterinario.id or 0)
+    cita.complete(veterinario.id or 0)
+    cita = await appointments.save(cita)
     await session.commit()
     return Escenario(cliente, veterinario, cita.id or 0)
 
@@ -117,6 +155,38 @@ async def test_no_se_genera_un_qr_de_una_cita_inexistente(
     )
 
     assert response.status_code == 404
+
+
+async def test_no_se_genera_un_qr_de_una_cita_no_completada(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """El precio es fijo: solo corresponde una vez que se sabe qué se atendió."""
+    users = SqlAlchemyUserRepository(session)
+    cliente = await users.add(build_user("carmen@example.com"))
+    veterinario = await users.add(build_user("vet2@example.com", role=Role.VETERINARIAN))
+    await session.flush()
+    pets = SqlAlchemyPetRepository(session)
+    mascota = await pets.add(build_pet(owner_id=cliente.id or 0))
+    appointments = SqlAlchemyAppointmentRepository(session)
+    cita_pendiente = await appointments.add(
+        Appointment(
+            scheduled_at=HORA,
+            duration=timedelta(minutes=30),
+            client_id=cliente.id or 0,
+            pet_id=mascota.id or 0,
+            veterinarian_id=veterinario.id or 0,
+            appointment_type_id=GENERAL_TYPE_ID,
+        )
+    )
+    await session.commit()
+
+    response = await client.post(
+        QR_URL,
+        json={"appointment_id": cita_pendiente.id},
+        headers=authorization_for(cliente),
+    )
+
+    assert response.status_code == 409
 
 
 async def test_generar_dos_veces_devuelve_el_mismo_cobro_pendiente(
@@ -233,3 +303,63 @@ async def test_sin_credencial_no_se_llega_a_ninguna_parte(client: AsyncClient) -
     assert (await client.post(QR_URL, json={"appointment_id": 1})).status_code == 401
     assert (await client.get(f"{QR_URL}/1")).status_code == 401
     assert (await client.post(f"{QR_URL}/1/confirm")).status_code == 401
+
+
+async def test_el_personal_ajusta_el_monto_dentro_del_margen(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """Consulta general cuesta S/ 60: dentro de ±5 se acepta."""
+    escenario = await montar(session)
+
+    response = await client.post(
+        QR_URL,
+        json={"appointment_id": escenario.cita_id, "amount": "64.00"},
+        headers=authorization_for(escenario.veterinario),
+    )
+
+    assert response.status_code == 201
+    assert Decimal(response.json()["amount"]) == Decimal("64.00")
+
+
+async def test_el_personal_no_se_sale_del_margen_en_una_cita_normal(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+
+    response = await client.post(
+        QR_URL,
+        json={"appointment_id": escenario.cita_id, "amount": "80.00"},
+        headers=authorization_for(escenario.veterinario),
+    )
+
+    assert response.status_code == 422
+
+
+async def test_un_cliente_no_puede_fijar_un_monto(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+
+    response = await client.post(
+        QR_URL,
+        json={"appointment_id": escenario.cita_id, "amount": "60.00"},
+        headers=authorization_for(escenario.cliente),
+    )
+
+    assert response.status_code == 403
+
+
+async def test_el_personal_ajusta_libremente_en_una_emergencia(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """El precio de catálogo de emergencia es S/ 150; acá se cobra bien menos."""
+    escenario = await montar_emergencia(session)
+
+    response = await client.post(
+        QR_URL,
+        json={"appointment_id": escenario.cita_id, "amount": "35.00"},
+        headers=authorization_for(escenario.veterinario),
+    )
+
+    assert response.status_code == 201
+    assert Decimal(response.json()["amount"]) == Decimal("35.00")

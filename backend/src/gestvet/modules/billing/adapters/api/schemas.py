@@ -94,6 +94,9 @@ class PaymentReportResponse(BaseModel):
 
 class CreateQrChargeRequest(BaseModel):
     appointment_id: int = Field(ge=1)
+    # Solo el personal puede mandarlo; un cliente que lo intente se rechaza
+    # en el caso de uso, no acá, para no revelar la regla en el esquema.
+    amount: Decimal | None = Field(default=None, gt=0)
 
 
 class QrChargeResponse(BaseModel):

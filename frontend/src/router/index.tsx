@@ -9,10 +9,13 @@ import RegisterView from '../features/auth/RegisterView'
 import ResetPasswordView from '../features/auth/ResetPasswordView'
 import AvailabilityView from '../features/availability/AvailabilityView'
 import PaymentsReportView from '../features/billing/PaymentsReportView'
+import ComplaintsView from '../features/complaints/ComplaintsView'
 import ActivityView from '../features/directory/ActivityView'
 import ClientsView from '../features/directory/ClientsView'
 import StaffView from '../features/directory/StaffView'
+import WalkInEmergencyView from '../features/emergency-intake/WalkInEmergencyView'
 import HomeView from '../features/home/HomeView'
+import InsightsView from '../features/insights/InsightsView'
 import DashboardView from '../features/panel/DashboardView'
 import PetsView from '../features/pets/PetsView'
 import AppShell from '../features/shell/AppShell'
@@ -58,13 +61,18 @@ const router = createBrowserRouter(
         },
         {
           element: <RequireSession roles={PERSONAL} />,
-          children: [{ path: 'clientes', Component: ClientsView }],
+          children: [
+            { path: 'clientes', Component: ClientsView },
+            { path: 'emergencia-cliente-nuevo', Component: WalkInEmergencyView },
+          ],
         },
         {
           element: <RequireSession roles={ADMIN} />,
           children: [
             { path: 'personal', Component: StaffView },
             { path: 'pagos', Component: PaymentsReportView },
+            { path: 'reclamos', Component: ComplaintsView },
+            { path: 'indicadores', Component: InsightsView },
             { path: 'movimientos', Component: ActivityView },
           ],
         },

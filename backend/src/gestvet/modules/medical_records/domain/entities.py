@@ -27,6 +27,7 @@ class EntryKind(StrEnum):
     VACCINE = "vaccine"
     SURGERY = "surgery"
     FOLLOW_UP = "follow_up"
+    CONSENT_FORM = "consent_form"
     OTHER = "other"
 
     @property
@@ -39,6 +40,7 @@ _KIND_LABELS: dict[EntryKind, str] = {
     EntryKind.VACCINE: "Vacuna",
     EntryKind.SURGERY: "Cirugía",
     EntryKind.FOLLOW_UP: "Control",
+    EntryKind.CONSENT_FORM: "Carta de consentimiento",
     EntryKind.OTHER: "Otro",
 }
 

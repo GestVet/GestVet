@@ -52,6 +52,7 @@ export const ICONS = {
   activo: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z',
   alerta:
     'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z',
+  indicadores: 'M4 20h2v-8H4v8zm7 0h2V4h-2v16zm7 0h2v-12h-2v12z',
 } as const
 
 export type IconName = keyof typeof ICONS

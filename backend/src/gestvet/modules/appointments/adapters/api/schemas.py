@@ -32,6 +32,18 @@ class OpenEmergencyRequest(BaseModel):
     description: str = Field(default="", max_length=MAX_DESCRIPTION_LENGTH)
 
 
+class OpenWalkInEmergencyRequest(BaseModel):
+    """La única excepción a la regla del módulo: acá sí viaja `client_id`.
+
+    Lo abre el personal por un cliente que recién se dio de alta en el
+    mostrador, así que no hay una sesión de cliente de la que tomarlo.
+    """
+
+    client_id: int = Field(ge=1)
+    pet_id: int = Field(ge=1)
+    description: str = Field(default="", max_length=MAX_DESCRIPTION_LENGTH)
+
+
 class CancelAppointmentRequest(BaseModel):
     # Obligatoria: quien cancela le debe una explicación a la otra parte.
     reason: str = Field(min_length=1, max_length=MAX_REASON_LENGTH)
@@ -78,6 +90,7 @@ class AppointmentResponse(BaseModel):
 
     @classmethod
     def from_entity(cls, appointment: Appointment) -> AppointmentResponse:
+        status = appointment.effective_status()
         return cls(
             id=appointment.id or 0,
             scheduled_at=appointment.scheduled_at,
@@ -88,8 +101,8 @@ class AppointmentResponse(BaseModel):
             veterinarian_id=appointment.veterinarian_id,
             appointment_type_id=appointment.appointment_type_id,
             description=appointment.description,
-            status=appointment.status,
-            status_label=appointment.status.label,
+            status=status,
+            status_label=status.label,
             cancellation_reason=appointment.cancellation_reason,
             updated_by=appointment.updated_by,
             created_at=appointment.created_at,

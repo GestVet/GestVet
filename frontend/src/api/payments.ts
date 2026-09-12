@@ -53,9 +53,13 @@ export function qrChargeQueryKey(chargeId: number) {
   return ['payments', 'qr-charge', chargeId] as const
 }
 
-export async function createQrCharge(appointmentId: number): Promise<QrChargeResponse> {
+export async function createQrCharge(
+  appointmentId: number,
+  amount?: string,
+): Promise<QrChargeResponse> {
   const { data } = await api.post<QrChargeResponse>('/payments/qr-charges', {
     appointment_id: appointmentId,
+    amount: amount === undefined || amount === '' ? null : amount,
   })
   return data
 }

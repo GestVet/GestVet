@@ -4,6 +4,7 @@ import type { PetResponse } from '../../api/types'
 import PetProfilePanel from '../../components/PetProfilePanel'
 import StatusBadge from '../../components/StatusBadge'
 import PetHistory from './PetHistory'
+import PetHospitalizations from './PetHospitalizations'
 
 interface PetRowProps {
   readonly mascota: PetResponse
@@ -65,6 +66,7 @@ export default function PetRow({ mascota, dandoDeBaja, onDarDeBaja }: PetRowProp
                 canEditClinicalFields={false}
               />
               <PetHistory petId={mascota.id} />
+              <PetHospitalizations petId={mascota.id} />
             </div>
           </td>
         </tr>

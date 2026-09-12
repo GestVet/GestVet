@@ -2,6 +2,7 @@ import { api } from '../services/api'
 import type {
   PetPageResponse,
   PetResponse,
+  RegisterPetForOwnerRequest,
   RegisterPetRequest,
   UpdatePetClinicalProfileRequest,
   UpdatePetOwnerProfileRequest,
@@ -25,6 +26,13 @@ export async function fetchPetsOfOwner(ownerId: number): Promise<PetPageResponse
 
 export async function registerPet(payload: RegisterPetRequest): Promise<PetResponse> {
   const { data } = await api.post<PetResponse>('/pets', payload)
+  return data
+}
+
+export async function registerPetForOwner(
+  payload: RegisterPetForOwnerRequest,
+): Promise<PetResponse> {
+  const { data } = await api.post<PetResponse>('/pets/for-owner', payload)
   return data
 }
 

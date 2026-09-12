@@ -19,6 +19,16 @@ _FIND_AMOUNT_DUE = text(
     "WHERE appointments.id = :appointment_id"
 )
 
+_IS_COMPLETED = text(
+    "SELECT 1 FROM appointments WHERE id = :appointment_id AND status = 'completed'"
+)
+
+_IS_EMERGENCY = text(
+    "SELECT appointment_types.is_emergency FROM appointments "
+    "JOIN appointment_types ON appointment_types.id = appointments.appointment_type_id "
+    "WHERE appointments.id = :appointment_id"
+)
+
 
 class SqlAppointmentDirectory:
     def __init__(self, session: AsyncSession) -> None:
@@ -35,3 +45,15 @@ class SqlAppointmentDirectory:
             await self._session.execute(_FIND_AMOUNT_DUE, {"appointment_id": appointment_id})
         ).first()
         return Decimal(str(row.price)) if row else None
+
+    async def is_completed(self, appointment_id: int) -> bool:
+        row = (
+            await self._session.execute(_IS_COMPLETED, {"appointment_id": appointment_id})
+        ).first()
+        return row is not None
+
+    async def is_emergency(self, appointment_id: int) -> bool:
+        row = (
+            await self._session.execute(_IS_EMERGENCY, {"appointment_id": appointment_id})
+        ).first()
+        return bool(row.is_emergency) if row else False

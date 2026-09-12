@@ -8,6 +8,7 @@ contratos de Import Linter lo verifican.
 from __future__ import annotations
 
 import hashlib
+import re
 import secrets
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
@@ -16,12 +17,15 @@ from datetime import UTC, datetime, timedelta
 # para autorizar, y si lo poseyera `accounts` todos tendrían que importarlo.
 from gestvet.core.identity import Role
 from gestvet.modules.accounts.domain.exceptions import (
+    InvalidDocumentId,
     InvalidEmail,
     RoleNotAssignable,
     RoleNotBackupEligible,
     RoleNotSelfAssignable,
     RoleNotSwappable,
 )
+
+_DOCUMENT_ID_PATTERN = re.compile(r"\d{8}")
 
 # El hallazgo P0 de la auditoría de CitasVet fue que un visitante podía pedir
 # rol de administrador al registrarse. La regla vive aquí, en el dominio, para
@@ -51,6 +55,11 @@ class User:
     role: Role
     password_hash: str
     phone: str = ""
+    # Vacío es válido a nivel de entidad: una cuenta de personal no lo
+    # necesita, y una cuenta de cliente sembrada antes de que este campo
+    # existiera tampoco lo trae. Que sea obligatorio para un cliente nuevo es
+    # una regla del caso de uso de registro, no de la entidad.
+    document_id: str = ""
     is_active: bool = True
     # Solo tiene efecto en un veterinario normal: lo habilita como respaldo de
     # guardia cuando todos los dedicados ya están cubriendo una emergencia.
@@ -60,6 +69,7 @@ class User:
 
     def __post_init__(self) -> None:
         self.email = normalize_email(self.email)
+        self.document_id = validate_document_id(self.document_id)
 
     @property
     def full_name(self) -> str:
@@ -113,6 +123,13 @@ def hash_reset_token(token: str) -> str:
     SHA-256 no proteja igual.
     """
     return hashlib.sha256(token.encode()).hexdigest()
+
+
+def validate_document_id(raw: str) -> str:
+    value = raw.strip()
+    if value and not _DOCUMENT_ID_PATTERN.fullmatch(value):
+        raise InvalidDocumentId(value)
+    return value
 
 
 def normalize_email(raw: str) -> str:

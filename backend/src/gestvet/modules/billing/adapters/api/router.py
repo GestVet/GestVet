@@ -35,7 +35,9 @@ from gestvet.modules.billing.adapters.api.schemas import (
 )
 from gestvet.modules.billing.domain.entities import PaymentMethod
 from gestvet.modules.billing.domain.exceptions import (
+    AppointmentNotCompleted,
     AppointmentNotFound,
+    CustomAmountRequiresStaff,
     InvalidPayment,
     PaymentAlreadyVoided,
     PaymentNotFound,
@@ -186,10 +188,17 @@ async def create_qr_charge(
                 appointment_id=payload.appointment_id,
                 requester_id=principal.user_id,
                 is_staff=principal.role in STAFF_ROLES,
+                amount=payload.amount,
             )
         )
     except AppointmentNotFound as error:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    except AppointmentNotCompleted as error:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
+    except CustomAmountRequiresStaff as error:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, str(error)) from error
+    except InvalidPayment as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
     return QrChargeResponse.from_entity(charge)
 
 

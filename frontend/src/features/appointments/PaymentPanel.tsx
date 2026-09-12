@@ -4,15 +4,15 @@ import { fetchPayments, paymentsQueryKey, voidPayment } from '../../api/payments
 import FormMessage from '../../components/FormMessage'
 import { errorMessage } from '../../services/api'
 import { useIsStaff } from '../../store/session'
-import PaymentForm from './PaymentForm'
+import NewPaymentOptions from './NewPaymentOptions'
 import PaymentsTable from './PaymentsTable'
-import QrPaymentPanel from './QrPaymentPanel'
 
 interface PaymentPanelProps {
   readonly appointmentId: number
+  readonly appointmentStatus: string
 }
 
-export default function PaymentPanel({ appointmentId }: PaymentPanelProps) {
+export default function PaymentPanel({ appointmentId, appointmentStatus }: PaymentPanelProps) {
   const puedeCobrar = useIsStaff()
   const queryClient = useQueryClient()
   const queryKey = paymentsQueryKey({ appointment_id: appointmentId })
@@ -61,8 +61,13 @@ export default function PaymentPanel({ appointmentId }: PaymentPanelProps) {
         />
       )}
 
-      {activo === undefined ? <QrPaymentPanel appointmentId={appointmentId} /> : null}
-      {puedeCobrar && activo === undefined ? <PaymentForm appointmentId={appointmentId} /> : null}
+      {activo === undefined ? (
+        <NewPaymentOptions
+          appointmentId={appointmentId}
+          appointmentStatus={appointmentStatus}
+          puedeCobrar={puedeCobrar}
+        />
+      ) : null}
     </div>
   )
 }

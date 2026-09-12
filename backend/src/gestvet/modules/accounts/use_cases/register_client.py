@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from gestvet.core.activity import ActivityKind, ActivityRecorder
 from gestvet.modules.accounts.domain.entities import Role, User, ensure_role_is_self_assignable
-from gestvet.modules.accounts.domain.exceptions import EmailAlreadyRegistered
+from gestvet.modules.accounts.domain.exceptions import DocumentIdRequired, EmailAlreadyRegistered
 from gestvet.modules.accounts.ports.user_repository import PasswordHasher, UserRepository
 
 
@@ -14,6 +14,7 @@ class RegisterClientCommand:
     password: str
     first_name: str
     last_name: str
+    document_id: str
     phone: str = ""
 
 
@@ -33,11 +34,15 @@ class RegisterClient:
         role = Role.CLIENT
         ensure_role_is_self_assignable(role)
 
+        if not command.document_id.strip():
+            raise DocumentIdRequired()
+
         candidate = User(
             email=command.email,
             first_name=command.first_name.strip(),
             last_name=command.last_name.strip(),
             phone=command.phone.strip(),
+            document_id=command.document_id.strip(),
             role=role,
             password_hash=self._hasher.hash(command.password),
         )

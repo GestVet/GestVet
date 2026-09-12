@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from gestvet.core.activity_log import ActivityRecorderDep
 from gestvet.core.auth import PrincipalDep, require_roles
-from gestvet.core.identity import VETERINARIAN_ROLES, Principal, Role
+from gestvet.core.identity import STAFF_ROLES, VETERINARIAN_ROLES, Principal, Role
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from gestvet.modules.appointments.adapters.api.dependencies import (
     AppointmentRepositoryDep,
@@ -30,6 +30,7 @@ from gestvet.modules.appointments.adapters.api.schemas import (
     BookAppointmentRequest,
     CancelAppointmentRequest,
     OpenEmergencyRequest,
+    OpenWalkInEmergencyRequest,
 )
 from gestvet.modules.appointments.domain.entities import AppointmentStatus
 from gestvet.modules.appointments.domain.exceptions import (
@@ -62,6 +63,7 @@ router = APIRouter()
 
 ClientDep = Annotated[Principal, Depends(require_roles(Role.CLIENT))]
 VeterinarianDep = Annotated[Principal, Depends(require_roles(*VETERINARIAN_ROLES))]
+StaffDep = Annotated[Principal, Depends(require_roles(*STAFF_ROLES))]
 
 _CONFLICT_ERRORS = (
     OutsideAvailability,
@@ -141,6 +143,37 @@ async def open_emergency(
         appointment = await use_case(
             OpenEmergencyCommand(
                 client_id=client.user_id,
+                pet_id=payload.pet_id,
+                description=payload.description,
+            )
+        )
+    except (AppointmentTypeNotFound, PetNotOwned) as error:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    except NoEmergencyVeterinarian as error:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
+    return AppointmentResponse.from_entity(appointment)
+
+
+@router.post(
+    "/emergency/walk-in",
+    response_model=AppointmentResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Abrir una emergencia para un cliente dado de alta en el mostrador",
+)
+async def open_walk_in_emergency(
+    payload: OpenWalkInEmergencyRequest,
+    staff: StaffDep,
+    appointments: AppointmentRepositoryDep,
+    types: AppointmentTypeRepositoryDep,
+    pets: PetDirectoryDep,
+    schedule: ScheduleDirectoryDep,
+    activity: ActivityRecorderDep,
+) -> AppointmentResponse:
+    use_case = OpenEmergency(appointments, types, pets, schedule, activity)
+    try:
+        appointment = await use_case(
+            OpenEmergencyCommand(
+                client_id=payload.client_id,
                 pet_id=payload.pet_id,
                 description=payload.description,
             )
@@ -243,6 +276,22 @@ async def complete_appointment(
 ) -> AppointmentResponse:
     return await _change_status(
         appointment_id, veterinarian, appointments, activity, AppointmentStatus.COMPLETED
+    )
+
+
+@router.post(
+    "/{appointment_id}/no-show",
+    response_model=AppointmentResponse,
+    summary="Marcar que el cliente no asistió",
+)
+async def mark_appointment_no_show(
+    appointment_id: int,
+    veterinarian: VeterinarianDep,
+    appointments: AppointmentRepositoryDep,
+    activity: ActivityRecorderDep,
+) -> AppointmentResponse:
+    return await _change_status(
+        appointment_id, veterinarian, appointments, activity, AppointmentStatus.NO_SHOW
     )
 
 

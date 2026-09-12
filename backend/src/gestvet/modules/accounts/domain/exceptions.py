@@ -16,6 +16,17 @@ class InvalidEmail(AccountsError):
         self.value = value
 
 
+class InvalidDocumentId(AccountsError):
+    def __init__(self, value: str) -> None:
+        super().__init__(f"El DNI no es válido: {value!r}. Debe tener 8 dígitos.")
+        self.value = value
+
+
+class DocumentIdRequired(AccountsError):
+    def __init__(self) -> None:
+        super().__init__("El DNI es obligatorio para registrarte.")
+
+
 class RoleNotSelfAssignable(AccountsError):
     def __init__(self, role: str) -> None:
         super().__init__(f"El rol {role!r} no se puede solicitar al registrarse.")

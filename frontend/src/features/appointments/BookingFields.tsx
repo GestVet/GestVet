@@ -4,6 +4,7 @@ import { type FieldErrors, useFormContext, useWatch } from 'react-hook-form'
 import { appointmentTypesQueryKey, fetchAppointmentTypes } from '../../api/appointments'
 import { fetchVeterinarians, veterinariansQueryKey } from '../../api/directory'
 import { fetchMyPets, myPetsQueryKey } from '../../api/pets'
+import type { VeterinarianResponse } from '../../api/types'
 import SelectField from '../../components/SelectField'
 import TextField from '../../components/TextField'
 import type { BookingForm } from './bookingSchema'
@@ -11,6 +12,13 @@ import VeterinarianSchedule from './VeterinarianSchedule'
 
 function mensajeDeError(errores: FieldErrors<BookingForm>, campo: keyof BookingForm) {
   return errores[campo]?.message
+}
+
+function etiquetaVeterinario(veterinario: VeterinarianResponse): string {
+  if (veterinario.average_rating === null) {
+    return veterinario.full_name
+  }
+  return `${veterinario.full_name} · ★ ${veterinario.average_rating} (${String(veterinario.review_count)})`
 }
 
 /**
@@ -57,7 +65,7 @@ export default function BookingFields() {
       >
         {veterinarios.data?.items.map((veterinario) => (
           <option key={veterinario.id} value={veterinario.id}>
-            {veterinario.full_name}
+            {etiquetaVeterinario(veterinario)}
           </option>
         ))}
       </SelectField>
@@ -68,6 +76,7 @@ export default function BookingFields() {
         placeholder="Elegí el motivo"
         field={register('appointment_type_id')}
         error={mensajeDeError(errores, 'appointment_type_id')}
+        hint="Precio estimado: puede variar según lo que finalmente requiera la atención."
       >
         {motivos.data?.items.map((motivo) => (
           <option key={motivo.id} value={motivo.id}>

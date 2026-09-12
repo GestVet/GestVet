@@ -30,6 +30,7 @@ NEW_CLIENT = {
     "first_name": "Ana",
     "last_name": "Quispe",
     "phone": "987654321",
+    "document_id": "87654321",
 }
 
 
@@ -76,6 +77,8 @@ async def test_el_registro_rechaza_un_correo_ya_usado(client: AsyncClient) -> No
         {"password": "corta"},
         {"email": "sin-arroba"},
         {"first_name": ""},
+        {"document_id": "123"},
+        {"document_id": ""},
     ],
 )
 async def test_el_registro_valida_el_cuerpo(

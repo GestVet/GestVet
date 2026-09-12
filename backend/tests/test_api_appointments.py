@@ -246,6 +246,41 @@ async def test_el_veterinario_confirma_y_completa(
     assert completada.json()["updated_by"] == escenario.veterinario.id
 
 
+async def test_el_veterinario_marca_la_inasistencia(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+    creada = await client.post(
+        URL, json=escenario.reserva(), headers=authorization_for(escenario.cliente)
+    )
+    cita_id = creada.json()["id"]
+    cabeceras = authorization_for(escenario.veterinario)
+    await client.post(f"{URL}/{cita_id}/confirm", headers=cabeceras)
+
+    respuesta = await client.post(f"{URL}/{cita_id}/no-show", headers=cabeceras)
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["status"] == "no_show"
+    assert respuesta.json()["status_label"] == "No asistió"
+
+
+async def test_un_cliente_no_marca_su_propia_inasistencia(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+    creada = await client.post(
+        URL, json=escenario.reserva(), headers=authorization_for(escenario.cliente)
+    )
+    cita_id = creada.json()["id"]
+    await client.post(f"{URL}/{cita_id}/confirm", headers=authorization_for(escenario.veterinario))
+
+    respuesta = await client.post(
+        f"{URL}/{cita_id}/no-show", headers=authorization_for(escenario.cliente)
+    )
+
+    assert respuesta.status_code == 403
+
+
 async def test_un_cliente_no_confirma_su_propia_cita(
     client: AsyncClient, session: AsyncSession
 ) -> None:
