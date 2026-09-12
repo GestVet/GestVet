@@ -37,6 +37,9 @@ from gestvet.modules.appointments.adapters.persistence.models import Appointment
 from gestvet.modules.availability.adapters.persistence import (
     models as availability_models,
 )
+from gestvet.modules.medical_records.adapters.persistence import (
+    models as medical_records_models,
+)
 from gestvet.modules.pets.adapters.persistence import models as pets_models
 from gestvet.modules.pets.domain.entities import Pet
 
@@ -55,6 +58,7 @@ REGISTERED_MODELS = (
     accounts_models,
     appointments_models,
     availability_models,
+    medical_records_models,
     pets_models,
 )
 

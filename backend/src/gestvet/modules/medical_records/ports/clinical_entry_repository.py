@@ -1,0 +1,26 @@
+"""Puerto de persistencia de la historia clínica.
+
+Define qué necesita el negocio, nunca cómo se guarda.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Protocol
+
+from gestvet.core.pagination import DEFAULT_PAGE_SIZE, Page
+from gestvet.modules.medical_records.domain.entities import ClinicalEntry, EntryKind
+
+
+@dataclass(frozen=True, slots=True)
+class ClinicalEntryQuery:
+    pet_id: int
+    kind: EntryKind | None = None
+    limit: int = DEFAULT_PAGE_SIZE
+    offset: int = 0
+
+
+class ClinicalEntryRepository(Protocol):
+    async def add(self, entry: ClinicalEntry) -> ClinicalEntry: ...
+
+    async def search(self, query: ClinicalEntryQuery) -> Page[ClinicalEntry]: ...

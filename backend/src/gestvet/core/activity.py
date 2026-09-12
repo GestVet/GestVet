@@ -47,6 +47,7 @@ class ActivityKind(StrEnum):
     APPOINTMENT_CONFIRMED = "appointment_confirmed"
     APPOINTMENT_COMPLETED = "appointment_completed"
     APPOINTMENT_CANCELLED = "appointment_cancelled"
+    CLINICAL_ENTRY_ADDED = "clinical_entry_added"
 
     @property
     def label(self) -> str:
@@ -70,6 +71,7 @@ _KIND_LABELS: dict[ActivityKind, str] = {
     ActivityKind.APPOINTMENT_CONFIRMED: "Confirmó una cita",
     ActivityKind.APPOINTMENT_COMPLETED: "Completó una cita",
     ActivityKind.APPOINTMENT_CANCELLED: "Canceló una cita",
+    ActivityKind.CLINICAL_ENTRY_ADDED: "Agregó una entrada a la historia clínica",
 }
 
 
