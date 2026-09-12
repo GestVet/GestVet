@@ -9,6 +9,7 @@ mascota: son datos que se confirman en consulta, no en el padrón del dueño.
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -23,6 +24,7 @@ from gestvet.modules.pets.adapters.api.schemas import (
     CorrectPetStatusRequest,
     PetPageResponse,
     PetResponse,
+    RegisterPetForOwnerRequest,
     RegisterPetRequest,
     UpdatePetClinicalProfileRequest,
     UpdatePetOwnerProfileRequest,
@@ -44,6 +46,11 @@ from gestvet.modules.pets.use_cases.update_pet_owner_profile import (
     UpdatePetOwnerProfile,
     UpdatePetOwnerProfileCommand,
 )
+
+# Raza y fecha de nacimiento reales no importan para abrir una emergencia; el
+# dueño las completa después, igual que cualquier mascota. "Sin especificar"
+# es más honesto que inventar una raza o una fecha.
+UNKNOWN_BREED = "Sin especificar"
 
 router = APIRouter()
 
@@ -72,6 +79,33 @@ async def register_pet(
                 breed=payload.breed,
                 birth_date=payload.birth_date,
                 owner_id=client.user_id,
+            )
+        )
+    except InvalidPetData as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
+    return PetResponse.from_entity(pet)
+
+
+@router.post(
+    "/for-owner",
+    response_model=PetResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Registrar una mascota a nombre de un cliente (alta exprés)",
+)
+async def register_pet_for_owner(
+    payload: RegisterPetForOwnerRequest,
+    staff: StaffDep,
+    pets: PetRepositoryDep,
+    activity: ActivityRecorderDep,
+) -> PetResponse:
+    try:
+        pet = await RegisterPet(pets, activity)(
+            RegisterPetCommand(
+                name=payload.name,
+                species=payload.species,
+                breed=UNKNOWN_BREED,
+                birth_date=date.today(),
+                owner_id=payload.owner_id,
             )
         )
     except InvalidPetData as error:

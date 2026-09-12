@@ -2,7 +2,10 @@ import { Fragment, useState } from 'react'
 
 import type { AppointmentResponse, AppointmentStatus } from '../../api/types'
 import StatusBadge from '../../components/StatusBadge'
+import { useIsStaff } from '../../store/session'
 import AppointmentActions from './AppointmentActions'
+import AppointmentExtraButtons from './AppointmentExtraButtons'
+import AppointmentExtraPanel from './AppointmentExtraPanel'
 import PaymentPanel from './PaymentPanel'
 
 // El tono de la etiqueta sale del estado, y el estado viene del contrato: si
@@ -12,9 +15,12 @@ const TONO: Record<AppointmentStatus, string> = {
   confirmed: 'confirmed',
   completed: 'completed',
   cancelled: 'cancelled',
+  no_show: 'cancelled',
 }
 
 const FORMATO = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
+
+type Extra = 'none' | 'review' | 'complaint' | 'hospitalization'
 
 interface AppointmentRowProps {
   readonly cita: AppointmentResponse
@@ -22,6 +28,14 @@ interface AppointmentRowProps {
 
 export default function AppointmentRow({ cita }: AppointmentRowProps) {
   const [expandido, setExpandido] = useState(false)
+  const [extra, setExtra] = useState<Extra>('none')
+  const esStaff = useIsStaff()
+  const puedeResenar = !esStaff && cita.status === 'completed'
+  const puedeInternar = esStaff && cita.status === 'completed'
+
+  const alternar = (valor: Extra) => {
+    setExtra(extra === valor ? 'none' : valor)
+  }
 
   return (
     <Fragment>
@@ -44,15 +58,33 @@ export default function AppointmentRow({ cita }: AppointmentRowProps) {
           >
             {expandido ? 'Ocultar pago' : 'Ver pago'}
           </button>
+          <AppointmentExtraButtons
+            extra={extra}
+            esStaff={esStaff}
+            puedeResenar={puedeResenar}
+            puedeInternar={puedeInternar}
+            onAlternar={alternar}
+          />
         </td>
       </tr>
       {expandido ? (
         <tr>
           <td colSpan={5}>
-            <PaymentPanel appointmentId={cita.id} />
+            <PaymentPanel appointmentId={cita.id} appointmentStatus={cita.status} />
           </td>
         </tr>
       ) : null}
+      {extra === 'none' ? null : (
+        <tr>
+          <td colSpan={5}>
+            <AppointmentExtraPanel
+              extra={extra}
+              appointmentId={cita.id}
+              veterinarianId={cita.veterinarian_id}
+            />
+          </td>
+        </tr>
+      )}
     </Fragment>
   )
 }

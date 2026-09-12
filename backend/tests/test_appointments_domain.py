@@ -8,6 +8,7 @@ from decimal import Decimal
 import pytest
 
 from gestvet.modules.appointments.domain.entities import (
+    NO_SHOW_GRACE,
     TURNAROUND,
     Appointment,
     AppointmentStatus,
@@ -83,6 +84,61 @@ def test_el_camino_normal_de_una_cita() -> None:
 def test_una_pendiente_no_puede_completarse_sin_confirmar() -> None:
     with pytest.raises(IllegalStatusChange):
         _cita().complete(VETERINARIO)
+
+
+def test_el_personal_marca_la_inasistencia_a_mano() -> None:
+    cita = _cita()
+    cita.confirm(VETERINARIO)
+
+    cita.mark_no_show(VETERINARIO)
+
+    assert cita.status is AppointmentStatus.NO_SHOW
+    assert cita.status.is_final
+
+
+def test_una_no_asistida_no_revive() -> None:
+    cita = _cita()
+    cita.confirm(VETERINARIO)
+    cita.mark_no_show(VETERINARIO)
+
+    with pytest.raises(IllegalStatusChange):
+        cita.complete(VETERINARIO)
+
+
+def test_una_completada_no_puede_marcarse_como_no_asistida() -> None:
+    cita = _cita()
+    cita.confirm(VETERINARIO)
+    cita.complete(VETERINARIO)
+
+    with pytest.raises(IllegalStatusChange):
+        cita.mark_no_show(VETERINARIO)
+
+
+def test_el_estado_efectivo_es_el_mismo_mientras_no_pase_el_margen() -> None:
+    cita = _cita()
+    cita.confirm(VETERINARIO)
+    momento = cita.ends_at + NO_SHOW_GRACE - timedelta(minutes=1)
+
+    assert cita.effective_status(momento) is AppointmentStatus.CONFIRMED
+
+
+def test_el_estado_efectivo_pasa_a_no_asistio_tras_el_margen() -> None:
+    cita = _cita()
+    cita.confirm(VETERINARIO)
+    momento = cita.ends_at + NO_SHOW_GRACE
+
+    assert cita.effective_status(momento) is AppointmentStatus.NO_SHOW
+    # El cambio es solo de lectura: no reescribe el estado real.
+    assert cita.status is AppointmentStatus.CONFIRMED
+
+
+def test_una_completada_nunca_es_efectivamente_no_asistida() -> None:
+    cita = _cita()
+    cita.confirm(VETERINARIO)
+    cita.complete(VETERINARIO)
+    momento = cita.ends_at + NO_SHOW_GRACE * 10
+
+    assert cita.effective_status(momento) is AppointmentStatus.COMPLETED
 
 
 def test_una_cancelada_no_revive() -> None:

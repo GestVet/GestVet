@@ -31,6 +31,19 @@ class RegisterPetRequest(BaseModel):
     birth_date: date
 
 
+class RegisterPetForOwnerRequest(BaseModel):
+    """Lo mínimo para una mascota dada de alta por el personal en una emergencia.
+
+    No hay tiempo de preguntar raza ni fecha de nacimiento: esos datos quedan
+    con un valor provisorio y el dueño los completa después desde su propia
+    ficha, igual que cualquier otra mascota.
+    """
+
+    owner_id: int = Field(ge=1)
+    name: str = Field(min_length=1, max_length=MAX_NAME_LENGTH)
+    species: str = Field(min_length=1, max_length=MAX_SPECIES_LENGTH)
+
+
 class ChangePetStatusRequest(BaseModel):
     is_active: bool
 

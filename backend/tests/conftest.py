@@ -41,12 +41,18 @@ from gestvet.modules.availability.adapters.persistence import (
     models as availability_models,
 )
 from gestvet.modules.billing.adapters.persistence import models as billing_models
+from gestvet.modules.complaints.adapters.api.dependencies import get_evidence_storage
+from gestvet.modules.complaints.adapters.persistence import models as complaints_models
+from gestvet.modules.hospitalizations.adapters.persistence import (
+    models as hospitalizations_models,
+)
 from gestvet.modules.medical_records.adapters.api.dependencies import get_attachment_storage
 from gestvet.modules.medical_records.adapters.persistence import (
     models as medical_records_models,
 )
 from gestvet.modules.pets.adapters.persistence import models as pets_models
 from gestvet.modules.pets.domain.entities import Pet
+from gestvet.modules.reviews.adapters.persistence import models as reviews_models
 
 # Cuatro rondas en vez de doce. El algoritmo es el mismo que en producción, que
 # es lo que interesa probar; el costo deliberado no aporta nada a una prueba.
@@ -64,8 +70,11 @@ REGISTERED_MODELS = (
     appointments_models,
     availability_models,
     billing_models,
+    complaints_models,
+    hospitalizations_models,
     medical_records_models,
     pets_models,
+    reviews_models,
 )
 
 VALID_PASSWORD = "contrasena-larga"
@@ -160,6 +169,7 @@ async def client(
     app.dependency_overrides[get_token_service] = lambda: TEST_TOKEN_SERVICE
     app.dependency_overrides[get_email_sender] = lambda: RecordingEmailSender()
     app.dependency_overrides[get_attachment_storage] = lambda: InMemoryAttachmentStorage()
+    app.dependency_overrides[get_evidence_storage] = lambda: InMemoryAttachmentStorage()
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as http_client:
@@ -172,6 +182,7 @@ def build_user(
     first_name: str = "Ana",
     last_name: str = "Quispe",
     phone: str = "",
+    document_id: str = "",
     is_active: bool = True,
     can_cover_emergencies: bool = False,
 ) -> User:
@@ -180,6 +191,7 @@ def build_user(
         first_name=first_name,
         last_name=last_name,
         phone=phone,
+        document_id=document_id,
         role=role,
         password_hash=TEST_HASHER.hash(VALID_PASSWORD),
         is_active=is_active,

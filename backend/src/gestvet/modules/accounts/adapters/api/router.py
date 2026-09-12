@@ -8,17 +8,36 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from gestvet.core.auth import require_roles
+from gestvet.core.activity_log import ActivityRecorderDep
+from gestvet.core.auth import PrincipalDep, require_roles
 from gestvet.core.identity import STAFF_ROLES
-from gestvet.modules.accounts.adapters.api.dependencies import UserRepositoryDep
+from gestvet.modules.accounts.adapters.api.dependencies import (
+    PasswordHasherDep,
+    UserRepositoryDep,
+)
 from gestvet.modules.accounts.adapters.api.schemas import (
     ClientPageResponse,
+    RegisterWalkInClientRequest,
+    UpdateClientContactRequest,
     UserResponse,
+)
+from gestvet.modules.accounts.domain.exceptions import (
+    DocumentIdRequired,
+    EmailAlreadyRegistered,
+    InvalidDocumentId,
+    InvalidEmail,
+    UserNotFound,
 )
 from gestvet.modules.accounts.ports.user_repository import UserQuery
 from gestvet.modules.accounts.use_cases.list_clients import CLIENT_ROLES, ListUsers
+from gestvet.modules.accounts.use_cases.manage_accounts import (
+    RegisterWalkInClient,
+    RegisterWalkInClientCommand,
+    UpdateClientContact,
+    UpdateClientContactCommand,
+)
 
 DEFAULT_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 100
@@ -50,3 +69,62 @@ async def list_clients(
         items=[UserResponse.from_entity(user) for user in page.items],
         total=page.total,
     )
+
+
+@router.post(
+    "/walk-in",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Alta exprés de un cliente sin correo (emergencia)",
+)
+async def register_walk_in_client(
+    payload: RegisterWalkInClientRequest,
+    principal: PrincipalDep,
+    users: UserRepositoryDep,
+    hasher: PasswordHasherDep,
+    activity: ActivityRecorderDep,
+) -> UserResponse:
+    try:
+        user = await RegisterWalkInClient(users, hasher, activity)(
+            RegisterWalkInClientCommand(
+                actor_id=principal.user_id,
+                first_name=payload.first_name,
+                last_name=payload.last_name,
+                document_id=payload.document_id,
+                phone=payload.phone,
+            )
+        )
+    except (DocumentIdRequired, InvalidDocumentId) as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
+    return UserResponse.from_entity(user)
+
+
+@router.patch(
+    "/{client_id}/contact",
+    response_model=UserResponse,
+    summary="Completar el correo real de un cliente de alta exprés",
+)
+async def update_client_contact(
+    client_id: int,
+    payload: UpdateClientContactRequest,
+    principal: PrincipalDep,
+    users: UserRepositoryDep,
+    activity: ActivityRecorderDep,
+) -> UserResponse:
+    try:
+        user = await UpdateClientContact(users, activity)(
+            UpdateClientContactCommand(
+                user_id=client_id,
+                actor_id=principal.user_id,
+                email=str(payload.email),
+                phone=payload.phone,
+                document_id=payload.document_id,
+            )
+        )
+    except UserNotFound as error:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    except EmailAlreadyRegistered as error:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
+    except (InvalidEmail, InvalidDocumentId) as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
+    return UserResponse.from_entity(user)

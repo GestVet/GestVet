@@ -15,13 +15,17 @@ from gestvet.modules.appointments.domain.entities import Appointment, Appointmen
 from gestvet.modules.appointments.domain.exceptions import AppointmentNotFound, InvalidAppointment
 from gestvet.modules.appointments.ports.repositories import AppointmentRepository
 
-# Confirmar y completar son actos clínicos: los hace quien atiende.
-_CLINICAL_TRANSITIONS = frozenset({AppointmentStatus.CONFIRMED, AppointmentStatus.COMPLETED})
+# Confirmar, completar y marcar la inasistencia son actos clínicos: los hace
+# quien atiende, nunca el cliente.
+_CLINICAL_TRANSITIONS = frozenset(
+    {AppointmentStatus.CONFIRMED, AppointmentStatus.COMPLETED, AppointmentStatus.NO_SHOW}
+)
 
 _ASIENTO_POR_ESTADO: dict[AppointmentStatus, ActivityKind] = {
     AppointmentStatus.CONFIRMED: ActivityKind.APPOINTMENT_CONFIRMED,
     AppointmentStatus.COMPLETED: ActivityKind.APPOINTMENT_COMPLETED,
     AppointmentStatus.CANCELLED: ActivityKind.APPOINTMENT_CANCELLED,
+    AppointmentStatus.NO_SHOW: ActivityKind.APPOINTMENT_NO_SHOW,
 }
 
 
@@ -52,6 +56,8 @@ class ChangeAppointmentStatus:
             appointment.cancel(command.actor_id, command.reason)
         elif command.target is AppointmentStatus.CONFIRMED:
             appointment.confirm(command.actor_id)
+        elif command.target is AppointmentStatus.NO_SHOW:
+            appointment.mark_no_show(command.actor_id)
         else:
             appointment.complete(command.actor_id)
 

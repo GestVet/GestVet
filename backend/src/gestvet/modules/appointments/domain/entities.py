@@ -50,6 +50,7 @@ class AppointmentStatus(StrEnum):
     CONFIRMED = "confirmed"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
+    NO_SHOW = "no_show"
 
     @property
     def label(self) -> str:
@@ -70,21 +71,30 @@ _STATUS_LABELS: dict[AppointmentStatus, str] = {
     AppointmentStatus.CONFIRMED: "Confirmada",
     AppointmentStatus.COMPLETED: "Completada",
     AppointmentStatus.CANCELLED: "Cancelada",
+    AppointmentStatus.NO_SHOW: "No asistió",
 }
 
-_FINAL_STATUSES = frozenset({AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED})
+_FINAL_STATUSES = frozenset(
+    {AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED, AppointmentStatus.NO_SHOW}
+)
+
+# Cuánto se espera después de la hora de una cita antes de darla por no
+# asistida sola, sin que nadie la haya cerrado. El margen evita marcar así una
+# cita que el personal todavía no tuvo tiempo de completar.
+NO_SHOW_GRACE = timedelta(hours=3)
 
 # El original dejaba pasar cualquier estado a cualquier otro, así que una cita
 # cancelada podía revivir como completada. Acá las transiciones son explícitas.
 _ALLOWED_TRANSITIONS: dict[AppointmentStatus, frozenset[AppointmentStatus]] = {
     AppointmentStatus.PENDING: frozenset(
-        {AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED}
+        {AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED, AppointmentStatus.NO_SHOW}
     ),
     AppointmentStatus.CONFIRMED: frozenset(
-        {AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED}
+        {AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED, AppointmentStatus.NO_SHOW}
     ),
     AppointmentStatus.COMPLETED: frozenset(),
     AppointmentStatus.CANCELLED: frozenset(),
+    AppointmentStatus.NO_SHOW: frozenset(),
 }
 
 # Estados que siguen ocupando la agenda del veterinario.
@@ -170,6 +180,26 @@ class Appointment:
 
     def complete(self, actor_id: int) -> None:
         self._move_to(AppointmentStatus.COMPLETED, actor_id)
+
+    def mark_no_show(self, actor_id: int) -> None:
+        self._move_to(AppointmentStatus.NO_SHOW, actor_id)
+
+    def effective_status(self, now: datetime | None = None) -> AppointmentStatus:
+        """El estado que corresponde en este instante.
+
+        Una cita que sigue pendiente o confirmada mucho después de su hora,
+        sin que nadie la haya cerrado, no deja de ser una inasistencia porque
+        nadie volvió a mirarla: se calcula al leer, en vez de necesitar un
+        trabajo en segundo plano que la marque. Ver `QrCharge.effective_status`
+        para la misma idea aplicada a un cobro vencido.
+        """
+        reference = now or datetime.now(UTC)
+        if (
+            self.status in (AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED)
+            and reference >= self.ends_at + NO_SHOW_GRACE
+        ):
+            return AppointmentStatus.NO_SHOW
+        return self.status
 
     def cancel(self, actor_id: int, reason: str) -> None:
         cleaned = _trim(reason, "razón de cancelación", MAX_REASON_LENGTH)

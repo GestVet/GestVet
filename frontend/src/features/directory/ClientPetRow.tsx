@@ -5,6 +5,7 @@ import PetProfilePanel from '../../components/PetProfilePanel'
 import StatusBadge from '../../components/StatusBadge'
 import { useIsVeterinarian } from '../../store/session'
 import ClientPetHistory from './ClientPetHistory'
+import ClientPetHospitalizations from './ClientPetHospitalizations'
 
 interface ClientPetRowProps {
   readonly mascota: PetResponse
@@ -59,6 +60,7 @@ export default function ClientPetRow({ mascota, corrigiendo, onCorregir }: Clien
                 canEditClinicalFields={esVeterinario}
               />
               <ClientPetHistory petId={mascota.id} />
+              <ClientPetHospitalizations petId={mascota.id} />
             </div>
           </td>
         </tr>

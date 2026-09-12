@@ -309,7 +309,15 @@ async def test_un_cliente_ve_los_veterinarios_para_reservar(
     assert response.status_code == 200
     body = response.json()
     assert body["total"] == 1
-    assert set(body["items"][0]) == {"id", "full_name", "role"}
+    assert set(body["items"][0]) == {
+        "id",
+        "full_name",
+        "role",
+        "average_rating",
+        "review_count",
+    }
+    assert body["items"][0]["average_rating"] is None
+    assert body["items"][0]["review_count"] == 0
 
 
 async def test_los_veterinarios_no_se_listan_sin_credencial(client: AsyncClient) -> None:

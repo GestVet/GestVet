@@ -20,6 +20,7 @@ const esquema = z.object({
   first_name: z.string().min(1, 'Ingresá tu nombre'),
   last_name: z.string().min(1, 'Ingresá tu apellido'),
   phone: z.string().max(32),
+  document_id: z.string().regex(/^\d{8}$/, 'El DNI tiene 8 dígitos').or(z.literal('')),
   // Vacía significa "conservar la actual", así que la longitud solo se exige
   // cuando el campo trae algo.
   new_password: z
@@ -41,6 +42,7 @@ function valoresIniciales(user: UserResponse | null): Formulario {
     first_name: user?.first_name ?? '',
     last_name: user?.last_name ?? '',
     phone: user?.phone ?? '',
+    document_id: user?.document_id ?? '',
     new_password: '',
   }
 }
@@ -60,6 +62,7 @@ export default function ProfileView() {
         first_name: valores.first_name,
         last_name: valores.last_name,
         phone: valores.phone,
+        document_id: valores.document_id,
         new_password: valores.new_password === '' ? null : valores.new_password,
       }),
     onSuccess: updateUser,
@@ -98,6 +101,13 @@ export default function ProfileView() {
           inputMode="tel"
           field={register('phone')}
           error={errores.phone?.message}
+        />
+        <TextField
+          id="document_id"
+          label="DNI"
+          inputMode="numeric"
+          field={register('document_id')}
+          error={errores.document_id?.message}
         />
         <TextField
           id="new_password"

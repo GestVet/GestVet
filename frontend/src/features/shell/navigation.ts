@@ -31,8 +31,16 @@ export const NAV_ENTRIES: readonly NavEntry[] = [
   { to: '/citas', label: 'Citas', icon: 'cita', roles: TODOS },
   { to: '/agenda', label: 'Mi agenda', icon: 'agenda', roles: VETERINARIOS },
   { to: '/clientes', label: 'Clientes', icon: 'cliente', roles: PERSONAL },
+  {
+    to: '/emergencia-cliente-nuevo',
+    label: 'Emergencia (cliente nuevo)',
+    icon: 'emergencia',
+    roles: PERSONAL,
+  },
   { to: '/personal', label: 'Personal', icon: 'personal', roles: ['admin'] },
   { to: '/pagos', label: 'Pagos', icon: 'pago', roles: ['admin'] },
+  { to: '/reclamos', label: 'Reclamos', icon: 'alerta', roles: ['admin'] },
+  { to: '/indicadores', label: 'Indicadores', icon: 'indicadores', roles: ['admin'] },
   { to: '/movimientos', label: 'Movimientos', icon: 'buscar', roles: ['admin'] },
 ]
 

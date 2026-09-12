@@ -13,7 +13,7 @@ interface TextFieldProps {
   readonly hint?: string
   readonly placeholder?: string
   readonly autoComplete?: string
-  readonly inputMode?: 'tel' | 'text' | 'email'
+  readonly inputMode?: 'tel' | 'text' | 'email' | 'numeric'
 }
 
 /**

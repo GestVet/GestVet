@@ -8,6 +8,7 @@ auditoría.
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -15,6 +16,7 @@ from gestvet.modules.accounts.domain.entities import Role, User
 
 MIN_PASSWORD_LENGTH = 10
 MAX_PASSWORD_LENGTH = 128
+DOCUMENT_ID_PATTERN = r"^\d{8}$"
 
 
 class RegisterClientRequest(BaseModel):
@@ -22,6 +24,7 @@ class RegisterClientRequest(BaseModel):
     password: str = Field(min_length=MIN_PASSWORD_LENGTH, max_length=MAX_PASSWORD_LENGTH)
     first_name: str = Field(min_length=1, max_length=80)
     last_name: str = Field(min_length=1, max_length=120)
+    document_id: str = Field(pattern=DOCUMENT_ID_PATTERN)
     phone: str = Field(default="", max_length=32)
 
 
@@ -37,10 +40,24 @@ class RegisterStaffRequest(BaseModel):
     phone: str = Field(default="", max_length=32)
 
 
+class RegisterWalkInClientRequest(BaseModel):
+    first_name: str = Field(min_length=1, max_length=80)
+    last_name: str = Field(min_length=1, max_length=120)
+    document_id: str = Field(pattern=DOCUMENT_ID_PATTERN)
+    phone: str = Field(default="", max_length=32)
+
+
+class UpdateClientContactRequest(BaseModel):
+    email: EmailStr
+    phone: str = Field(default="", max_length=32)
+    document_id: str = Field(default="", pattern=r"^(\d{8})?$")
+
+
 class UpdateProfileRequest(BaseModel):
     first_name: str = Field(min_length=1, max_length=80)
     last_name: str = Field(min_length=1, max_length=120)
     phone: str = Field(default="", max_length=32)
+    document_id: str = Field(default="", pattern=r"^(\d{8})?$")
     new_password: str | None = Field(
         default=None, min_length=MIN_PASSWORD_LENGTH, max_length=MAX_PASSWORD_LENGTH
     )
@@ -80,6 +97,7 @@ class UserResponse(BaseModel):
     first_name: str
     last_name: str
     phone: str
+    document_id: str
     role: Role
     is_active: bool
     can_cover_emergencies: bool
@@ -93,6 +111,7 @@ class UserResponse(BaseModel):
             first_name=user.first_name,
             last_name=user.last_name,
             phone=user.phone,
+            document_id=user.document_id,
             role=user.role,
             is_active=user.is_active,
             can_cover_emergencies=user.can_cover_emergencies,
@@ -117,10 +136,23 @@ class VeterinarianResponse(BaseModel):
     id: int
     full_name: str
     role: Role
+    average_rating: Decimal | None
+    review_count: int
 
     @classmethod
-    def from_entity(cls, user: User) -> VeterinarianResponse:
-        return cls(id=user.id or 0, full_name=user.full_name, role=user.role)
+    def from_entity(
+        cls,
+        user: User,
+        average_rating: Decimal | None = None,
+        review_count: int = 0,
+    ) -> VeterinarianResponse:
+        return cls(
+            id=user.id or 0,
+            full_name=user.full_name,
+            role=user.role,
+            average_rating=average_rating,
+            review_count=review_count,
+        )
 
 
 class VeterinarianListResponse(BaseModel):

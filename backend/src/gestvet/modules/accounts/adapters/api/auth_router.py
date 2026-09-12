@@ -28,9 +28,11 @@ from gestvet.modules.accounts.adapters.api.schemas import (
     UserResponse,
 )
 from gestvet.modules.accounts.domain.exceptions import (
+    DocumentIdRequired,
     EmailAlreadyRegistered,
     InactiveAccount,
     InvalidCredentials,
+    InvalidDocumentId,
     InvalidEmail,
     InvalidResetToken,
     UserNotFound,
@@ -75,12 +77,13 @@ async def register_client(
                 password=payload.password,
                 first_name=payload.first_name,
                 last_name=payload.last_name,
+                document_id=payload.document_id,
                 phone=payload.phone,
             )
         )
     except EmailAlreadyRegistered as error:
         raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
-    except InvalidEmail as error:
+    except (InvalidEmail, InvalidDocumentId, DocumentIdRequired) as error:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
     return UserResponse.from_entity(user)
 
@@ -139,11 +142,14 @@ async def update_current_user(
                 first_name=payload.first_name,
                 last_name=payload.last_name,
                 phone=payload.phone,
+                document_id=payload.document_id,
                 new_password=payload.new_password,
             )
         )
     except UserNotFound as error:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    except InvalidDocumentId as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
     return UserResponse.from_entity(user)
 
 
