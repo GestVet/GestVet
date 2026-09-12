@@ -48,6 +48,8 @@ class ActivityKind(StrEnum):
     APPOINTMENT_COMPLETED = "appointment_completed"
     APPOINTMENT_CANCELLED = "appointment_cancelled"
     CLINICAL_ENTRY_ADDED = "clinical_entry_added"
+    ATTACHMENT_UPLOADED = "attachment_uploaded"
+    ATTACHMENT_DELETED = "attachment_deleted"
     PAYMENT_REGISTERED = "payment_registered"
     PAYMENT_VOIDED = "payment_voided"
 
@@ -74,6 +76,8 @@ _KIND_LABELS: dict[ActivityKind, str] = {
     ActivityKind.APPOINTMENT_COMPLETED: "Completó una cita",
     ActivityKind.APPOINTMENT_CANCELLED: "Canceló una cita",
     ActivityKind.CLINICAL_ENTRY_ADDED: "Agregó una entrada a la historia clínica",
+    ActivityKind.ATTACHMENT_UPLOADED: "Adjuntó un archivo a la historia clínica",
+    ActivityKind.ATTACHMENT_DELETED: "Quitó un adjunto de la historia clínica",
     ActivityKind.PAYMENT_REGISTERED: "Registró un pago",
     ActivityKind.PAYMENT_VOIDED: "Anuló un pago",
 }

@@ -14,6 +14,11 @@ export default function PetHistory({ petId }: PetHistoryProps) {
   })
 
   return (
-    <ClinicalEntryList items={historia.data?.items ?? []} isLoading={historia.isPending} />
+    <ClinicalEntryList
+      items={historia.data?.items ?? []}
+      isLoading={historia.isPending}
+      petId={petId}
+      canManageAttachments={false}
+    />
   )
 }

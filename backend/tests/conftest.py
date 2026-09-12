@@ -41,6 +41,7 @@ from gestvet.modules.availability.adapters.persistence import (
     models as availability_models,
 )
 from gestvet.modules.billing.adapters.persistence import models as billing_models
+from gestvet.modules.medical_records.adapters.api.dependencies import get_attachment_storage
 from gestvet.modules.medical_records.adapters.persistence import (
     models as medical_records_models,
 )
@@ -158,6 +159,7 @@ async def client(
     app.dependency_overrides[get_password_hasher] = lambda: TEST_HASHER
     app.dependency_overrides[get_token_service] = lambda: TEST_TOKEN_SERVICE
     app.dependency_overrides[get_email_sender] = lambda: RecordingEmailSender()
+    app.dependency_overrides[get_attachment_storage] = lambda: InMemoryAttachmentStorage()
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as http_client:
@@ -209,6 +211,25 @@ def build_pet(
         owner_id=owner_id,
         is_active=is_active,
     )
+
+
+class InMemoryAttachmentStorage:
+    """Guarda los bytes en un diccionario en vez de en disco.
+
+    Ninguna prueba necesita que el archivo sobreviva al proceso; le alcanza
+    con que `save` y `delete` se comporten como el adaptador real.
+    """
+
+    def __init__(self) -> None:
+        self.saved: dict[str, bytes] = {}
+
+    async def save(self, key: str, content: bytes, content_type: str) -> str:
+        del content_type
+        self.saved[key] = content
+        return f"http://test/attachments/{key}"
+
+    async def delete(self, key: str) -> None:
+        self.saved.pop(key, None)
 
 
 class RecordingActivity:

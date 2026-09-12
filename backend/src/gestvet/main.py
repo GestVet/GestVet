@@ -8,9 +8,11 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from gestvet.core.config import get_settings
@@ -72,6 +74,16 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+    )
+
+    # El directorio puede no existir todavía en un clon nuevo: recién se crea
+    # cuando se guarda el primer adjunto. `StaticFiles` exige que exista al
+    # montarse, así que se garantiza acá.
+    Path(settings.attachments_storage_dir).mkdir(parents=True, exist_ok=True)
+    app.mount(
+        "/attachments",
+        StaticFiles(directory=settings.attachments_storage_dir),
+        name="attachments",
     )
 
     @app.get(f"{API_PREFIX}/health", tags=["system"], summary="Sondeo de vida")

@@ -39,6 +39,7 @@ export type ClinicalEntryResponse = components['schemas']['ClinicalEntryResponse
 export type ClinicalEntryPageResponse = components['schemas']['ClinicalEntryPageResponse']
 export type AddClinicalEntryRequest = components['schemas']['AddClinicalEntryRequest']
 export type EntryKind = components['schemas']['EntryKind']
+export type AttachmentResponse = components['schemas']['AttachmentResponse']
 
 export type PaymentResponse = components['schemas']['PaymentResponse']
 export type PaymentPageResponse = components['schemas']['PaymentPageResponse']

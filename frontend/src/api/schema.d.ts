@@ -314,6 +314,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/medical-records/attachments/{attachment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Quitar un adjunto de la historia clínica */
+        delete: operations["delete_attachment_api_v1_medical_records_attachments__attachment_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/medical-records/{entry_id}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Adjuntar un archivo a una entrada de la historia clínica */
+        post: operations["upload_attachment_api_v1_medical_records__entry_id__attachments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/payments": {
         parameters: {
             query?: never;
@@ -549,7 +583,7 @@ export interface components {
          *     historial.
          * @enum {string}
          */
-        ActivityKind: "signed_in" | "client_registered" | "profile_updated" | "staff_registered" | "user_status_changed" | "guard_duty_toggled" | "pet_registered" | "pet_status_changed" | "pet_status_corrected" | "slot_published" | "slot_withdrawn" | "appointment_booked" | "emergency_opened" | "appointment_confirmed" | "appointment_completed" | "appointment_cancelled" | "clinical_entry_added" | "payment_registered" | "payment_voided";
+        ActivityKind: "signed_in" | "client_registered" | "profile_updated" | "staff_registered" | "user_status_changed" | "guard_duty_toggled" | "pet_registered" | "pet_status_changed" | "pet_status_corrected" | "slot_published" | "slot_withdrawn" | "appointment_booked" | "emergency_opened" | "appointment_confirmed" | "appointment_completed" | "appointment_cancelled" | "clinical_entry_added" | "attachment_uploaded" | "attachment_deleted" | "payment_registered" | "payment_voided";
         /** ActivityPageResponse */
         ActivityPageResponse: {
             /** Items */
@@ -673,6 +707,33 @@ export interface components {
             /** Price */
             price: string;
         };
+        /** AttachmentResponse */
+        AttachmentResponse: {
+            /** Clinical Entry Id */
+            clinical_entry_id: number;
+            /** Content Type */
+            content_type: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Filename */
+            filename: string;
+            /** Id */
+            id: number;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Uploaded By */
+            uploaded_by: number;
+            /** Url */
+            url: string;
+        };
+        /** Body_upload_attachment_api_v1_medical_records__entry_id__attachments_post */
+        Body_upload_attachment_api_v1_medical_records__entry_id__attachments_post: {
+            /** File */
+            file: string;
+        };
         /** BookAppointmentRequest */
         BookAppointmentRequest: {
             /** Appointment Type Id */
@@ -725,6 +786,8 @@ export interface components {
         ClinicalEntryResponse: {
             /** Appointment Id */
             appointment_id: number | null;
+            /** Attachments */
+            attachments: components["schemas"]["AttachmentResponse"][];
             /**
              * Created At
              * Format: date-time
@@ -1820,6 +1883,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClinicalEntryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_attachment_api_v1_medical_records_attachments__attachment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attachment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_attachment_api_v1_medical_records__entry_id__attachments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_attachment_api_v1_medical_records__entry_id__attachments_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentResponse"];
                 };
             };
             /** @description Validation Error */

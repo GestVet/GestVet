@@ -7,6 +7,7 @@ from decimal import Decimal
 
 from pydantic import AwareDatetime, BaseModel, Field
 
+from gestvet.modules.medical_records.domain.attachment import Attachment
 from gestvet.modules.medical_records.domain.entities import (
     MAX_DIAGNOSIS_LENGTH,
     MAX_NOTES_LENGTH,
@@ -27,6 +28,30 @@ class AddClinicalEntryRequest(BaseModel):
     occurred_at: AwareDatetime | None = None
 
 
+class AttachmentResponse(BaseModel):
+    id: int
+    clinical_entry_id: int
+    filename: str
+    content_type: str
+    size_bytes: int
+    url: str
+    uploaded_by: int
+    created_at: datetime
+
+    @classmethod
+    def from_entity(cls, attachment: Attachment) -> AttachmentResponse:
+        return cls(
+            id=attachment.id or 0,
+            clinical_entry_id=attachment.clinical_entry_id,
+            filename=attachment.filename,
+            content_type=attachment.content_type,
+            size_bytes=attachment.size_bytes,
+            url=attachment.url,
+            uploaded_by=attachment.uploaded_by,
+            created_at=attachment.created_at,
+        )
+
+
 class ClinicalEntryResponse(BaseModel):
     id: int
     pet_id: int
@@ -40,9 +65,12 @@ class ClinicalEntryResponse(BaseModel):
     weight_kg: Decimal | None
     occurred_at: datetime
     created_at: datetime
+    attachments: list[AttachmentResponse]
 
     @classmethod
-    def from_entity(cls, entry: ClinicalEntry) -> ClinicalEntryResponse:
+    def from_entity(
+        cls, entry: ClinicalEntry, attachments: list[Attachment] | None = None
+    ) -> ClinicalEntryResponse:
         return cls(
             id=entry.id or 0,
             pet_id=entry.pet_id,
@@ -56,6 +84,9 @@ class ClinicalEntryResponse(BaseModel):
             weight_kg=entry.weight_kg,
             occurred_at=entry.occurred_at,
             created_at=entry.created_at,
+            attachments=[
+                AttachmentResponse.from_entity(attachment) for attachment in attachments or []
+            ],
         )
 
 

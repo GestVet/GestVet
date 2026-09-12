@@ -26,3 +26,15 @@ class PetNotFound(MedicalRecordsError):
     def __init__(self, pet_id: int) -> None:
         super().__init__(f"No existe la mascota {pet_id}.")
         self.pet_id = pet_id
+
+
+class InvalidAttachment(MedicalRecordsError):
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
+
+
+class AttachmentNotFound(MedicalRecordsError):
+    def __init__(self, attachment_id: int) -> None:
+        super().__init__(f"No existe el adjunto {attachment_id}.")
+        self.attachment_id = attachment_id
