@@ -5,11 +5,13 @@ import { Link } from 'react-router'
 import { z } from 'zod'
 
 import { forgotPassword } from '../../api/auth'
-import FieldError from '../../components/FieldError'
 import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
+import TextField from '../../components/TextField'
+import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
+import AuthCard from './AuthCard'
 
 const esquema = z.object({
   email: z.email('Ingresá un correo válido'),
@@ -26,29 +28,35 @@ export default function ForgotPasswordView() {
   const pedir = useMutation({ mutationFn: forgotPassword })
 
   return (
-    <section className="card form">
-      <h1>Recuperar contraseña</h1>
-      <p className="muted">
-        Ingresá el correo con el que te registraste. Si existe una cuenta, te mandamos un
-        enlace para elegir una contraseña nueva.
-      </p>
-
+    <AuthCard
+      title="Recuperar contraseña"
+      description="Ingresá el correo con el que te registraste. Si existe una cuenta, te mandamos un enlace para elegir una contraseña nueva."
+      footer={
+        <Link to="/acceso" className="font-medium text-primary underline underline-offset-4">
+          Volver a iniciar sesión
+        </Link>
+      }
+    >
       {pedir.isSuccess ? (
         <FormMessage tone="ok">{pedir.data.message}</FormMessage>
       ) : (
         <form
-          className="form"
+          noValidate
+          className="flex flex-col gap-5"
           onSubmit={onSubmit(
             handleSubmit((valores) => {
               pedir.mutate(valores)
             }),
           )}
         >
-          <div className="field">
-            <label htmlFor="email">Correo</label>
-            <input id="email" type="email" autoComplete="email" {...register('email')} />
-            <FieldError message={formState.errors.email?.message} />
-          </div>
+          <TextField
+            id="email"
+            label="Correo"
+            type="email"
+            autoComplete="email"
+            field={register('email')}
+            error={formState.errors.email?.message}
+          />
 
           {pedir.isError ? (
             <FormMessage tone="error">
@@ -56,14 +64,12 @@ export default function ForgotPasswordView() {
             </FormMessage>
           ) : null}
 
-          <button type="submit" className="btn btn-blue" disabled={pedir.isPending}>
+          <Button type="submit" size="lg" className="h-10 w-full" disabled={pedir.isPending}>
             <Icon name="confirmar" size={16} />
             <span>{pedir.isPending ? 'Enviando…' : 'Mandar enlace'}</span>
-          </button>
+          </Button>
         </form>
       )}
-
-      <Link to="/acceso">Volver a iniciar sesión</Link>
-    </section>
+    </AuthCard>
   )
 }

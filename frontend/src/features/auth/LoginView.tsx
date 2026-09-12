@@ -5,12 +5,14 @@ import { Link, useNavigate } from 'react-router'
 import { z } from 'zod'
 
 import { login } from '../../api/auth'
-import FieldError from '../../components/FieldError'
 import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
+import TextField from '../../components/TextField'
+import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 import { useSession } from '../../store/session'
+import AuthCard from './AuthCard'
 
 const esquema = z.object({
   email: z.email('Ingresá un correo válido'),
@@ -36,40 +38,63 @@ export default function LoginView() {
   })
 
   return (
-    <section className="card form">
-      <h1>Iniciar sesión</h1>
-      <form className="form" onSubmit={onSubmit(
+    <AuthCard
+      title="Iniciar sesión"
+      footer={
+        <p className="m-0 text-muted-foreground">
+          ¿No tenés cuenta?{' '}
+          <Link to="/registro" className="font-medium text-primary underline underline-offset-4">
+            Registrate
+          </Link>
+        </p>
+      }
+    >
+      <form
+        noValidate
+        className="flex flex-col gap-5"
+        onSubmit={onSubmit(
           handleSubmit((valores) => {
             acceder.mutate(valores)
           }),
-        )}>
-        <div className="field">
-          <label htmlFor="email">Correo</label>
-          <input id="email" type="email" autoComplete="email" {...register('email')} />
-          <FieldError message={formState.errors.email?.message} />
-        </div>
+        )}
+      >
+        <TextField
+          id="email"
+          label="Correo"
+          type="email"
+          autoComplete="email"
+          field={register('email')}
+          error={formState.errors.email?.message}
+        />
 
-        <div className="field">
-          <label htmlFor="password">Contraseña</label>
-          <input
+        <div className="flex flex-col gap-2">
+          <TextField
             id="password"
+            label="Contraseña"
             type="password"
             autoComplete="current-password"
-            {...register('password')}
+            field={register('password')}
+            error={formState.errors.password?.message}
           />
-          <FieldError message={formState.errors.password?.message} />
-          <Link to="/olvide-contrasena">¿Olvidaste tu contraseña?</Link>
+          <Link
+            to="/olvide-contrasena"
+            className="self-end text-sm font-medium text-primary underline underline-offset-4"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
         </div>
 
         {acceder.isError ? (
-          <FormMessage tone="error">{errorMessage(acceder.error, 'No se pudo iniciar sesión.')}</FormMessage>
+          <FormMessage tone="error">
+            {errorMessage(acceder.error, 'No se pudo iniciar sesión.')}
+          </FormMessage>
         ) : null}
 
-        <button type="submit" className="btn btn-blue" disabled={acceder.isPending}>
+        <Button type="submit" size="lg" className="h-10 w-full" disabled={acceder.isPending}>
           <Icon name="confirmar" size={16} />
           <span>{acceder.isPending ? 'Entrando…' : 'Entrar'}</span>
-        </button>
+        </Button>
       </form>
-    </section>
+    </AuthCard>
   )
 }

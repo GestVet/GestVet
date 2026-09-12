@@ -20,13 +20,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
-/*
- ---break---
- */
 @custom-variant dark (&:is(.dark *));
-/*
- ---break---
- */
 @theme inline {
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', sans-serif;
@@ -47,6 +41,8 @@
     --color-input: var(--input);
     --color-border: var(--border);
     --color-destructive: var(--destructive);
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
     --color-muted-foreground: var(--muted-foreground);
@@ -70,81 +66,58 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 /*
- ---break---
+ * Paleta de GestVet sobre los tokens de shadcn/ui.
+ *
+ * Los valores salen de la paleta de style.css, asi las pantallas migradas y las
+ * que todavia no conviven sin saltos de color. Donde el color original no
+ * alcanza el contraste de WCAG 2.2 AA se oscurece lo justo:
+ *
+ * - el verde #28a745 con texto blanco da 3,1 a 1; `--success` usa #1e7b34;
+ * - el gris #777777 no llega a 4,5 a 1 ni sobre blanco ni sobre el fondo;
+ *   `--muted-foreground` usa #5c6370;
+ * - el borde #dddddd no llega a 3 a 1, que es lo minimo para distinguir un
+ *   campo; `--input` usa #7f8a98 y `--border`, que solo separa, conserva el
+ *   original.
+ *
+ * No hay tema oscuro: ninguna pantalla lo ofrece todavia.
  */
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
+    --background: #f4f7fb;
+    --foreground: #333333;
+    --card: #ffffff;
+    --card-foreground: #333333;
+    --popover: #ffffff;
+    --popover-foreground: #333333;
+    --primary: #004b8d;
+    --primary-foreground: #ffffff;
+    --secondary: #e6f0fa;
+    --secondary-foreground: #004b8d;
+    --muted: #eef2f7;
+    --muted-foreground: #5c6370;
+    --accent: #e6f0fa;
+    --accent-foreground: #004b8d;
+    --destructive: #c92a2a;
+    --success: #1e7b34;
+    --success-foreground: #ffffff;
+    --border: #dddddd;
+    --input: #7f8a98;
+    --ring: #0056b3;
+    --chart-1: #004b8d;
+    --chart-2: #1e7b34;
+    --chart-3: #0056b3;
+    --chart-4: #b8860b;
+    --chart-5: #c92a2a;
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    --sidebar: #ffffff;
+    --sidebar-foreground: #333333;
+    --sidebar-primary: #004b8d;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #e6f0fa;
+    --sidebar-accent-foreground: #004b8d;
+    --sidebar-border: #dddddd;
+    --sidebar-ring: #0056b3;
 }
-/*
- ---break---
- */
-.dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
-}
-/*
- ---break---
- */
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

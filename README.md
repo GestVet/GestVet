@@ -119,7 +119,15 @@ Las pantallas existentes siguen usando el CSS escrito a mano de `src/style.css` 
 
 Las tablas actuales se excluyen de las de shadcn con `data-slot`, que es el atributo que llevan todos sus componentes. Cuando la última pantalla deje de usar `style.css`, se borra su importación y la capa desaparece.
 
-El tema es el neutral por defecto de shadcn. La identidad visual propia del producto está pendiente y se define aparte.
+### Tema
+
+Los tokens de shadcn en `src/index.css` llevan la paleta de GestVet: el azul institucional `#004b8d` es `primary`, el verde de las acciones afirmativas es `success` (con su variante de botón) y el fondo gris azulado es `background`. Así una pantalla migrada y una que todavía no se ven de la misma familia.
+
+Donde un color original no alcanza el contraste de WCAG 2.2 AA se oscurece lo justo, y el archivo anota por qué: el verde con texto blanco, el gris de texto secundario y el borde de los campos. No hay tema oscuro.
+
+### Migración por áreas
+
+Las pantallas pasan a shadcn de a un área por vez, verificadas en escritorio y celular. Hechas: acceso, registro y recuperación de contraseña. Los campos compartidos `TextField`, `FieldError` y `FormMessage` ya usan shadcn, así que los formularios que los usan, migrados o no, tienen el mismo campo accesible.
 
 ## Requisitos
 
@@ -179,6 +187,21 @@ pnpm migrate                                              # aplicar hasta la úl
 uv run --directory backend alembic downgrade -1           # deshacer una
 uv run --directory backend alembic revision --autogenerate -m "descripcion"
 ```
+
+Para revisar las pantallas privadas hay cuentas de prueba, una por rol, que siembra un script. Solo corre contra una base local y es idempotente:
+
+```powershell
+pnpm seed
+```
+
+| Rol | Correo |
+|---|---|
+| Administrador | `admin.demo@example.com` |
+| Cliente, con una mascota | `cliente.demo@example.com` |
+| Veterinario | `veterinario.demo@example.com` |
+| Veterinario de emergencia | `guardia.demo@example.com` |
+
+Todas usan la contraseña `gestvet-demo-2026`. El dominio `example.com` está reservado, así que ninguna cuenta puede ser de una persona real.
 
 La aplicación no crea tablas al arrancar. Hacerlo dejaba que la base local se apartara del historial de migraciones sin que nadie se enterara hasta el despliegue. Una prueba aplica las migraciones sobre una base vacía y compara el resultado contra el modelo: si divergen, falla y dice qué migración falta.
 
