@@ -68,10 +68,14 @@ class PetDirectory(Protocol):
 
 
 class ScheduleDirectory(Protocol):
-    """Lo que las citas necesitan saber de la agenda: si la hora está publicada."""
+    """Lo que las citas necesitan saber de la agenda y de a quién atiende."""
 
     async def covers(
         self, veterinarian_id: int, starts_at: datetime, ends_at: datetime
     ) -> bool: ...
 
     async def veterinarians_on_duty(self, moment: datetime) -> list[int]: ...
+
+    async def is_bookable_for_normal_appointments(self, veterinarian_id: int) -> bool: ...
+
+    async def list_emergency_backup_candidates(self) -> list[int]: ...

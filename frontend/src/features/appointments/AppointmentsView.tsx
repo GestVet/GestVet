@@ -1,10 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 
-import { appointmentsQueryKey, fetchAppointments } from '../../api/appointments'
+import {
+  type AppointmentsFilter,
+  appointmentsFilterQueryKey,
+  fetchAppointments,
+} from '../../api/appointments'
 import type { AppointmentStatus } from '../../api/types'
 import StatusBadge from '../../components/StatusBadge'
 import TableShell from '../../components/TableShell'
+import { useIsVeterinarian } from '../../store/session'
 import AppointmentActions from './AppointmentActions'
+import AppointmentsFilters from './AppointmentsFilters'
 
 const COLUMNAS = ['Fecha', 'Duración', 'Estado', 'Descripción', 'Acciones'] as const
 
@@ -20,7 +27,23 @@ const TONO: Record<AppointmentStatus, string> = {
 const FORMATO = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
 
 export default function AppointmentsView() {
-  const citas = useQuery({ queryKey: appointmentsQueryKey, queryFn: fetchAppointments })
+  const atiende = useIsVeterinarian()
+  const [estado, setEstado] = useState('')
+  const [desde, setDesde] = useState('')
+  const [hasta, setHasta] = useState('')
+  const [soloEmergencias, setSoloEmergencias] = useState(false)
+
+  const filtro: AppointmentsFilter = {
+    status: estado === '' ? undefined : (estado as AppointmentStatus),
+    starts_after: desde === '' ? undefined : new Date(desde).toISOString(),
+    ends_before: hasta === '' ? undefined : new Date(hasta).toISOString(),
+    is_emergency: soloEmergencias ? true : undefined,
+  }
+
+  const citas = useQuery({
+    queryKey: appointmentsFilterQueryKey(filtro),
+    queryFn: () => fetchAppointments(filtro),
+  })
   const items = citas.data?.items ?? []
 
   return (
@@ -30,6 +53,18 @@ export default function AppointmentsView() {
       </div>
 
       <section className="card">
+        <AppointmentsFilters
+          estado={estado}
+          desde={desde}
+          hasta={hasta}
+          soloEmergencias={soloEmergencias}
+          mostrarEmergencias={atiende}
+          onEstadoChange={setEstado}
+          onDesdeChange={setDesde}
+          onHastaChange={setHasta}
+          onSoloEmergenciasChange={setSoloEmergencias}
+        />
+
         <TableShell
           columns={COLUMNAS}
           isLoading={citas.isPending}

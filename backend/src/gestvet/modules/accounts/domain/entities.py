@@ -16,6 +16,7 @@ from gestvet.core.identity import Role
 from gestvet.modules.accounts.domain.exceptions import (
     InvalidEmail,
     RoleNotAssignable,
+    RoleNotBackupEligible,
     RoleNotSelfAssignable,
     RoleNotSwappable,
 )
@@ -49,6 +50,9 @@ class User:
     password_hash: str
     phone: str = ""
     is_active: bool = True
+    # Solo tiene efecto en un veterinario normal: lo habilita como respaldo de
+    # guardia cuando todos los dedicados ya están cubriendo una emergencia.
+    can_cover_emergencies: bool = False
     id: int | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
@@ -90,3 +94,8 @@ def swapped_guard_role(role: Role) -> Role:
     if target is None:
         raise RoleNotSwappable(role.value)
     return target
+
+
+def ensure_role_is_backup_eligible(role: Role) -> None:
+    if role is not Role.VETERINARIAN:
+        raise RoleNotBackupEligible(role.value)

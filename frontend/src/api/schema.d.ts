@@ -297,6 +297,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pets/{pet_id}/correct-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Corregir el estado de una mascota (personal de la clínica) */
+        patch: operations["correct_pet_status_api_v1_pets__pet_id__correct_status_patch"];
+        trace?: never;
+    };
     "/api/v1/pets/{pet_id}/status": {
         parameters: {
             query?: never;
@@ -326,6 +343,23 @@ export interface paths {
         put?: never;
         /** Dar de alta un veterinario */
         post: operations["register_staff_api_v1_staff_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/{user_id}/emergency-coverage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Habilitar o quitar el respaldo de emergencias */
+        post: operations["toggle_emergency_coverage_api_v1_staff__user_id__emergency_coverage_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -411,7 +445,7 @@ export interface components {
          *     historial.
          * @enum {string}
          */
-        ActivityKind: "signed_in" | "client_registered" | "profile_updated" | "staff_registered" | "user_status_changed" | "guard_duty_toggled" | "pet_registered" | "pet_status_changed" | "slot_published" | "slot_withdrawn" | "appointment_booked" | "emergency_opened" | "appointment_confirmed" | "appointment_completed" | "appointment_cancelled";
+        ActivityKind: "signed_in" | "client_registered" | "profile_updated" | "staff_registered" | "user_status_changed" | "guard_duty_toggled" | "pet_registered" | "pet_status_changed" | "pet_status_corrected" | "slot_published" | "slot_withdrawn" | "appointment_booked" | "emergency_opened" | "appointment_confirmed" | "appointment_completed" | "appointment_cancelled";
         /** ActivityPageResponse */
         ActivityPageResponse: {
             /** Items */
@@ -551,6 +585,13 @@ export interface components {
             items: components["schemas"]["UserResponse"][];
             /** Total */
             total: number;
+        };
+        /** CorrectPetStatusRequest */
+        CorrectPetStatusRequest: {
+            /** Is Active */
+            is_active: boolean;
+            /** Reason */
+            reason: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -723,6 +764,11 @@ export interface components {
             /** Veterinarian Id */
             veterinarian_id: number;
         };
+        /** ToggleEmergencyCoverageRequest */
+        ToggleEmergencyCoverageRequest: {
+            /** Can Cover Emergencies */
+            can_cover_emergencies: boolean;
+        };
         /** UpdateProfileRequest */
         UpdateProfileRequest: {
             /** First Name */
@@ -739,6 +785,8 @@ export interface components {
         };
         /** UserResponse */
         UserResponse: {
+            /** Can Cover Emergencies */
+            can_cover_emergencies: boolean;
             /**
              * Created At
              * Format: date-time
@@ -1475,6 +1523,41 @@ export interface operations {
             };
         };
     };
+    correct_pet_status_api_v1_pets__pet_id__correct_status_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pet_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorrectPetStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PetResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     change_pet_status_api_v1_pets__pet_id__status_patch: {
         parameters: {
             query?: never;
@@ -1563,6 +1646,41 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    toggle_emergency_coverage_api_v1_staff__user_id__emergency_coverage_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ToggleEmergencyCoverageRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

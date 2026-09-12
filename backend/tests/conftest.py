@@ -145,6 +145,7 @@ def build_user(
     last_name: str = "Quispe",
     phone: str = "",
     is_active: bool = True,
+    can_cover_emergencies: bool = False,
 ) -> User:
     return User(
         email=email,
@@ -154,6 +155,7 @@ def build_user(
         role=role,
         password_hash=TEST_HASHER.hash(VALID_PASSWORD),
         is_active=is_active,
+        can_cover_emergencies=can_cover_emergencies,
     )
 
 

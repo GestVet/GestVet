@@ -29,6 +29,11 @@ class ChangePetStatusRequest(BaseModel):
     is_active: bool
 
 
+class CorrectPetStatusRequest(BaseModel):
+    is_active: bool
+    reason: str = Field(min_length=1, max_length=300)
+
+
 class PetResponse(BaseModel):
     id: int
     name: str

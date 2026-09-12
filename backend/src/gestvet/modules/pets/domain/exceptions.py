@@ -20,3 +20,14 @@ class PetNotFound(PetsError):
     def __init__(self, pet_id: int) -> None:
         super().__init__(f"No existe la mascota {pet_id}.")
         self.pet_id = pet_id
+
+
+class PetStatusIsFinal(PetsError):
+    """Fallecida es un hecho, no un estado administrativo: no se revierte solo."""
+
+    def __init__(self, pet_id: int) -> None:
+        super().__init__(
+            "La mascota ya fue registrada como fallecida. Si fue un error de carga, "
+            "pedile al personal de la clínica que lo corrija."
+        )
+        self.pet_id = pet_id

@@ -1,17 +1,43 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
 
 import { fetchMySlots, mySlotsQueryKey, withdrawSlot } from '../../api/availability'
 import Icon from '../../components/Icon'
 import TableShell from '../../components/TableShell'
+import AvailabilityRangeFilter, { type Rango } from './AvailabilityRangeFilter'
 import SlotForm from './SlotForm'
 
 const COLUMNAS = ['Desde', 'Hasta', 'Duración', 'Acciones'] as const
 
 const FORMATO = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
 
+function calcularVentana(rango: Rango, ancla: string): { desde?: string; hasta?: string } {
+  if (rango === 'todos' || ancla === '') {
+    return {}
+  }
+  const inicio = new Date(`${ancla}T00:00:00`)
+  const fin = new Date(inicio)
+  if (rango === 'dia') {
+    fin.setDate(fin.getDate() + 1)
+  } else if (rango === 'semana') {
+    fin.setDate(fin.getDate() + 7)
+  } else {
+    fin.setMonth(fin.getMonth() + 1)
+  }
+  return { desde: inicio.toISOString(), hasta: fin.toISOString() }
+}
+
 export default function AvailabilityView() {
   const queryClient = useQueryClient()
-  const tramos = useQuery({ queryKey: mySlotsQueryKey, queryFn: fetchMySlots })
+  const hoy = new Date().toISOString().slice(0, 10)
+  const [rango, setRango] = useState<Rango>('todos')
+  const [ancla, setAncla] = useState(hoy)
+
+  const ventana = useMemo(() => calcularVentana(rango, ancla), [rango, ancla])
+  const tramos = useQuery({
+    queryKey: [...mySlotsQueryKey, ventana],
+    queryFn: () => fetchMySlots(ventana.desde, ventana.hasta),
+  })
 
   const retirar = useMutation({
     mutationFn: withdrawSlot,
@@ -32,6 +58,12 @@ export default function AvailabilityView() {
 
       <section className="card">
         <h2>Tramos publicados</h2>
+        <AvailabilityRangeFilter
+          rango={rango}
+          ancla={ancla}
+          onRangoChange={setRango}
+          onAnclaChange={setAncla}
+        />
         <TableShell
           columns={COLUMNAS}
           isLoading={tramos.isPending}

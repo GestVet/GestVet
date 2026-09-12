@@ -11,13 +11,18 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from gestvet.core.activity import ActivityKind, ActivityRecorder
-from gestvet.modules.appointments.domain.entities import Appointment
+from gestvet.modules.appointments.domain.entities import (
+    ACTIVE_STATUSES,
+    Appointment,
+    clinic_day_window,
+)
 from gestvet.modules.appointments.domain.exceptions import (
     AppointmentTypeNotFound,
     NoEmergencyVeterinarian,
     PetNotOwned,
 )
 from gestvet.modules.appointments.ports.repositories import (
+    AppointmentQuery,
     AppointmentRepository,
     AppointmentTypeRepository,
     PetDirectory,
@@ -73,12 +78,47 @@ class OpenEmergency:
         return abierta
 
     async def _pick_veterinarian(self, moment: datetime) -> int:
-        on_duty = await self._schedule.veterinarians_on_duty(moment)
-        if not on_duty:
-            raise NoEmergencyVeterinarian()
-
         # Entre los de guardia gana el menos cargado. El original ordenaba por
         # la misma cuenta, pero además descartaba a cualquiera que tuviera una
         # cita activa, así que con la clínica llena no asignaba a nadie.
-        loads = [(await self._appointments.count_active_for(vet_id), vet_id) for vet_id in on_duty]
-        return min(loads)[1]
+        on_duty = await self._schedule.veterinarians_on_duty(moment)
+        menos_cargado: int | None = None
+        if on_duty:
+            loads = [
+                (await self._appointments.count_active_for(vet_id), vet_id) for vet_id in on_duty
+            ]
+            carga_minima, menos_cargado = min(loads)
+            if carga_minima == 0:
+                return menos_cargado
+
+        # Todos los dedicados ya tienen algo activo, o no hay ninguno de
+        # guardia: un veterinario normal habilitado como respaldo, si le queda
+        # libre el resto de la jornada, cubre antes que sobrecargar a uno solo.
+        respaldo = await self._pick_free_backup(moment)
+        if respaldo is not None:
+            return respaldo
+
+        if menos_cargado is not None:
+            return menos_cargado
+
+        raise NoEmergencyVeterinarian()
+
+    async def _pick_free_backup(self, moment: datetime) -> int | None:
+        candidatos = await self._schedule.list_emergency_backup_candidates()
+        if not candidatos:
+            return None
+
+        _, fin_de_jornada = clinic_day_window(moment)
+        for candidato_id in candidatos:
+            pagina = await self._appointments.search(
+                AppointmentQuery(
+                    veterinarian_id=candidato_id,
+                    statuses=ACTIVE_STATUSES,
+                    starts_after=moment,
+                    ends_before=fin_de_jornada,
+                    limit=1,
+                )
+            )
+            if pagina.total == 0:
+                return candidato_id
+        return None

@@ -12,6 +12,7 @@ from gestvet.modules.appointments.domain.entities import (
     Appointment,
     AppointmentStatus,
     AppointmentType,
+    clinic_day_window,
 )
 from gestvet.modules.appointments.domain.exceptions import IllegalStatusChange, InvalidAppointment
 
@@ -151,3 +152,30 @@ def test_un_motivo_necesita_nombre_duracion_y_precio_validos() -> None:
 def test_un_motivo_no_puede_durar_una_jornada_entera() -> None:
     with pytest.raises(InvalidAppointment):
         AppointmentType(name="Consulta", duration=timedelta(hours=9), price=Decimal("10"))
+
+
+def test_la_ventana_del_dia_de_la_clinica_no_es_el_dia_calendario_utc() -> None:
+    """Las 20:00 en Trujillo caen del otro lado de la medianoche en UTC.
+
+    Comparar `.date()` en UTC directamente confundiría esta hora con el día
+    calendario siguiente, aunque para la clínica sigue siendo la misma
+    jornada.
+    """
+    noche_en_trujillo = datetime(2026, 9, 13, 22, 0, tzinfo=UTC) + timedelta(hours=5)
+    assert noche_en_trujillo.date() == datetime(2026, 9, 14).date()
+
+    manana_en_trujillo = datetime(2026, 9, 13, 8, 0, tzinfo=UTC) + timedelta(hours=5)
+    inicio, fin = clinic_day_window(manana_en_trujillo)
+
+    assert inicio <= manana_en_trujillo < fin
+    assert inicio <= noche_en_trujillo < fin
+
+
+def test_la_ventana_del_dia_dura_veinticuatro_horas_y_excluye_los_vecinos() -> None:
+    momento = datetime(2026, 9, 13, 12, 0, tzinfo=UTC)
+    inicio, fin = clinic_day_window(momento)
+
+    assert fin - inicio == timedelta(days=1)
+    assert inicio <= momento < fin
+    assert momento - timedelta(days=1) < inicio
+    assert momento + timedelta(days=1) >= fin

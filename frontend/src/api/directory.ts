@@ -55,3 +55,13 @@ export async function toggleGuardDuty(userId: number): Promise<UserResponse> {
   const { data } = await api.post<UserResponse>(`/staff/${String(userId)}/guard-duty`)
   return data
 }
+
+export async function toggleEmergencyCoverage(
+  userId: number,
+  canCoverEmergencies: boolean,
+): Promise<UserResponse> {
+  const { data } = await api.post<UserResponse>(`/staff/${String(userId)}/emergency-coverage`, {
+    can_cover_emergencies: canCoverEmergencies,
+  })
+  return data
+}

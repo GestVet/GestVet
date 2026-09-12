@@ -138,9 +138,10 @@ async def test_la_baja_de_una_mascota_ajena_responde_que_no_existe(
     assert response.status_code == 404
 
 
-async def test_la_baja_y_el_alta_de_una_mascota_propia(
+async def test_la_baja_de_una_mascota_propia_es_definitiva(
     client: AsyncClient, session: AsyncSession
 ) -> None:
+    """Fallecida es un hecho, no un estado administrativo: el dueño no la revierte."""
     ana = await _client_account(session)
     pets = SqlAlchemyPetRepository(session)
     propia = await pets.add(build_pet(owner_id=ana.id or 0))
@@ -153,10 +154,51 @@ async def test_la_baja_y_el_alta_de_una_mascota_propia(
     assert baja.status_code == 200
     assert baja.json()["is_active"] is False
 
-    alta = await client.patch(
+    intento_de_alta = await client.patch(
         f"{PETS_URL}/{propia.id}/status", json={"is_active": True}, headers=cabeceras
     )
-    assert alta.json()["is_active"] is True
+    assert intento_de_alta.status_code == 409
+
+
+async def test_el_personal_corrige_un_error_de_carga(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    ana = await _client_account(session)
+    personal = await _staff_account(session)
+    pets = SqlAlchemyPetRepository(session)
+    propia = await pets.add(build_pet(owner_id=ana.id or 0, is_active=False))
+    await session.commit()
+
+    sin_motivo = await client.patch(
+        f"{PETS_URL}/{propia.id}/correct-status",
+        json={"is_active": True, "reason": ""},
+        headers=authorization_for(personal),
+    )
+    assert sin_motivo.status_code == 422
+
+    corregida = await client.patch(
+        f"{PETS_URL}/{propia.id}/correct-status",
+        json={"is_active": True, "reason": "Se cargó como fallecida por error"},
+        headers=authorization_for(personal),
+    )
+    assert corregida.status_code == 200
+    assert corregida.json()["is_active"] is True
+
+
+async def test_un_cliente_no_puede_corregir_el_estado(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    ana = await _client_account(session)
+    pets = SqlAlchemyPetRepository(session)
+    propia = await pets.add(build_pet(owner_id=ana.id or 0, is_active=False))
+    await session.commit()
+
+    response = await client.patch(
+        f"{PETS_URL}/{propia.id}/correct-status",
+        json={"is_active": True, "reason": "Error de carga"},
+        headers=authorization_for(ana),
+    )
+    assert response.status_code == 403
 
 
 async def test_el_personal_consulta_las_mascotas_de_un_cliente(

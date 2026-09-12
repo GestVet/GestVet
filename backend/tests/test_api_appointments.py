@@ -17,6 +17,10 @@ from gestvet.core.identity import Role
 from gestvet.modules.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
+from gestvet.modules.appointments.adapters.persistence.repositories import (
+    SqlAlchemyAppointmentRepository,
+)
+from gestvet.modules.appointments.domain.entities import Appointment
 from gestvet.modules.availability.adapters.persistence.sqlalchemy_availability_repository import (
     SqlAlchemyAvailabilityRepository,
 )
@@ -390,6 +394,142 @@ async def test_sin_veterinario_de_guardia_la_emergencia_lo_dice(
 
     assert response.status_code == 409
     assert "telefono" in response.json()["detail"] or "teléfono" in response.json()["detail"]
+
+
+async def test_el_veterinario_de_guardia_no_recibe_citas_normales(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """HU09: exclusividad del lado servidor, no solo en el selector del frontend."""
+    escenario = await montar(session, rol_veterinario=Role.EMERGENCY_VETERINARIAN)
+
+    response = await client.post(
+        URL, json=escenario.reserva(), headers=authorization_for(escenario.cliente)
+    )
+
+    assert response.status_code == 409
+
+
+async def test_el_respaldo_cubre_cuando_todos_los_de_guardia_estan_ocupados(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """HU10: en vez de amontonar en el mismo, un respaldo libre cubre la siguiente."""
+    escenario = await montar(session, rol_veterinario=Role.EMERGENCY_VETERINARIAN)
+    users = SqlAlchemyUserRepository(session)
+    respaldo = await users.add(
+        build_user("respaldo@example.com", role=Role.VETERINARIAN, can_cover_emergencies=True)
+    )
+    slots = SqlAlchemyAvailabilityRepository(session)
+    ahora = datetime.now(UTC)
+    await slots.add(
+        AvailabilitySlot(
+            veterinarian_id=escenario.veterinario.id or 0,
+            starts_at=ahora - timedelta(hours=1),
+            ends_at=ahora + timedelta(hours=7),
+        )
+    )
+    await session.commit()
+    cabeceras = authorization_for(escenario.cliente)
+
+    primera = await client.post(
+        f"{URL}/emergency", json={"pet_id": escenario.mascota.id}, headers=cabeceras
+    )
+    assert primera.status_code == 201
+    assert primera.json()["veterinarian_id"] == escenario.veterinario.id
+
+    otro_cliente = await users.add(build_user("beto@example.com"))
+    otra_mascota = await SqlAlchemyPetRepository(session).add(
+        build_pet(owner_id=otro_cliente.id or 0, name="Luna")
+    )
+    await session.commit()
+
+    segunda = await client.post(
+        f"{URL}/emergency",
+        json={"pet_id": otra_mascota.id},
+        headers=authorization_for(otro_cliente),
+    )
+
+    assert segunda.status_code == 201
+    assert segunda.json()["veterinarian_id"] == respaldo.id
+
+
+async def test_el_dia_que_bloquea_al_respaldo_es_el_dia_local_no_el_utc(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """Regresión de un bug encontrado a mano.
+
+    Una emergencia tarde en la noche (hora de Trujillo) cae del otro lado de
+    la medianoche en UTC. Compararlas por fecha calendario UTC dejaba pasar
+    una cita normal más temprano ese mismo día local.
+    """
+    escenario = await montar(session, con_agenda=False)
+    slots = SqlAlchemyAvailabilityRepository(session)
+    await slots.add(
+        AvailabilitySlot(
+            veterinarian_id=escenario.veterinario.id or 0,
+            starts_at=datetime(2026, 9, 13, 13, 0, tzinfo=UTC),
+            ends_at=datetime(2026, 9, 13, 20, 0, tzinfo=UTC),
+        )
+    )
+    appointments = SqlAlchemyAppointmentRepository(session)
+    await appointments.add(
+        Appointment(
+            scheduled_at=datetime(2026, 9, 14, 4, 0, tzinfo=UTC),
+            duration=timedelta(hours=1),
+            client_id=escenario.cliente.id or 0,
+            pet_id=escenario.mascota.id or 0,
+            veterinarian_id=escenario.veterinario.id or 0,
+            appointment_type_id=EMERGENCY_TYPE_ID,
+        )
+    )
+    await session.commit()
+
+    intento = await client.post(
+        URL,
+        json=escenario.reserva(scheduled_at=datetime(2026, 9, 13, 14, 0, tzinfo=UTC).isoformat()),
+        headers=authorization_for(escenario.cliente),
+    )
+
+    assert intento.status_code == 409
+
+
+async def test_el_respaldo_no_recibe_citas_normales_mientras_cubre(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """HU10: cubrir una emergencia bloquea sus citas normales por el resto del día."""
+    escenario = await montar(session, rol_veterinario=Role.EMERGENCY_VETERINARIAN, con_agenda=False)
+    users = SqlAlchemyUserRepository(session)
+    respaldo = await users.add(
+        build_user("respaldo@example.com", role=Role.VETERINARIAN, can_cover_emergencies=True)
+    )
+    await session.commit()
+
+    abierta = await client.post(
+        f"{URL}/emergency",
+        json={"pet_id": escenario.mascota.id},
+        headers=authorization_for(escenario.cliente),
+    )
+    assert abierta.status_code == 201
+    assert abierta.json()["veterinarian_id"] == respaldo.id
+
+    ahora = datetime.now(UTC)
+    slots = SqlAlchemyAvailabilityRepository(session)
+    await slots.add(
+        AvailabilitySlot(
+            veterinarian_id=respaldo.id or 0, starts_at=ahora, ends_at=ahora + timedelta(hours=8)
+        )
+    )
+    await session.commit()
+
+    intento = await client.post(
+        URL,
+        json=escenario.reserva(
+            veterinarian_id=respaldo.id,
+            scheduled_at=(ahora + timedelta(hours=2)).isoformat(),
+        ),
+        headers=authorization_for(escenario.cliente),
+    )
+
+    assert intento.status_code == 409
 
 
 async def test_un_veterinario_comun_no_atiende_emergencias(

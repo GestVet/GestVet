@@ -7,8 +7,13 @@ export function slotsOfVeterinarianQueryKey(veterinarianId: number) {
   return ['availability', veterinarianId] as const
 }
 
-export async function fetchMySlots(): Promise<SlotListResponse> {
-  const { data } = await api.get<SlotListResponse>('/availability/mine')
+export async function fetchMySlots(
+  startsAfter?: string,
+  endsBefore?: string,
+): Promise<SlotListResponse> {
+  const { data } = await api.get<SlotListResponse>('/availability/mine', {
+    params: { starts_after: startsAfter, ends_before: endsBefore },
+  })
   return data
 }
 

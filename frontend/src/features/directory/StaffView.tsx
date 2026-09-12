@@ -10,7 +10,7 @@ import { errorMessage } from '../../services/api'
 import StaffForm from './StaffForm'
 import StaffRowActions from './StaffRowActions'
 
-const COLUMNAS = ['Nombre', 'Correo', 'Rol', 'Estado', 'Acciones'] as const
+const COLUMNAS = ['Nombre', 'Correo', 'Rol', 'Respaldo', 'Estado', 'Acciones'] as const
 
 const ETIQUETA_DE_ROL: Record<UserRole, string> = {
   admin: 'Administración',
@@ -54,6 +54,13 @@ export default function StaffView() {
               </td>
               <td>{cuenta.email}</td>
               <td>{ETIQUETA_DE_ROL[cuenta.role]}</td>
+              <td>
+                {cuenta.role === 'veterinarian' && cuenta.can_cover_emergencies ? (
+                  <StatusBadge label="Habilitado" tone="confirmed" />
+                ) : (
+                  '—'
+                )}
+              </td>
               <td>
                 <StatusBadge
                   label={cuenta.is_active ? 'Activa' : 'Inactiva'}

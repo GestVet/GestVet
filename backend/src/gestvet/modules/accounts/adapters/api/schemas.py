@@ -50,6 +50,10 @@ class ChangeUserStatusRequest(BaseModel):
     is_active: bool
 
 
+class ToggleEmergencyCoverageRequest(BaseModel):
+    can_cover_emergencies: bool
+
+
 class LoginRequest(BaseModel):
     email: EmailStr
     # Sin longitud mínima: validar aquí diría cuánto mide una contraseña válida
@@ -65,6 +69,7 @@ class UserResponse(BaseModel):
     phone: str
     role: Role
     is_active: bool
+    can_cover_emergencies: bool
     created_at: datetime
 
     @classmethod
@@ -77,6 +82,7 @@ class UserResponse(BaseModel):
             phone=user.phone,
             role=user.role,
             is_active=user.is_active,
+            can_cover_emergencies=user.can_cover_emergencies,
             created_at=user.created_at,
         )
 

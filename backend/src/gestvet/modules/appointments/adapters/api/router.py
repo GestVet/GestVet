@@ -41,6 +41,7 @@ from gestvet.modules.appointments.domain.exceptions import (
     OutsideAvailability,
     OverlappingAppointment,
     PetNotOwned,
+    VeterinarianUnavailable,
 )
 from gestvet.modules.appointments.ports.repositories import AppointmentQuery
 from gestvet.modules.appointments.use_cases.book_appointment import (
@@ -62,7 +63,12 @@ router = APIRouter()
 ClientDep = Annotated[Principal, Depends(require_roles(Role.CLIENT))]
 VeterinarianDep = Annotated[Principal, Depends(require_roles(*VETERINARIAN_ROLES))]
 
-_CONFLICT_ERRORS = (OutsideAvailability, OverlappingAppointment, NoEmergencyVeterinarian)
+_CONFLICT_ERRORS = (
+    OutsideAvailability,
+    OverlappingAppointment,
+    NoEmergencyVeterinarian,
+    VeterinarianUnavailable,
+)
 
 
 @router.get(

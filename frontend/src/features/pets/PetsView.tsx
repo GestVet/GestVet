@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { changePetStatus, fetchMyPets, myPetsQueryKey } from '../../api/pets'
+import FormMessage from '../../components/FormMessage'
 import StatusBadge from '../../components/StatusBadge'
 import TableShell from '../../components/TableShell'
+import { errorMessage } from '../../services/api'
 import PetForm from './PetForm'
 
 const COLUMNAS = ['Nombre', 'Especie', 'Raza', 'Edad', 'Estado', 'Acciones'] as const
@@ -11,8 +13,8 @@ export default function PetsView() {
   const queryClient = useQueryClient()
   const mascotas = useQuery({ queryKey: myPetsQueryKey, queryFn: fetchMyPets })
 
-  const cambiarEstado = useMutation({
-    mutationFn: ({ id, activa }: { id: number; activa: boolean }) => changePetStatus(id, activa),
+  const darDeBaja = useMutation({
+    mutationFn: (id: number) => changePetStatus(id, false),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: myPetsQueryKey })
     },
@@ -30,6 +32,11 @@ export default function PetsView() {
 
       <section className="card">
         <h2>Registradas</h2>
+        {darDeBaja.isError ? (
+          <FormMessage tone="error">
+            {errorMessage(darDeBaja.error, 'No se pudo actualizar el estado.')}
+          </FormMessage>
+        ) : null}
         <TableShell
           columns={COLUMNAS}
           isLoading={mascotas.isPending}
@@ -44,21 +51,33 @@ export default function PetsView() {
               <td>{mascota.age_in_years} años</td>
               <td>
                 <StatusBadge
-                  label={mascota.is_active ? 'Activa' : 'Dada de baja'}
+                  label={mascota.is_active ? 'Activa' : 'Fallecida'}
                   tone={mascota.is_active ? 'completed' : undefined}
                 />
               </td>
               <td>
-                <button
-                  type="button"
-                  className={mascota.is_active ? 'btn btn-plain' : 'btn btn-green'}
-                  disabled={cambiarEstado.isPending}
-                  onClick={() => {
-                    cambiarEstado.mutate({ id: mascota.id, activa: !mascota.is_active })
-                  }}
-                >
-                  {mascota.is_active ? 'Dar de baja' : 'Reactivar'}
-                </button>
+                {mascota.is_active ? (
+                  <button
+                    type="button"
+                    className="btn btn-plain"
+                    disabled={darDeBaja.isPending}
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          `¿Confirmás que ${mascota.name} falleció? Esta acción no se puede deshacer; solo el personal de la clínica puede corregirla si fue un error.`,
+                        )
+                      ) {
+                        darDeBaja.mutate(mascota.id)
+                      }
+                    }}
+                  >
+                    Registrar fallecimiento
+                  </button>
+                ) : (
+                  <span className="muted">
+                    Si fue un error, pedile al personal de la clínica que lo corrija.
+                  </span>
+                )}
               </td>
             </tr>
           ))}

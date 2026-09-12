@@ -10,15 +10,22 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from gestvet.core.activity import ActivityKind, ActivityRecorder
-from gestvet.modules.appointments.domain.entities import Appointment, AppointmentType
+from gestvet.modules.appointments.domain.entities import (
+    ACTIVE_STATUSES,
+    Appointment,
+    AppointmentType,
+    clinic_day_window,
+)
 from gestvet.modules.appointments.domain.exceptions import (
     AppointmentTypeNotFound,
     InvalidAppointment,
     OutsideAvailability,
     OverlappingAppointment,
     PetNotOwned,
+    VeterinarianUnavailable,
 )
 from gestvet.modules.appointments.ports.repositories import (
+    AppointmentQuery,
     AppointmentRepository,
     AppointmentTypeRepository,
     PetDirectory,
@@ -59,6 +66,13 @@ class BookAppointment:
         if not await self._pets.is_owned_by(command.pet_id, command.client_id):
             raise PetNotOwned(command.pet_id)
 
+        # El de guardia solo recibe emergencias. El original filtraba esto en
+        # el listado; acá también se exige del lado servidor.
+        if not await self._schedule.is_bookable_for_normal_appointments(command.veterinarian_id):
+            raise VeterinarianUnavailable(
+                "El veterinario elegido no está disponible para citas normales."
+            )
+
         appointment = Appointment(
             scheduled_at=command.scheduled_at,
             duration=appointment_type.duration,
@@ -70,6 +84,7 @@ class BookAppointment:
         )
 
         await self._require_free_slot(appointment)
+        await self._require_not_covering_emergency(appointment)
         reservada = await self._appointments.add(appointment)
         await self._activity.record(
             command.client_id, ActivityKind.APPOINTMENT_BOOKED, appointment_type.name
@@ -103,3 +118,25 @@ class BookAppointment:
         )
         if conflicts:
             raise OverlappingAppointment()
+
+    async def _require_not_covering_emergency(self, appointment: Appointment) -> None:
+        """Un respaldo con una emergencia activa no recibe citas normales ese día.
+
+        Solo se activa para un veterinario normal que además está cubriendo:
+        el de guardia dedicado ya está excluido del selector por su rol.
+        """
+        day_start, day_end = clinic_day_window(appointment.scheduled_at)
+        cubriendo = await self._appointments.search(
+            AppointmentQuery(
+                veterinarian_id=appointment.veterinarian_id,
+                is_emergency=True,
+                statuses=ACTIVE_STATUSES,
+                starts_after=day_start,
+                ends_before=day_end,
+                limit=1,
+            )
+        )
+        if cubriendo.total > 0:
+            raise VeterinarianUnavailable(
+                "El veterinario está cubriendo una emergencia y no recibe citas normales hoy."
+            )

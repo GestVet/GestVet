@@ -3,6 +3,9 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router'
 import Icon from '../../components/Icon'
 import { useSession } from '../../store/session'
 import { entriesForRole } from './navigation'
+import ToastStack from './ToastStack'
+import { useClientAppointmentAlerts } from './useClientAppointmentAlerts'
+import { useVeterinarianEmergencyAlerts } from './useVeterinarianEmergencyAlerts'
 
 const ANIO = new Date().getFullYear()
 
@@ -14,6 +17,8 @@ export default function AppShell() {
   const user = useSession((state) => state.user)
   const signOut = useSession((state) => state.signOut)
   const navigate = useNavigate()
+  useClientAppointmentAlerts()
+  useVeterinarianEmergencyAlerts()
 
   const entradas = user === null ? [] : entriesForRole(user.role)
 
@@ -63,6 +68,8 @@ export default function AppShell() {
           )}
         </div>
       </header>
+
+      <ToastStack />
 
       <main className="page-container">
         <Outlet />

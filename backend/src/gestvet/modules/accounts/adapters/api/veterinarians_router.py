@@ -17,14 +17,16 @@ from gestvet.modules.accounts.adapters.api.schemas import (
     VeterinarianResponse,
 )
 from gestvet.modules.accounts.ports.user_repository import UserQuery
-from gestvet.modules.accounts.use_cases.list_clients import STAFF_LISTING_ROLES, ListUsers
+from gestvet.modules.accounts.use_cases.list_clients import BOOKABLE_VETERINARIAN_ROLES, ListUsers
 
 router = APIRouter(dependencies=[Depends(get_principal)])
 
 
 @router.get("", response_model=VeterinarianListResponse, summary="Veterinarios que atienden")
 async def list_veterinarians(users: UserRepositoryDep) -> VeterinarianListResponse:
-    page = await ListUsers(users, STAFF_LISTING_ROLES)(
+    # El de guardia no aparece acá: HU09 lo reserva para el reparto automático
+    # de emergencias, no para que un cliente lo elija a mano.
+    page = await ListUsers(users, BOOKABLE_VETERINARIAN_ROLES)(
         UserQuery(is_active=True, limit=MAX_PAGE_SIZE)
     )
     return VeterinarianListResponse(

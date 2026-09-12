@@ -17,6 +17,7 @@ from gestvet.core.auth import PrincipalDep, require_roles
 from gestvet.core.identity import Role
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from gestvet.modules.accounts.adapters.api.dependencies import (
+    AppointmentDirectoryDep,
     PasswordHasherDep,
     UserRepositoryDep,
 )
@@ -26,6 +27,7 @@ from gestvet.modules.accounts.adapters.api.schemas import (
     ChangeUserStatusRequest,
     ClientPageResponse,
     RegisterStaffRequest,
+    ToggleEmergencyCoverageRequest,
     UserResponse,
 )
 from gestvet.modules.accounts.domain.exceptions import (
@@ -33,8 +35,10 @@ from gestvet.modules.accounts.domain.exceptions import (
     EmailAlreadyRegistered,
     InvalidEmail,
     RoleNotAssignable,
+    RoleNotBackupEligible,
     RoleNotSwappable,
     UserNotFound,
+    VeterinarianHasUpcomingAppointments,
 )
 from gestvet.modules.accounts.ports.user_repository import UserQuery
 from gestvet.modules.accounts.use_cases.list_clients import STAFF_LISTING_ROLES, ListUsers
@@ -43,6 +47,8 @@ from gestvet.modules.accounts.use_cases.manage_accounts import (
     ChangeUserStatusCommand,
     RegisterStaff,
     RegisterStaffCommand,
+    ToggleEmergencyCoverage,
+    ToggleEmergencyCoverageCommand,
     ToggleGuardDuty,
     ToggleGuardDutyCommand,
 )
@@ -144,14 +150,42 @@ async def toggle_guard_duty(
     principal: PrincipalDep,
     users: UserRepositoryDep,
     activity: ActivityRecorderDep,
+    appointments: AppointmentDirectoryDep,
 ) -> UserResponse:
     try:
-        user = await ToggleGuardDuty(users, activity)(
+        user = await ToggleGuardDuty(users, activity, appointments)(
             ToggleGuardDutyCommand(user_id=user_id, actor_id=principal.user_id)
         )
     except UserNotFound as error:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
-    except RoleNotSwappable as error:
+    except (RoleNotSwappable, VeterinarianHasUpcomingAppointments) as error:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
+    return UserResponse.from_entity(user)
+
+
+@router.post(
+    "/staff/{user_id}/emergency-coverage",
+    response_model=UserResponse,
+    summary="Habilitar o quitar el respaldo de emergencias",
+)
+async def toggle_emergency_coverage(
+    user_id: int,
+    payload: ToggleEmergencyCoverageRequest,
+    principal: PrincipalDep,
+    users: UserRepositoryDep,
+    activity: ActivityRecorderDep,
+) -> UserResponse:
+    try:
+        user = await ToggleEmergencyCoverage(users, activity)(
+            ToggleEmergencyCoverageCommand(
+                user_id=user_id,
+                actor_id=principal.user_id,
+                can_cover_emergencies=payload.can_cover_emergencies,
+            )
+        )
+    except UserNotFound as error:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    except RoleNotBackupEligible as error:
         raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
     return UserResponse.from_entity(user)
 

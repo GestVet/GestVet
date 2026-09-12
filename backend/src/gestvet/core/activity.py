@@ -39,6 +39,7 @@ class ActivityKind(StrEnum):
     GUARD_DUTY_TOGGLED = "guard_duty_toggled"
     PET_REGISTERED = "pet_registered"
     PET_STATUS_CHANGED = "pet_status_changed"
+    PET_STATUS_CORRECTED = "pet_status_corrected"
     SLOT_PUBLISHED = "slot_published"
     SLOT_WITHDRAWN = "slot_withdrawn"
     APPOINTMENT_BOOKED = "appointment_booked"
@@ -61,6 +62,7 @@ _KIND_LABELS: dict[ActivityKind, str] = {
     ActivityKind.GUARD_DUTY_TOGGLED: "Cambió el turno de guardia",
     ActivityKind.PET_REGISTERED: "Registró una mascota",
     ActivityKind.PET_STATUS_CHANGED: "Cambió el estado de una mascota",
+    ActivityKind.PET_STATUS_CORRECTED: "Corrigió el estado de una mascota",
     ActivityKind.SLOT_PUBLISHED: "Publicó un tramo de disponibilidad",
     ActivityKind.SLOT_WITHDRAWN: "Retiró un tramo de disponibilidad",
     ActivityKind.APPOINTMENT_BOOKED: "Reservó una cita",

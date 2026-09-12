@@ -18,13 +18,18 @@ from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from gestvet.modules.pets.adapters.api.dependencies import PetRepositoryDep
 from gestvet.modules.pets.adapters.api.schemas import (
     ChangePetStatusRequest,
+    CorrectPetStatusRequest,
     PetPageResponse,
     PetResponse,
     RegisterPetRequest,
 )
-from gestvet.modules.pets.domain.exceptions import InvalidPetData, PetNotFound
+from gestvet.modules.pets.domain.exceptions import InvalidPetData, PetNotFound, PetStatusIsFinal
 from gestvet.modules.pets.ports.pet_repository import PetQuery
 from gestvet.modules.pets.use_cases.change_pet_status import ChangePetStatus, ChangePetStatusCommand
+from gestvet.modules.pets.use_cases.correct_pet_status import (
+    CorrectPetStatus,
+    CorrectPetStatusCommand,
+)
 from gestvet.modules.pets.use_cases.list_pets import ListPets
 from gestvet.modules.pets.use_cases.register_pet import RegisterPet, RegisterPetCommand
 
@@ -123,4 +128,34 @@ async def change_pet_status(
         )
     except PetNotFound as error:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    except PetStatusIsFinal as error:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
+    return PetResponse.from_entity(pet)
+
+
+@router.patch(
+    "/{pet_id}/correct-status",
+    response_model=PetResponse,
+    summary="Corregir el estado de una mascota (personal de la clínica)",
+)
+async def correct_pet_status(
+    pet_id: int,
+    payload: CorrectPetStatusRequest,
+    staff: StaffDep,
+    pets: PetRepositoryDep,
+    activity: ActivityRecorderDep,
+) -> PetResponse:
+    try:
+        pet = await CorrectPetStatus(pets, activity)(
+            CorrectPetStatusCommand(
+                pet_id=pet_id,
+                actor_id=staff.user_id,
+                is_active=payload.is_active,
+                reason=payload.reason,
+            )
+        )
+    except PetNotFound as error:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    except InvalidPetData as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
     return PetResponse.from_entity(pet)

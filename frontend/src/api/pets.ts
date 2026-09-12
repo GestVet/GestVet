@@ -28,3 +28,15 @@ export async function changePetStatus(petId: number, isActive: boolean): Promise
   })
   return data
 }
+
+export async function correctPetStatus(
+  petId: number,
+  isActive: boolean,
+  reason: string,
+): Promise<PetResponse> {
+  const { data } = await api.patch<PetResponse>(`/pets/${String(petId)}/correct-status`, {
+    is_active: isActive,
+    reason,
+  })
+  return data
+}

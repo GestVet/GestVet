@@ -20,6 +20,7 @@ def row_to_entity(row: UserRow) -> User:
         role=Role(row.role),
         password_hash=row.password_hash,
         is_active=row.is_active,
+        can_cover_emergencies=row.can_cover_emergencies,
         created_at=as_utc(row.created_at),
     )
 
@@ -33,5 +34,6 @@ def entity_to_row(user: User) -> UserRow:
         role=user.role.value,
         password_hash=user.password_hash,
         is_active=user.is_active,
+        can_cover_emergencies=user.can_cover_emergencies,
         created_at=user.created_at,
     )

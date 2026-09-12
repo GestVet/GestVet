@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 from gestvet.core.activity import ActivityKind, ActivityRecorder
 from gestvet.modules.pets.domain.entities import Pet
-from gestvet.modules.pets.domain.exceptions import PetNotFound
+from gestvet.modules.pets.domain.exceptions import PetNotFound, PetStatusIsFinal
 from gestvet.modules.pets.ports.pet_repository import PetRepository
 
 
@@ -23,6 +23,13 @@ class ChangePetStatusCommand:
 
 
 class ChangePetStatus:
+    """Dar de baja una mascota propia: que falleció, y es de un solo sentido.
+
+    El dueño puede pasarla de viva a fallecida, nunca al revés. Revertir un
+    error de carga es competencia del personal de la clínica, que lo hace por
+    `CorrectPetStatus` con un motivo obligatorio y su propio asiento.
+    """
+
     def __init__(self, pets: PetRepository, activity: ActivityRecorder) -> None:
         self._pets = pets
         self._activity = activity
@@ -35,16 +42,17 @@ class ChangePetStatus:
         if pet is None:
             raise PetNotFound(command.pet_id)
 
-        if command.is_active:
-            pet.activate()
-        else:
-            pet.deactivate()
+        if not pet.is_active:
+            raise PetStatusIsFinal(pet.id or command.pet_id)
 
-        guardada = await self._pets.save(pet)
-        estado = "reactivada" if command.is_active else "dada de baja"
-        await self._activity.record(
-            command.owner_id,
-            ActivityKind.PET_STATUS_CHANGED,
-            f"{guardada.name}: {estado}",
-        )
-        return guardada
+        if not command.is_active:
+            pet.deactivate()
+            guardada = await self._pets.save(pet)
+            await self._activity.record(
+                command.owner_id,
+                ActivityKind.PET_STATUS_CHANGED,
+                f"{guardada.name}: dada de baja",
+            )
+            return guardada
+
+        return pet

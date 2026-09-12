@@ -51,6 +51,15 @@ _ON_DUTY = text(
     "AND s.starts_at <= :moment AND s.ends_at > :moment"
 ).bindparams(bindparam("moment", type_=_MOMENT))
 
+_IS_BOOKABLE = text(
+    "SELECT 1 FROM users WHERE id = :veterinarian_id AND role = :role AND is_active = :active"
+)
+
+_BACKUP_CANDIDATES = text(
+    "SELECT id FROM users WHERE role = :role AND is_active = :active "
+    "AND can_cover_emergencies = :can_cover"
+)
+
 
 class SqlPetDirectory:
     def __init__(self, session: AsyncSession) -> None:
@@ -99,3 +108,29 @@ class SqlScheduleDirectory:
             },
         )
         return [int(row.veterinarian_id) for row in rows]
+
+    async def is_bookable_for_normal_appointments(self, veterinarian_id: int) -> bool:
+        """Un veterinario de guardia no aparece para citas normales.
+
+        El original filtraba esto con `WHERE id_rol = 2` en el listado; acá se
+        restaura la misma exclusividad, y del lado servidor, no solo en el
+        selector del frontend.
+        """
+        row = (
+            await self._session.execute(
+                _IS_BOOKABLE,
+                {
+                    "veterinarian_id": veterinarian_id,
+                    "role": Role.VETERINARIAN.value,
+                    "active": True,
+                },
+            )
+        ).first()
+        return row is not None
+
+    async def list_emergency_backup_candidates(self) -> list[int]:
+        rows = await self._session.execute(
+            _BACKUP_CANDIDATES,
+            {"role": Role.VETERINARIAN.value, "active": True, "can_cover": True},
+        )
+        return [int(row.id) for row in rows]

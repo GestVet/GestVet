@@ -62,6 +62,7 @@ class SqlAlchemyUserRepository:
         row.phone = user.phone
         row.role = user.role.value
         row.is_active = user.is_active
+        row.can_cover_emergencies = user.can_cover_emergencies
         row.password_hash = user.password_hash
         await self._session.flush()
         return row_to_entity(row)
