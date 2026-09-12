@@ -7,6 +7,7 @@ import { fetchMyPets, myPetsQueryKey } from '../../api/pets'
 import type { VeterinarianResponse } from '../../api/types'
 import SelectField from '../../components/SelectField'
 import TextField from '../../components/TextField'
+import { NativeSelectOption } from '../../components/ui/native-select'
 import type { BookingForm } from './bookingSchema'
 import VeterinarianSchedule from './VeterinarianSchedule'
 
@@ -42,33 +43,35 @@ export default function BookingFields() {
 
   return (
     <>
-      <SelectField
-        id="pet_id"
-        label="Mascota"
-        placeholder="Elegí una"
-        field={register('pet_id')}
-        error={mensajeDeError(errores, 'pet_id')}
-      >
-        {activas.map((mascota) => (
-          <option key={mascota.id} value={mascota.id}>
-            {mascota.name} · {mascota.species}
-          </option>
-        ))}
-      </SelectField>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <SelectField
+          id="pet_id"
+          label="Mascota"
+          placeholder="Elegí una"
+          field={register('pet_id')}
+          error={mensajeDeError(errores, 'pet_id')}
+        >
+          {activas.map((mascota) => (
+            <NativeSelectOption key={mascota.id} value={mascota.id}>
+              {mascota.name} · {mascota.species}
+            </NativeSelectOption>
+          ))}
+        </SelectField>
 
-      <SelectField
-        id="veterinarian_id"
-        label="Veterinario"
-        placeholder="Elegí uno"
-        field={register('veterinarian_id')}
-        error={mensajeDeError(errores, 'veterinarian_id')}
-      >
-        {veterinarios.data?.items.map((veterinario) => (
-          <option key={veterinario.id} value={veterinario.id}>
-            {etiquetaVeterinario(veterinario)}
-          </option>
-        ))}
-      </SelectField>
+        <SelectField
+          id="veterinarian_id"
+          label="Veterinario"
+          placeholder="Elegí uno"
+          field={register('veterinarian_id')}
+          error={mensajeDeError(errores, 'veterinarian_id')}
+        >
+          {veterinarios.data?.items.map((veterinario) => (
+            <NativeSelectOption key={veterinario.id} value={veterinario.id}>
+              {etiquetaVeterinario(veterinario)}
+            </NativeSelectOption>
+          ))}
+        </SelectField>
+      </div>
 
       <SelectField
         id="appointment_type_id"
@@ -79,9 +82,9 @@ export default function BookingFields() {
         hint="Precio estimado: puede variar según lo que finalmente requiera la atención."
       >
         {motivos.data?.items.map((motivo) => (
-          <option key={motivo.id} value={motivo.id}>
+          <NativeSelectOption key={motivo.id} value={motivo.id}>
             {motivo.name} · {motivo.duration_minutes} min · S/ {motivo.price}
-          </option>
+          </NativeSelectOption>
         ))}
       </SelectField>
 

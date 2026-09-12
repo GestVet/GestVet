@@ -4,6 +4,9 @@ import { useState } from 'react'
 import { createQrCharge } from '../../api/payments'
 import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
+import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
+import { Label } from '../../components/ui/label'
 import { errorMessage } from '../../services/api'
 import QrChargeTracker from './QrChargeTracker'
 
@@ -26,6 +29,7 @@ export default function QrPaymentPanel({
 }: QrPaymentPanelProps) {
   const [chargeId, setChargeId] = useState<number | null>(null)
   const [monto, setMonto] = useState('')
+  const montoId = `monto-qr-${String(appointmentId)}`
 
   const generar = useMutation({
     mutationFn: () => createQrCharge(appointmentId, monto),
@@ -47,35 +51,37 @@ export default function QrPaymentPanel({
   }
 
   return (
-    <div className="stack">
+    <div className="flex flex-col items-start gap-3">
       {generar.isError ? (
         <FormMessage tone="error">
           {errorMessage(generar.error, 'No se pudo generar el QR.')}
         </FormMessage>
       ) : null}
       {puedeAjustarMonto ? (
-        <div className="field">
-          <label htmlFor="monto-qr">Monto (opcional)</label>
-          <input
-            id="monto-qr"
+        <div className="flex w-full max-w-sm flex-col gap-2">
+          <Label htmlFor={montoId}>Monto (opcional)</Label>
+          <Input
+            id={montoId}
             type="number"
+            inputMode="decimal"
             step="0.01"
             min="0"
-            placeholder="Dejalo vacío para usar el precio de catálogo"
+            className="h-10"
+            placeholder="Precio de catálogo"
+            aria-describedby={`${montoId}-ayuda`}
             value={monto}
             onChange={(evento) => {
               setMonto(evento.target.value)
             }}
           />
-          <span className="muted">
-            En una cita normal, el monto admite hasta S/ 5 de diferencia con el precio de
-            catálogo; en una emergencia no hay límite.
-          </span>
+          <p id={`${montoId}-ayuda`} className="m-0 text-sm text-muted-foreground">
+            Dejalo vacío para usar el precio de catálogo. En una cita normal admite hasta S/ 5
+            de diferencia; en una emergencia no hay límite.
+          </p>
         </div>
       ) : null}
-      <button
+      <Button
         type="button"
-        className="btn btn-plain"
         disabled={generar.isPending}
         onClick={() => {
           generar.mutate()
@@ -83,7 +89,7 @@ export default function QrPaymentPanel({
       >
         <Icon name="pago" size={16} />
         <span>{generar.isPending ? 'Generando…' : 'Pagar con QR'}</span>
-      </button>
+      </Button>
     </div>
   )
 }

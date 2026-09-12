@@ -12,10 +12,10 @@ interface HospitalizationNotesListProps {
 
 export default function HospitalizationNotesList({ notes }: HospitalizationNotesListProps) {
   if (notes.length === 0) {
-    return <p className="empty">Todavía no hay notas de seguimiento.</p>
+    return <p className="m-0 text-sm text-muted-foreground">Todavía no hay notas de seguimiento.</p>
   }
   return (
-    <ul className="stack">
+    <ul className="m-0 flex list-none flex-col gap-2 p-0 text-sm">
       {notes.map((item) => (
         <li key={item.id}>
           <strong>{FORMATO.format(new Date(item.created_at))}:</strong> {item.note}

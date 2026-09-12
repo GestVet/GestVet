@@ -8,11 +8,14 @@ import { registerWalkInClient } from '../../api/directory'
 import { registerPetForOwner } from '../../api/pets'
 import type { AppointmentResponse } from '../../api/types'
 import FormMessage from '../../components/FormMessage'
+import Icon from '../../components/Icon'
+import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 import { EMPTY_WALK_IN_EMERGENCY, walkInEmergencySchema } from './formValues'
 import type { WalkInEmergencyFormValues } from './formValues'
 import WalkInEmergencyFields from './WalkInEmergencyFields'
+import WalkInEmergencySuccess from './WalkInEmergencySuccess'
 
 /**
  * Alta exprés: cliente + mascota + emergencia, en una sola acción.
@@ -68,23 +71,13 @@ export default function WalkInEmergencyForm() {
   }
 
   if (resultado) {
-    return (
-      <div className="stack">
-        <FormMessage tone="ok">
-          Emergencia abierta (#{resultado.id}). Quedó asignada automáticamente a un veterinario
-          disponible. El cliente y la mascota ya quedaron registrados — el personal puede
-          completar el correo real desde la ficha del cliente cuando haya tiempo.
-        </FormMessage>
-        <button type="button" className="btn btn-plain" onClick={empezarDeNuevo}>
-          Registrar otra emergencia
-        </button>
-      </div>
-    )
+    return <WalkInEmergencySuccess appointmentId={resultado.id} onRestart={empezarDeNuevo} />
   }
 
   return (
     <form
-      className="form"
+      noValidate
+      className="flex flex-col gap-6"
       onSubmit={onSubmit(
         handleSubmit((valores) => {
           abrir.mutate(valores)
@@ -99,9 +92,16 @@ export default function WalkInEmergencyForm() {
         </FormMessage>
       ) : null}
 
-      <button type="submit" className="btn btn-danger" disabled={abrir.isPending}>
+      <Button
+        type="submit"
+        variant="danger"
+        size="lg"
+        className="h-11 self-start px-5"
+        disabled={abrir.isPending}
+      >
+        <Icon name="emergencia" size={16} />
         <span>{abrir.isPending ? 'Abriendo…' : 'Abrir emergencia'}</span>
-      </button>
+      </Button>
     </form>
   )
 }

@@ -5,8 +5,9 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import { fileComplaint } from '../../api/complaints'
-import FieldError from '../../components/FieldError'
 import FormMessage from '../../components/FormMessage'
+import TextareaField from '../../components/TextareaField'
+import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 import EvidenceUploader from './EvidenceUploader'
@@ -38,7 +39,7 @@ export default function ComplaintForm({ appointmentId }: ComplaintFormProps) {
 
   if (complaintId !== null) {
     return (
-      <div className="stack">
+      <div className="flex flex-col gap-3">
         <FormMessage tone="ok">
           Reclamo presentado. Administración lo va a revisar lo antes posible.
         </FormMessage>
@@ -49,18 +50,20 @@ export default function ComplaintForm({ appointmentId }: ComplaintFormProps) {
 
   return (
     <form
-      className="form"
+      noValidate
+      className="flex flex-col gap-4"
       onSubmit={onSubmit(
         handleSubmit((valores) => {
           presentar.mutate(valores)
         }),
       )}
     >
-      <div className="field">
-        <label htmlFor="description">¿Qué pasó?</label>
-        <textarea id="description" rows={3} {...register('description')} />
-        <FieldError message={formState.errors.description?.message} />
-      </div>
+      <TextareaField
+        id={`reclamo-${String(appointmentId)}`}
+        label="¿Qué pasó?"
+        field={register('description')}
+        error={formState.errors.description?.message}
+      />
 
       {presentar.isError ? (
         <FormMessage tone="error">
@@ -68,9 +71,14 @@ export default function ComplaintForm({ appointmentId }: ComplaintFormProps) {
         </FormMessage>
       ) : null}
 
-      <button type="submit" className="btn btn-danger" disabled={presentar.isPending}>
-        <span>{presentar.isPending ? 'Enviando…' : 'Presentar reclamo'}</span>
-      </button>
+      <Button
+        type="submit"
+        variant="destructive"
+        className="self-start"
+        disabled={presentar.isPending}
+      >
+        {presentar.isPending ? 'Enviando…' : 'Presentar reclamo'}
+      </Button>
     </form>
   )
 }

@@ -1,4 +1,14 @@
+import { Input } from '../../components/ui/input'
+import { Label } from '../../components/ui/label'
+import { NativeSelect, NativeSelectOption } from '../../components/ui/native-select'
+
 export type Rango = 'dia' | 'semana' | 'mes' | 'todos'
+
+const RANGOS: readonly Rango[] = ['todos', 'dia', 'semana', 'mes']
+
+function esRango(valor: string): valor is Rango {
+  return (RANGOS as readonly string[]).includes(valor)
+}
 
 interface AvailabilityRangeFilterProps {
   readonly rango: Rango
@@ -14,28 +24,32 @@ export default function AvailabilityRangeFilter({
   onAnclaChange,
 }: AvailabilityRangeFilterProps) {
   return (
-    <div className="form" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
-      <div className="field">
-        <label htmlFor="rango">Ver por</label>
-        <select
+    <div className="grid gap-4 sm:grid-cols-2">
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="rango">Ver por</Label>
+        <NativeSelect
           id="rango"
+          className="w-full [&_select]:h-10"
           value={rango}
           onChange={(evento) => {
-            onRangoChange(evento.target.value as Rango)
+            if (esRango(evento.target.value)) {
+              onRangoChange(evento.target.value)
+            }
           }}
         >
-          <option value="todos">Todos</option>
-          <option value="dia">Día</option>
-          <option value="semana">Semana</option>
-          <option value="mes">Mes</option>
-        </select>
+          <NativeSelectOption value="todos">Todos</NativeSelectOption>
+          <NativeSelectOption value="dia">Día</NativeSelectOption>
+          <NativeSelectOption value="semana">Semana</NativeSelectOption>
+          <NativeSelectOption value="mes">Mes</NativeSelectOption>
+        </NativeSelect>
       </div>
       {rango === 'todos' ? null : (
-        <div className="field">
-          <label htmlFor="ancla">Desde</label>
-          <input
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="ancla">Desde</Label>
+          <Input
             id="ancla"
             type="date"
+            className="h-10"
             value={ancla}
             onChange={(evento) => {
               onAnclaChange(evento.target.value)

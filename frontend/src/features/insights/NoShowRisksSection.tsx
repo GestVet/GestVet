@@ -1,38 +1,36 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { fetchNoShowRisks, noShowRisksQueryKey } from '../../api/insights'
-import TableShell from '../../components/TableShell'
+import DataTable, { type DataColumn } from '../../components/DataTable'
+import SectionCard from '../../components/SectionCard'
 
-const COLUMNAS = ['Cita', 'Cliente', 'Mascota', 'Cuándo', 'Inasistencias previas'] as const
+type Riesgo = Awaited<ReturnType<typeof fetchNoShowRisks>>['items'][number]
+
 const FORMATO = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
+
+const COLUMNAS: readonly DataColumn<Riesgo>[] = [
+  { id: 'cita', header: 'Cita', cell: (item) => `#${String(item.appointment_id)}` },
+  { id: 'cliente', header: 'Cliente', cell: (item) => item.client_name },
+  { id: 'mascota', header: 'Mascota', cell: (item) => item.pet_name },
+  { id: 'cuando', header: 'Cuándo', cell: (item) => FORMATO.format(new Date(item.scheduled_at)) },
+  { id: 'previas', header: 'Inasistencias previas', cell: (item) => item.past_incidents },
+]
 
 export default function NoShowRisksSection() {
   const riesgos = useQuery({ queryKey: noShowRisksQueryKey, queryFn: fetchNoShowRisks })
-  const items = riesgos.data?.items ?? []
 
   return (
-    <section className="card">
-      <h2>Riesgo de inasistencia</h2>
-      <p className="muted">
-        Citas próximas de clientes con dos o más citas pasadas que quedaron sin cerrar. Vale la
-        pena llamar para confirmar.
-      </p>
-      <TableShell
+    <SectionCard
+      title="Riesgo de inasistencia"
+      description="Citas próximas de clientes con dos o más citas pasadas que quedaron sin cerrar. Vale la pena llamar para confirmar."
+    >
+      <DataTable
         columns={COLUMNAS}
+        data={riesgos.data?.items ?? []}
         isLoading={riesgos.isPending}
-        isEmpty={items.length === 0}
         emptyMessage="No hay citas con riesgo de inasistencia."
-      >
-        {items.map((item) => (
-          <tr key={item.appointment_id}>
-            <td>#{item.appointment_id}</td>
-            <td>{item.client_name}</td>
-            <td>{item.pet_name}</td>
-            <td>{FORMATO.format(new Date(item.scheduled_at))}</td>
-            <td>{item.past_incidents}</td>
-          </tr>
-        ))}
-      </TableShell>
-    </section>
+        getRowId={(item) => String(item.appointment_id)}
+      />
+    </SectionCard>
   )
 }

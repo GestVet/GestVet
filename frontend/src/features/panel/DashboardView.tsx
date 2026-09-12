@@ -1,8 +1,10 @@
 import { Link } from 'react-router'
 
+import type { UserRole } from '../../api/types'
 import Icon from '../../components/Icon'
 import type { IconName } from '../../components/icons'
-import type { UserRole } from '../../api/types'
+import PageHeader from '../../components/PageHeader'
+import { Button } from '../../components/ui/button'
 import { useSession } from '../../store/session'
 
 interface Acceso {
@@ -111,28 +113,40 @@ export default function DashboardView() {
   }
 
   return (
-    <div className="stack">
-      <div className="page-header">
-        <div>
-          <span className="eyebrow">{user.role}</span>
-          <h1>Hola, {user.first_name}</h1>
-          <p className="muted">{user.email}</p>
-        </div>
-        <Link className="btn btn-plain" to="/perfil">
-          <Icon name="perfil" size={16} />
-          <span>Editar perfil</span>
-        </Link>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title={`Hola, ${user.first_name}`}
+        description={user.email}
+        actions={
+          <Button asChild variant="outline" size="lg" className="h-10 px-4">
+            <Link to="/perfil">
+              <Icon name="perfil" size={16} />
+              <span>Editar perfil</span>
+            </Link>
+          </Button>
+        }
+      />
 
-      <section className="card-grid">
-        {ACCESOS[user.role].map((acceso) => (
-          <Link className="tile" key={acceso.to} to={acceso.to}>
-            <Icon className="tile-icon" name={acceso.icon} size={28} />
-            <h3>{acceso.title}</h3>
-            <p>{acceso.description}</p>
-          </Link>
-        ))}
-      </section>
+      <nav aria-label="Accesos del panel">
+        <ul className="m-0 grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
+          {ACCESOS[user.role].map((acceso) => (
+            <li key={acceso.to}>
+              <Link
+                to={acceso.to}
+                className="flex h-full flex-col gap-2 rounded-xl bg-card p-5 text-card-foreground shadow-sm ring-1 ring-foreground/10 transition-shadow outline-none hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <Icon className="text-primary" name={acceso.icon} size={28} />
+                <h2 className="m-0 font-heading text-lg font-semibold text-primary">
+                  {acceso.title}
+                </h2>
+                <p className="m-0 text-sm leading-relaxed text-muted-foreground">
+                  {acceso.description}
+                </p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </div>
   )
 }

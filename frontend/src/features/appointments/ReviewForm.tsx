@@ -4,10 +4,12 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import { submitReview } from '../../api/reviews'
-import FieldError from '../../components/FieldError'
 import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
 import SelectField from '../../components/SelectField'
+import TextareaField from '../../components/TextareaField'
+import { Button } from '../../components/ui/button'
+import { NativeSelectOption } from '../../components/ui/native-select'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 
@@ -21,15 +23,17 @@ type Formulario = z.infer<typeof esquema>
 const VACIO: Formulario = { rating: '5', comment: '' }
 
 interface ReviewFormProps {
+  readonly appointmentId: number
   readonly veterinarianId: number
 }
 
 /** Calificar al veterinario que atendió esta cita. Volver a enviarlo actualiza la reseña. */
-export default function ReviewForm({ veterinarianId }: ReviewFormProps) {
+export default function ReviewForm({ appointmentId, veterinarianId }: ReviewFormProps) {
   const { register, handleSubmit, reset, formState } = useForm<Formulario>({
     resolver: zodResolver(esquema),
     defaultValues: VACIO,
   })
+  const campo = (nombre: string) => `${nombre}-${String(appointmentId)}`
 
   const enviar = useMutation({
     mutationFn: (valores: Formulario) =>
@@ -45,26 +49,31 @@ export default function ReviewForm({ veterinarianId }: ReviewFormProps) {
 
   return (
     <form
-      className="form"
+      noValidate
+      className="flex flex-col gap-4"
       onSubmit={onSubmit(
         handleSubmit((valores) => {
           enviar.mutate(valores)
         }),
       )}
     >
-      <SelectField id="rating" label="Calificación" field={register('rating')}>
-        <option value="5">★★★★★ (5)</option>
-        <option value="4">★★★★ (4)</option>
-        <option value="3">★★★ (3)</option>
-        <option value="2">★★ (2)</option>
-        <option value="1">★ (1)</option>
-      </SelectField>
-
-      <div className="field">
-        <label htmlFor="comment">Comentario</label>
-        <textarea id="comment" rows={2} {...register('comment')} />
-        <FieldError message={formState.errors.comment?.message} />
+      <div className="max-w-xs">
+        <SelectField id={campo('rating')} label="Calificación" field={register('rating')}>
+          <NativeSelectOption value="5">★★★★★ (5)</NativeSelectOption>
+          <NativeSelectOption value="4">★★★★ (4)</NativeSelectOption>
+          <NativeSelectOption value="3">★★★ (3)</NativeSelectOption>
+          <NativeSelectOption value="2">★★ (2)</NativeSelectOption>
+          <NativeSelectOption value="1">★ (1)</NativeSelectOption>
+        </SelectField>
       </div>
+
+      <TextareaField
+        id={campo('comment')}
+        label="Comentario"
+        rows={2}
+        field={register('comment')}
+        error={formState.errors.comment?.message}
+      />
 
       {enviar.isError ? (
         <FormMessage tone="error">
@@ -73,10 +82,10 @@ export default function ReviewForm({ veterinarianId }: ReviewFormProps) {
       ) : null}
       {enviar.isSuccess ? <FormMessage tone="ok">¡Gracias por tu reseña!</FormMessage> : null}
 
-      <button type="submit" className="btn btn-green" disabled={enviar.isPending}>
+      <Button type="submit" variant="success" className="self-start" disabled={enviar.isPending}>
         <Icon name="confirmar" size={16} />
         <span>{enviar.isPending ? 'Enviando…' : 'Enviar reseña'}</span>
-      </button>
+      </Button>
     </form>
   )
 }

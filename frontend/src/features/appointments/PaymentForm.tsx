@@ -4,10 +4,13 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import { paymentsQueryKey, registerPayment } from '../../api/payments'
-import FieldError from '../../components/FieldError'
 import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
+import SectionHeading from '../../components/SectionHeading'
 import SelectField from '../../components/SelectField'
+import TextField from '../../components/TextField'
+import { Button } from '../../components/ui/button'
+import { NativeSelectOption } from '../../components/ui/native-select'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 
@@ -39,6 +42,7 @@ export default function PaymentForm({ appointmentId }: PaymentFormProps) {
     resolver: zodResolver(esquema),
     defaultValues: VACIO,
   })
+  const campo = (nombre: string) => `${nombre}-${String(appointmentId)}`
 
   const registrar = useMutation({
     mutationFn: (valores: Formulario) =>
@@ -57,30 +61,39 @@ export default function PaymentForm({ appointmentId }: PaymentFormProps) {
 
   return (
     <form
-      className="form"
+      noValidate
+      className="flex flex-col gap-4"
       onSubmit={onSubmit(
         handleSubmit((valores) => {
           registrar.mutate(valores)
         }),
       )}
     >
-      <div className="field">
-        <label htmlFor="amount">Monto (S/)</label>
-        <input id="amount" type="number" step="0.01" min="0" {...register('amount')} />
-        <FieldError message={formState.errors.amount?.message} />
-      </div>
-
-      <SelectField id="method" label="Medio de pago" field={register('method')}>
-        {METODOS.map((metodo) => (
-          <option key={metodo.value} value={metodo.value}>
-            {metodo.label}
-          </option>
-        ))}
-      </SelectField>
-
-      <div className="field">
-        <label htmlFor="reference">Referencia (opcional)</label>
-        <input id="reference" placeholder="N° de operación" {...register('reference')} />
+      <SectionHeading as="h3">Registrar un pago en mostrador</SectionHeading>
+      <div className="grid gap-5 sm:grid-cols-3">
+        <TextField
+          id={campo('amount')}
+          label="Monto (S/)"
+          type="number"
+          inputMode="decimal"
+          step="0.01"
+          min="0"
+          field={register('amount')}
+          error={formState.errors.amount?.message}
+        />
+        <SelectField id={campo('method')} label="Medio de pago" field={register('method')}>
+          {METODOS.map((metodo) => (
+            <NativeSelectOption key={metodo.value} value={metodo.value}>
+              {metodo.label}
+            </NativeSelectOption>
+          ))}
+        </SelectField>
+        <TextField
+          id={campo('reference')}
+          label="Referencia (opcional)"
+          placeholder="N° de operación"
+          field={register('reference')}
+        />
       </div>
 
       {registrar.isError ? (
@@ -89,10 +102,10 @@ export default function PaymentForm({ appointmentId }: PaymentFormProps) {
         </FormMessage>
       ) : null}
 
-      <button type="submit" className="btn btn-green" disabled={registrar.isPending}>
+      <Button type="submit" variant="success" className="self-start" disabled={registrar.isPending}>
         <Icon name="agregar" size={16} />
         <span>{registrar.isPending ? 'Guardando…' : 'Registrar pago'}</span>
-      </button>
+      </Button>
     </form>
   )
 }

@@ -10,7 +10,7 @@ const AUTO_DISMISS_MS = 8_000
 // el color de lectura, y el aviso se entiende igual sin distinguir colores.
 const ICON_TONE = {
   info: 'text-primary',
-  warning: 'text-chart-4',
+  warning: 'text-warning',
 } as const
 
 interface ToastItemProps {

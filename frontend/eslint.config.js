@@ -106,7 +106,7 @@ export default tseslint.config(
       'react/no-multi-comp': 'off',
       'react-refresh/only-export-components': [
         'warn',
-        { allowConstantExport: true, allowExportNames: ['buttonVariants'] },
+        { allowConstantExport: true, allowExportNames: ['buttonVariants', 'badgeVariants', 'tabsListVariants'] },
       ],
     },
   },

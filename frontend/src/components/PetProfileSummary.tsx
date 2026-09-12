@@ -20,7 +20,12 @@ function esterilizadoLabel(valor: boolean | null): string {
   return valor ? 'Sí' : 'No'
 }
 
-/** Ficha completa de la mascota, siempre en modo lectura. */
+/**
+ * Ficha completa de la mascota, siempre en modo lectura.
+ *
+ * Son pares de dato y valor, no una tabla: una lista de definicion lo dice
+ * asi al lector de pantalla y en el celular no necesita desplazarse.
+ */
 export default function PetProfileSummary({ mascota }: PetProfileSummaryProps) {
   const filas: readonly [string, string][] = [
     ['Sexo', mascota.sex ? SEX_LABELS[mascota.sex] : 'No especificado'],
@@ -34,15 +39,13 @@ export default function PetProfileSummary({ mascota }: PetProfileSummaryProps) {
   ]
 
   return (
-    <table>
-      <tbody>
-        {filas.map(([campo, valor]) => (
-          <tr key={campo}>
-            <th scope="row">{campo}</th>
-            <td>{valor}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <dl className="m-0 grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+      {filas.map(([campo, valor]) => (
+        <div key={campo} className="flex flex-col gap-0.5">
+          <dt className="text-muted-foreground">{campo}</dt>
+          <dd className="m-0 font-medium">{valor}</dd>
+        </div>
+      ))}
+    </dl>
   )
 }

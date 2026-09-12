@@ -1,37 +1,35 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { fetchVeterinarianAlerts, veterinarianAlertsQueryKey } from '../../api/insights'
-import TableShell from '../../components/TableShell'
+import DataTable, { type DataColumn } from '../../components/DataTable'
+import SectionCard from '../../components/SectionCard'
 
-const COLUMNAS = ['Veterinario', 'Reseñas bajas (60 días)', 'Reclamos (60 días)'] as const
+type Alerta = Awaited<ReturnType<typeof fetchVeterinarianAlerts>>['items'][number]
+
+const COLUMNAS: readonly DataColumn<Alerta>[] = [
+  { id: 'veterinario', header: 'Veterinario', cell: (item) => item.veterinarian_name },
+  { id: 'resenas', header: 'Reseñas bajas (60 días)', cell: (item) => item.low_rating_count },
+  { id: 'reclamos', header: 'Reclamos (60 días)', cell: (item) => item.complaint_count },
+]
 
 export default function VeterinarianAlertsSection() {
   const alertas = useQuery({
     queryKey: veterinarianAlertsQueryKey,
     queryFn: fetchVeterinarianAlerts,
   })
-  const items = alertas.data?.items ?? []
 
   return (
-    <section className="card">
-      <h2>Veterinarios a seguir de cerca</h2>
-      <p className="muted">
-        Tres o más reseñas de 1-2 estrellas, o dos o más reclamos, en los últimos 60 días.
-      </p>
-      <TableShell
+    <SectionCard
+      title="Veterinarios a seguir de cerca"
+      description="Tres o más reseñas de 1-2 estrellas, o dos o más reclamos, en los últimos 60 días."
+    >
+      <DataTable
         columns={COLUMNAS}
+        data={alertas.data?.items ?? []}
         isLoading={alertas.isPending}
-        isEmpty={items.length === 0}
         emptyMessage="Ningún veterinario está en ese caso ahora mismo."
-      >
-        {items.map((item) => (
-          <tr key={item.veterinarian_id}>
-            <td>{item.veterinarian_name}</td>
-            <td>{item.low_rating_count}</td>
-            <td>{item.complaint_count}</td>
-          </tr>
-        ))}
-      </TableShell>
-    </section>
+        getRowId={(item) => String(item.veterinarian_id)}
+      />
+    </SectionCard>
   )
 }

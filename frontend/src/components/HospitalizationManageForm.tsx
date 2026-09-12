@@ -2,6 +2,9 @@ import { useState } from 'react'
 
 import { useAddHospitalizationNote, useDischargeHospitalization } from '../hooks/useHospitalizations'
 import FormMessage from './FormMessage'
+import { Button } from './ui/button'
+import { Label } from './ui/label'
+import { Textarea } from './ui/textarea'
 
 interface HospitalizationManageFormProps {
   readonly hospitalizationId: number
@@ -17,63 +20,69 @@ export default function HospitalizationManageForm({
   const [notasDeAlta, setNotasDeAlta] = useState('')
   const agregarNota = useAddHospitalizationNote(petId)
   const darDeAlta = useDischargeHospitalization(petId)
+  const notaId = `nota-${String(hospitalizationId)}`
+  const altaId = `alta-${String(hospitalizationId)}`
 
   return (
-    <div className="stack">
-      <div className="field">
-        <label htmlFor={`nota-${String(hospitalizationId)}`}>Nota de seguimiento</label>
-        <textarea
-          id={`nota-${String(hospitalizationId)}`}
+    <div className="grid gap-6 md:grid-cols-2">
+      <div className="flex flex-col gap-2">
+        <Label htmlFor={notaId}>Nota de seguimiento</Label>
+        <Textarea
+          id={notaId}
           rows={2}
           value={nota}
           onChange={(evento) => {
             setNota(evento.target.value)
           }}
         />
-      </div>
-      {agregarNota.isError ? (
-        <FormMessage tone="error">{agregarNota.errorMessage}</FormMessage>
-      ) : null}
-      <button
-        type="button"
-        className="btn btn-plain"
-        disabled={agregarNota.isPending || nota.trim() === ''}
-        onClick={() => {
-          agregarNota.mutate(
-            { hospitalizationId, note: nota },
-            {
-              onSuccess: () => {
-                setNota('')
+        {agregarNota.isError ? (
+          <FormMessage tone="error">{agregarNota.errorMessage}</FormMessage>
+        ) : null}
+        <Button
+          type="button"
+          variant="outline"
+          className="self-start"
+          disabled={agregarNota.isPending || nota.trim() === ''}
+          onClick={() => {
+            agregarNota.mutate(
+              { hospitalizationId, note: nota },
+              {
+                onSuccess: () => {
+                  setNota('')
+                },
               },
-            },
-          )
-        }}
-      >
-        {agregarNota.isPending ? 'Agregando…' : 'Agregar nota'}
-      </button>
+            )
+          }}
+        >
+          {agregarNota.isPending ? 'Agregando…' : 'Agregar nota'}
+        </Button>
+      </div>
 
-      <div className="field">
-        <label htmlFor={`alta-${String(hospitalizationId)}`}>Notas de alta (opcional)</label>
-        <textarea
-          id={`alta-${String(hospitalizationId)}`}
+      <div className="flex flex-col gap-2">
+        <Label htmlFor={altaId}>Notas de alta (opcional)</Label>
+        <Textarea
+          id={altaId}
           rows={2}
           value={notasDeAlta}
           onChange={(evento) => {
             setNotasDeAlta(evento.target.value)
           }}
         />
+        {darDeAlta.isError ? (
+          <FormMessage tone="error">{darDeAlta.errorMessage}</FormMessage>
+        ) : null}
+        <Button
+          type="button"
+          variant="success"
+          className="self-start"
+          disabled={darDeAlta.isPending}
+          onClick={() => {
+            darDeAlta.mutate({ hospitalizationId, dischargeNotes: notasDeAlta })
+          }}
+        >
+          {darDeAlta.isPending ? 'Dando de alta…' : 'Dar de alta'}
+        </Button>
       </div>
-      {darDeAlta.isError ? <FormMessage tone="error">{darDeAlta.errorMessage}</FormMessage> : null}
-      <button
-        type="button"
-        className="btn btn-green"
-        disabled={darDeAlta.isPending}
-        onClick={() => {
-          darDeAlta.mutate({ hospitalizationId, dischargeNotes: notasDeAlta })
-        }}
-      >
-        {darDeAlta.isPending ? 'Dando de alta…' : 'Dar de alta'}
-      </button>
     </div>
   )
 }

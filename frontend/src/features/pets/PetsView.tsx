@@ -1,66 +1,68 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 
-import { changePetStatus, fetchMyPets, myPetsQueryKey } from '../../api/pets'
-import FormMessage from '../../components/FormMessage'
-import TableShell from '../../components/TableShell'
-import { errorMessage } from '../../services/api'
+import { fetchMyPets, myPetsQueryKey } from '../../api/pets'
+import type { PetResponse } from '../../api/types'
+import DataTable, { type DataColumn } from '../../components/DataTable'
+import PageHeader from '../../components/PageHeader'
+import SectionCard from '../../components/SectionCard'
+import StatusBadge from '../../components/StatusBadge'
+import PetActions from './PetActions'
+import PetDetails from './PetDetails'
 import PetForm from './PetForm'
-import PetRow from './PetRow'
 
-const COLUMNAS = ['Nombre', 'Especie', 'Raza', 'Edad', 'Peso', 'Altura', 'Estado', 'Acciones'] as const
+const COLUMNAS: readonly DataColumn<PetResponse>[] = [
+  { id: 'nombre', header: 'Nombre', cell: (mascota) => mascota.name },
+  { id: 'especie', header: 'Especie', cell: (mascota) => mascota.species },
+  { id: 'raza', header: 'Raza', cell: (mascota) => mascota.breed },
+  { id: 'edad', header: 'Edad', cell: (mascota) => `${String(mascota.age_in_years)} años` },
+  {
+    id: 'peso',
+    header: 'Peso',
+    cell: (mascota) => (mascota.weight_kg ? `${mascota.weight_kg} kg` : '—'),
+  },
+  {
+    id: 'altura',
+    header: 'Altura',
+    cell: (mascota) => (mascota.height_cm ? `${mascota.height_cm} cm` : '—'),
+  },
+  {
+    id: 'estado',
+    header: 'Estado',
+    cell: (mascota) => (
+      <StatusBadge
+        label={mascota.is_active ? 'Activa' : 'Fallecida'}
+        tone={mascota.is_active ? 'completed' : undefined}
+      />
+    ),
+  },
+  {
+    id: 'acciones',
+    header: 'Acciones',
+    cell: (mascota, fila) => (
+      <PetActions mascota={mascota} isExpanded={fila.isExpanded} onToggle={fila.toggleExpanded} />
+    ),
+  },
+]
 
 export default function PetsView() {
-  const queryClient = useQueryClient()
   const mascotas = useQuery({ queryKey: myPetsQueryKey, queryFn: fetchMyPets })
 
-  const darDeBaja = useMutation({
-    mutationFn: (id: number) => changePetStatus(id, false),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: myPetsQueryKey })
-    },
-  })
-
-  const items = mascotas.data?.items ?? []
-
   return (
-    <div className="stack">
-      <div className="page-header">
-        <h1>Mis mascotas</h1>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Mis mascotas" />
 
       <PetForm />
 
-      <section className="card">
-        <h2>Registradas</h2>
-        {darDeBaja.isError ? (
-          <FormMessage tone="error">
-            {errorMessage(darDeBaja.error, 'No se pudo actualizar el estado.')}
-          </FormMessage>
-        ) : null}
-        <TableShell
+      <SectionCard title="Registradas">
+        <DataTable
           columns={COLUMNAS}
+          data={mascotas.data?.items ?? []}
           isLoading={mascotas.isPending}
-          isEmpty={items.length === 0}
           emptyMessage="Todavía no registraste ninguna mascota."
-        >
-          {items.map((mascota) => (
-            <PetRow
-              key={mascota.id}
-              mascota={mascota}
-              dandoDeBaja={darDeBaja.isPending}
-              onDarDeBaja={() => {
-                if (
-                  window.confirm(
-                    `¿Confirmás que ${mascota.name} falleció? Esta acción no se puede deshacer; solo el personal de la clínica puede corregirla si fue un error.`,
-                  )
-                ) {
-                  darDeBaja.mutate(mascota.id)
-                }
-              }}
-            />
-          ))}
-        </TableShell>
-      </section>
+          getRowId={(mascota) => String(mascota.id)}
+          renderExpanded={(mascota) => <PetDetails mascota={mascota} />}
+        />
+      </SectionCard>
     </div>
   )
 }

@@ -4,10 +4,13 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import { addClinicalEntry, clinicalEntriesQueryKey } from '../../api/medicalRecords'
-import FieldError from '../../components/FieldError'
 import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
 import SelectField from '../../components/SelectField'
+import TextareaField from '../../components/TextareaField'
+import TextField from '../../components/TextField'
+import { Button } from '../../components/ui/button'
+import { NativeSelectOption } from '../../components/ui/native-select'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 
@@ -49,6 +52,7 @@ export default function ClinicalEntryForm({ petId }: ClinicalEntryFormProps) {
     resolver: zodResolver(esquema),
     defaultValues: VACIO,
   })
+  const campo = (nombre: string) => `${nombre}-${String(petId)}`
 
   const alta = useMutation({
     mutationFn: (valores: Formulario) =>
@@ -68,41 +72,41 @@ export default function ClinicalEntryForm({ petId }: ClinicalEntryFormProps) {
 
   return (
     <form
-      className="form"
+      noValidate
+      className="flex flex-col gap-5"
       onSubmit={onSubmit(
         handleSubmit((valores) => {
           alta.mutate(valores)
         }),
       )}
     >
-      <SelectField id="kind" label="Tipo" field={register('kind')}>
-        {TIPOS.map((tipo) => (
-          <option key={tipo.value} value={tipo.value}>
-            {tipo.label}
-          </option>
-        ))}
-      </SelectField>
-
-      <div className="field">
-        <label htmlFor="notes">Notas</label>
-        <textarea id="notes" rows={2} {...register('notes')} />
-        <FieldError message={formState.errors.notes?.message} />
+      <div className="grid gap-5 sm:grid-cols-2">
+        <SelectField id={campo('kind')} label="Tipo" field={register('kind')}>
+          {TIPOS.map((tipo) => (
+            <NativeSelectOption key={tipo.value} value={tipo.value}>
+              {tipo.label}
+            </NativeSelectOption>
+          ))}
+        </SelectField>
+        <TextField
+          id={campo('weight_kg')}
+          label="Peso (kg)"
+          type="number"
+          inputMode="decimal"
+          step="0.1"
+          min="0"
+          field={register('weight_kg')}
+        />
+        <TextField id={campo('diagnosis')} label="Diagnóstico" field={register('diagnosis')} />
+        <TextField id={campo('treatment')} label="Tratamiento" field={register('treatment')} />
       </div>
-
-      <div className="field">
-        <label htmlFor="diagnosis">Diagnóstico</label>
-        <input id="diagnosis" {...register('diagnosis')} />
-      </div>
-
-      <div className="field">
-        <label htmlFor="treatment">Tratamiento</label>
-        <input id="treatment" {...register('treatment')} />
-      </div>
-
-      <div className="field">
-        <label htmlFor="weight_kg">Peso (kg)</label>
-        <input id="weight_kg" type="number" step="0.1" min="0" {...register('weight_kg')} />
-      </div>
+      <TextareaField
+        id={campo('notes')}
+        label="Notas"
+        rows={2}
+        field={register('notes')}
+        error={formState.errors.notes?.message}
+      />
 
       {alta.isError ? (
         <FormMessage tone="error">
@@ -110,10 +114,10 @@ export default function ClinicalEntryForm({ petId }: ClinicalEntryFormProps) {
         </FormMessage>
       ) : null}
 
-      <button type="submit" className="btn btn-green" disabled={alta.isPending}>
+      <Button type="submit" variant="success" className="self-start" disabled={alta.isPending}>
         <Icon name="agregar" size={16} />
         <span>{alta.isPending ? 'Guardando…' : 'Agregar a la historia clínica'}</span>
-      </button>
+      </Button>
     </form>
   )
 }

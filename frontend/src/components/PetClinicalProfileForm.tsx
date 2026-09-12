@@ -4,10 +4,13 @@ import { z } from 'zod'
 
 import { onSubmit } from '../hooks/formSubmit'
 import { usePetClinicalProfileUpdate } from '../hooks/usePetProfile'
-import FieldError from './FieldError'
 import FormMessage from './FormMessage'
 import Icon from './Icon'
 import SelectField from './SelectField'
+import TextareaField from './TextareaField'
+import TextField from './TextField'
+import { Button } from './ui/button'
+import { NativeSelectOption } from './ui/native-select'
 
 const esquema = z.object({
   weight_kg: z.string(),
@@ -51,7 +54,8 @@ export default function PetClinicalProfileForm(props: PetClinicalProfileFormProp
 
   return (
     <form
-      className="form"
+      noValidate
+      className="flex flex-col gap-5"
       onSubmit={onSubmit(
         handleSubmit((valores) => {
           guardar.mutate({
@@ -63,37 +67,51 @@ export default function PetClinicalProfileForm(props: PetClinicalProfileFormProp
         }),
       )}
     >
-      <div className="field">
-        <label htmlFor="weight_kg">Peso (kg)</label>
-        <input id="weight_kg" type="number" step="0.1" min="0" {...register('weight_kg')} />
-        <FieldError message={errores.weight_kg?.message} />
+      <div className="grid gap-5 sm:grid-cols-3">
+        <TextField
+          id="weight_kg"
+          label="Peso (kg)"
+          type="number"
+          inputMode="decimal"
+          step="0.1"
+          min="0"
+          field={register('weight_kg')}
+          error={errores.weight_kg?.message}
+        />
+        <TextField
+          id="height_cm"
+          label="Altura (cm)"
+          type="number"
+          inputMode="decimal"
+          step="0.1"
+          min="0"
+          field={register('height_cm')}
+          error={errores.height_cm?.message}
+        />
+        <SelectField
+          id="is_sterilized"
+          label="Esterilizado"
+          field={register('is_sterilized')}
+          placeholder="No evaluado"
+        >
+          <NativeSelectOption value="true">Sí</NativeSelectOption>
+          <NativeSelectOption value="false">No</NativeSelectOption>
+        </SelectField>
       </div>
-      <div className="field">
-        <label htmlFor="height_cm">Altura (cm)</label>
-        <input id="height_cm" type="number" step="0.1" min="0" {...register('height_cm')} />
-        <FieldError message={errores.height_cm?.message} />
-      </div>
-      <SelectField
-        id="is_sterilized"
-        label="Esterilizado"
-        field={register('is_sterilized')}
-        placeholder="No evaluado"
-      >
-        <option value="true">Sí</option>
-        <option value="false">No</option>
-      </SelectField>
-      <div className="field">
-        <label htmlFor="allergies">Alergias / condiciones crónicas</label>
-        <textarea id="allergies" rows={2} {...register('allergies')} />
-        <FieldError message={errores.allergies?.message} />
-      </div>
+      <TextareaField
+        id="allergies"
+        label="Alergias / condiciones crónicas"
+        rows={2}
+        field={register('allergies')}
+        error={errores.allergies?.message}
+      />
 
       {guardar.isError ? <FormMessage tone="error">{guardar.errorMessage}</FormMessage> : null}
 
-      <button type="submit" className="btn btn-blue" disabled={guardar.isPending}>
+      <Button type="submit" className="self-start" disabled={guardar.isPending}>
         <Icon name="confirmar" size={16} />
-        <span>{guardar.isPending ? 'Guardando…' : 'Guardar'}</span>
-      </button>
+        <span>{guardar.isPending ? 'Guardando…' : 'Guardar datos clínicos'}</span>
+      </Button>
     </form>
   )
 }

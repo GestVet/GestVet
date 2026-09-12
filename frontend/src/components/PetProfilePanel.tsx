@@ -1,6 +1,8 @@
 import PetClinicalProfileForm from './PetClinicalProfileForm'
 import PetOwnerProfileForm from './PetOwnerProfileForm'
 import PetProfileSummary from './PetProfileSummary'
+import SectionHeading from './SectionHeading'
+import { Separator } from './ui/separator'
 
 interface PetProfileLike {
   readonly id: number
@@ -33,25 +35,32 @@ export default function PetProfilePanel({
   canEditClinicalFields,
 }: PetProfilePanelProps) {
   return (
-    <div className="stack">
+    <div className="flex flex-col gap-4">
+      <SectionHeading as="h3">Ficha</SectionHeading>
       <PetProfileSummary mascota={mascota} />
       {canEditOwnerFields ? (
-        <PetOwnerProfileForm
-          petId={mascota.id}
-          sex={mascota.sex}
-          color={mascota.color}
-          microchipNumber={mascota.microchip_number}
-          temperament={mascota.temperament}
-        />
+        <>
+          <Separator />
+          <PetOwnerProfileForm
+            petId={mascota.id}
+            sex={mascota.sex}
+            color={mascota.color}
+            microchipNumber={mascota.microchip_number}
+            temperament={mascota.temperament}
+          />
+        </>
       ) : null}
       {canEditClinicalFields ? (
-        <PetClinicalProfileForm
-          petId={mascota.id}
-          weightKg={mascota.weight_kg}
-          heightCm={mascota.height_cm}
-          isSterilized={mascota.is_sterilized}
-          allergies={mascota.allergies}
-        />
+        <>
+          <Separator />
+          <PetClinicalProfileForm
+            petId={mascota.id}
+            weightKg={mascota.weight_kg}
+            heightCm={mascota.height_cm}
+            isSterilized={mascota.is_sterilized}
+            allergies={mascota.allergies}
+          />
+        </>
       ) : null}
     </div>
   )

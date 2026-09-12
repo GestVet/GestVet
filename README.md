@@ -110,26 +110,25 @@ Los componentes caen en `src/components/ui`. Es código que genera y actualiza e
 
 El `cn` que usan los componentes viene del paquete `cn`, que es lo que emite hoy el registro de shadcn. No hay `src/lib`: el `.gitignore` de la raíz ignora cualquier carpeta `lib/`, y un archivo ahí nunca llegaría al repositorio.
 
-### Convivencia con el CSS actual
+### Tablas
 
-Las pantallas existentes siguen usando el CSS escrito a mano de `src/style.css` hasta migrar. El orden de capas de `src/index.css` es lo que evita que las dos cosas se pisen:
+Todos los listados usan `components/DataTable.tsx`, que monta TanStack Table 9 sobre la tabla de shadcn y resuelve lo común: carga, vacío, desplazamiento horizontal en el celular y filas que se despliegan. Cada pantalla declara sus columnas con una forma propia (`id`, `header`, `cell`) y no con los genéricos de TanStack, que cambiaron enteros de la 8 a la 9.
 
-- El CSS actual vive en la capa `legacy`, **por encima** del reinicio de Tailwind, así las pantallas conservan su aspecto.
-- Y **por debajo** de los componentes y las utilidades de Tailwind, así nunca pisa a shadcn.
-
-Las tablas actuales se excluyen de las de shadcn con `data-slot`, que es el atributo que llevan todos sus componentes. Cuando la última pantalla deje de usar `style.css`, se borra su importación y la capa desaparece.
+En el celular la tabla se desplaza en vez de apilarse: WCAG exime a las tablas de datos del reflujo, y apilarla le quita las cabeceras al lector de pantalla.
 
 ### Tema
 
-Los tokens de shadcn en `src/index.css` llevan la paleta de GestVet: el azul institucional `#004b8d` es `primary`, el verde de las acciones afirmativas es `success` (con su variante de botón) y el fondo gris azulado es `background`. Así una pantalla migrada y una que todavía no se ven de la misma familia.
+Los tokens de shadcn en `src/index.css` llevan la paleta de GestVet: el azul institucional `#004b8d` es `primary`, el verde de las acciones afirmativas es `success` (con su variante de botón) y el fondo gris azulado es `background`. Es la misma identidad que tenía la interfaz original.
 
 Donde un color original no alcanza el contraste de WCAG 2.2 AA se oscurece lo justo, y el archivo anota por qué: el verde con texto blanco, el gris de texto secundario y el borde de los campos. No hay tema oscuro.
 
-### Migración por áreas
+### Sin CSS escrito a mano
 
-Las pantallas pasan a shadcn de a un área por vez, verificadas en escritorio y celular. Hechas: acceso, registro y recuperación de contraseña; el armazón (menú, pie y avisos) y la portada.
+Toda la interfaz está en componentes de shadcn y utilidades de Tailwind. No queda `style.css` ni capa `legacy`. Las piezas repetidas viven en `src/components`: `PageHeader`, `SectionCard`, `EmptyState`, `DataTable`, `ConfirmDialog`, `StatusBadge` y los campos `TextField`, `SelectField` y `TextareaField`, que enlazan su ayuda y su error con `aria-describedby`.
 
-Con sesión iniciada, el menú va en una barra lateral desde 1024 px y detrás de un botón en pantallas más angostas: un administrador tiene nueve entradas y en una barra superior no entraban ni en escritorio. Las entradas siguen saliendo de `features/shell/navigation.ts`. Los campos compartidos `TextField`, `FieldError` y `FormMessage` ya usan shadcn, así que los formularios que los usan, migrados o no, tienen el mismo campo accesible.
+Las confirmaciones y los motivos (cancelar una cita, anular un pago, corregir el estado de una mascota) se piden en un diálogo y no con `window.confirm` o `window.prompt`, que no toman el tema y no se leen bien con lector de pantalla.
+
+Con sesión iniciada, el menú va en una barra lateral desde 1024 px y detrás de un botón en pantallas más angostas. Las entradas salen de `features/shell/navigation.ts`.
 
 ## Requisitos
 

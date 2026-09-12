@@ -4,9 +4,11 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import { myPetsQueryKey, registerPet } from '../../api/pets'
-import FieldError from '../../components/FieldError'
 import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
+import SectionCard from '../../components/SectionCard'
+import TextField from '../../components/TextField'
+import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 
@@ -27,6 +29,7 @@ export default function PetForm() {
     resolver: zodResolver(esquema),
     defaultValues: VACIO,
   })
+  const errores = formState.errors
 
   const alta = useMutation({
     mutationFn: registerPet,
@@ -37,35 +40,33 @@ export default function PetForm() {
   })
 
   return (
-    <section className="card">
-      <h2>Registrar una mascota</h2>
-      <form className="form" onSubmit={onSubmit(
+    <SectionCard title="Registrar una mascota">
+      <form
+        noValidate
+        className="flex flex-col gap-5"
+        onSubmit={onSubmit(
           handleSubmit((valores) => {
             alta.mutate(valores)
           }),
-        )}>
-        <div className="field">
-          <label htmlFor="name">Nombre</label>
-          <input id="name" {...register('name')} />
-          <FieldError message={formState.errors.name?.message} />
-        </div>
-
-        <div className="field">
-          <label htmlFor="species">Especie</label>
-          <input id="species" placeholder="Perro, gato, conejo…" {...register('species')} />
-          <FieldError message={formState.errors.species?.message} />
-        </div>
-
-        <div className="field">
-          <label htmlFor="breed">Raza</label>
-          <input id="breed" {...register('breed')} />
-          <FieldError message={formState.errors.breed?.message} />
-        </div>
-
-        <div className="field">
-          <label htmlFor="birth_date">Fecha de nacimiento</label>
-          <input id="birth_date" type="date" {...register('birth_date')} />
-          <FieldError message={formState.errors.birth_date?.message} />
+        )}
+      >
+        <div className="grid gap-5 sm:grid-cols-2">
+          <TextField id="name" label="Nombre" field={register('name')} error={errores.name?.message} />
+          <TextField
+            id="species"
+            label="Especie"
+            placeholder="Perro, gato, conejo…"
+            field={register('species')}
+            error={errores.species?.message}
+          />
+          <TextField id="breed" label="Raza" field={register('breed')} error={errores.breed?.message} />
+          <TextField
+            id="birth_date"
+            label="Fecha de nacimiento"
+            type="date"
+            field={register('birth_date')}
+            error={errores.birth_date?.message}
+          />
         </div>
 
         {alta.isError ? (
@@ -74,11 +75,17 @@ export default function PetForm() {
           </FormMessage>
         ) : null}
 
-        <button type="submit" className="btn btn-green" disabled={alta.isPending}>
+        <Button
+          type="submit"
+          variant="success"
+          size="lg"
+          className="h-10 self-start px-4"
+          disabled={alta.isPending}
+        >
           <Icon name="agregar" size={16} />
           <span>{alta.isPending ? 'Guardando…' : 'Registrar'}</span>
-        </button>
+        </Button>
       </form>
-    </section>
+    </SectionCard>
   )
 }

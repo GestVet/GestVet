@@ -1,5 +1,6 @@
 import type { AppointmentStatus } from '../../api/types'
 import Icon from '../../components/Icon'
+import { Button } from '../../components/ui/button'
 
 interface AppointmentActionButtonsProps {
   readonly status: AppointmentStatus
@@ -8,10 +9,9 @@ interface AppointmentActionButtonsProps {
   readonly onConfirm: () => void
   readonly onComplete: () => void
   readonly onMarkNoShow: () => void
-  readonly onCancel: () => void
 }
 
-/** Los botones de una fila de citas, ya resueltos según rol y estado. */
+/** Los botones de quien atiende una cita, ya resueltos según su estado. */
 export default function AppointmentActionButtons({
   status,
   atiende,
@@ -19,39 +19,34 @@ export default function AppointmentActionButtons({
   onConfirm,
   onComplete,
   onMarkNoShow,
-  onCancel,
 }: AppointmentActionButtonsProps) {
+  if (!atiende) {
+    return null
+  }
   const abierta = status === 'pending' || status === 'confirmed'
 
   return (
-    <div className="row-actions">
-      {atiende && status === 'pending' ? (
-        <button type="button" className="btn btn-blue" disabled={ocupado} onClick={onConfirm}>
+    <>
+      {status === 'pending' ? (
+        <Button type="button" size="sm" disabled={ocupado} onClick={onConfirm}>
           <Icon name="confirmar" size={14} />
           <span>Confirmar</span>
-        </button>
+        </Button>
       ) : null}
 
-      {atiende && status === 'confirmed' ? (
-        <button type="button" className="btn btn-green" disabled={ocupado} onClick={onComplete}>
+      {status === 'confirmed' ? (
+        <Button type="button" size="sm" variant="success" disabled={ocupado} onClick={onComplete}>
           <Icon name="confirmar" size={14} />
           <span>Completar</span>
-        </button>
-      ) : null}
-
-      {atiende && abierta ? (
-        <button type="button" className="btn btn-plain" disabled={ocupado} onClick={onMarkNoShow}>
-          <Icon name="alerta" size={14} />
-          <span>No asistió</span>
-        </button>
+        </Button>
       ) : null}
 
       {abierta ? (
-        <button type="button" className="btn btn-danger" disabled={ocupado} onClick={onCancel}>
-          <Icon name="cancelar" size={14} />
-          <span>Cancelar</span>
-        </button>
+        <Button type="button" size="sm" variant="outline" disabled={ocupado} onClick={onMarkNoShow}>
+          <Icon name="alerta" size={14} />
+          <span>No asistió</span>
+        </Button>
       ) : null}
-    </div>
+    </>
   )
 }

@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { clientsQueryKey, updateClientContact } from '../../api/directory'
 import FormMessage from '../../components/FormMessage'
 import TextField from '../../components/TextField'
+import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 
@@ -47,26 +48,30 @@ export default function CompleteContactForm({ clientId, phone }: CompleteContact
 
   return (
     <form
-      className="form"
+      noValidate
+      className="flex flex-col gap-5"
       onSubmit={onSubmit(
         handleSubmit((valores) => {
           completar.mutate(valores)
         }),
       )}
     >
-      <TextField
-        id={`contacto-correo-${String(clientId)}`}
-        label="Correo real del cliente"
-        type="email"
-        field={register('email')}
-        error={formState.errors.email?.message}
-      />
-      <TextField
-        id={`contacto-telefono-${String(clientId)}`}
-        label="Teléfono"
-        inputMode="tel"
-        field={register('phone')}
-      />
+      <div className="grid gap-5 sm:grid-cols-2">
+        <TextField
+          id={`contacto-correo-${String(clientId)}`}
+          label="Correo real del cliente"
+          type="email"
+          field={register('email')}
+          error={formState.errors.email?.message}
+        />
+        <TextField
+          id={`contacto-telefono-${String(clientId)}`}
+          label="Teléfono"
+          type="tel"
+          inputMode="tel"
+          field={register('phone')}
+        />
+      </div>
 
       {completar.isError ? (
         <FormMessage tone="error">
@@ -74,9 +79,9 @@ export default function CompleteContactForm({ clientId, phone }: CompleteContact
         </FormMessage>
       ) : null}
 
-      <button type="submit" className="btn btn-blue" disabled={completar.isPending}>
-        <span>{completar.isPending ? 'Guardando…' : 'Guardar contacto'}</span>
-      </button>
+      <Button type="submit" className="self-start" disabled={completar.isPending}>
+        {completar.isPending ? 'Guardando…' : 'Guardar contacto'}
+      </Button>
     </form>
   )
 }

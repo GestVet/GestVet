@@ -1,15 +1,24 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 
-import { fetchMySlots, mySlotsQueryKey, withdrawSlot } from '../../api/availability'
-import Icon from '../../components/Icon'
-import TableShell from '../../components/TableShell'
+import { fetchMySlots, mySlotsQueryKey } from '../../api/availability'
+import DataTable, { type DataColumn } from '../../components/DataTable'
+import PageHeader from '../../components/PageHeader'
+import SectionCard from '../../components/SectionCard'
 import AvailabilityRangeFilter, { type Rango } from './AvailabilityRangeFilter'
 import SlotForm from './SlotForm'
+import WithdrawSlotButton from './WithdrawSlotButton'
 
-const COLUMNAS = ['Desde', 'Hasta', 'Duración', 'Acciones'] as const
+type Tramo = Awaited<ReturnType<typeof fetchMySlots>>['items'][number]
 
 const FORMATO = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
+
+const COLUMNAS: readonly DataColumn<Tramo>[] = [
+  { id: 'desde', header: 'Desde', cell: (tramo) => FORMATO.format(new Date(tramo.starts_at)) },
+  { id: 'hasta', header: 'Hasta', cell: (tramo) => FORMATO.format(new Date(tramo.ends_at)) },
+  { id: 'duracion', header: 'Duración', cell: (tramo) => `${String(tramo.duration_minutes)} min` },
+  { id: 'acciones', header: 'Acciones', cell: (tramo) => <WithdrawSlotButton slotId={tramo.id} /> },
+]
 
 function calcularVentana(rango: Rango, ancla: string): { desde?: string; hasta?: string } {
   if (rango === 'todos' || ancla === '') {
@@ -28,7 +37,6 @@ function calcularVentana(rango: Rango, ancla: string): { desde?: string; hasta?:
 }
 
 export default function AvailabilityView() {
-  const queryClient = useQueryClient()
   const hoy = new Date().toISOString().slice(0, 10)
   const [rango, setRango] = useState<Rango>('todos')
   const [ancla, setAncla] = useState(hoy)
@@ -39,59 +47,27 @@ export default function AvailabilityView() {
     queryFn: () => fetchMySlots(ventana.desde, ventana.hasta),
   })
 
-  const retirar = useMutation({
-    mutationFn: withdrawSlot,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: mySlotsQueryKey })
-    },
-  })
-
-  const items = tramos.data?.items ?? []
-
   return (
-    <div className="stack">
-      <div className="page-header">
-        <h1>Mi agenda</h1>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Mi agenda" />
 
       <SlotForm />
 
-      <section className="card">
-        <h2>Tramos publicados</h2>
+      <SectionCard title="Tramos publicados">
         <AvailabilityRangeFilter
           rango={rango}
           ancla={ancla}
           onRangoChange={setRango}
           onAnclaChange={setAncla}
         />
-        <TableShell
+        <DataTable
           columns={COLUMNAS}
+          data={tramos.data?.items ?? []}
           isLoading={tramos.isPending}
-          isEmpty={items.length === 0}
           emptyMessage="Todavía no publicaste ningún tramo."
-        >
-          {items.map((tramo) => (
-            <tr key={tramo.id}>
-              <td>{FORMATO.format(new Date(tramo.starts_at))}</td>
-              <td>{FORMATO.format(new Date(tramo.ends_at))}</td>
-              <td>{tramo.duration_minutes} min</td>
-              <td>
-                <button
-                  type="button"
-                  className="btn btn-plain"
-                  disabled={retirar.isPending}
-                  onClick={() => {
-                    retirar.mutate(tramo.id)
-                  }}
-                >
-                  <Icon name="cancelar" size={14} />
-                  <span>Retirar</span>
-                </button>
-              </td>
-            </tr>
-          ))}
-        </TableShell>
-      </section>
+          getRowId={(tramo) => String(tramo.id)}
+        />
+      </SectionCard>
     </div>
   )
 }

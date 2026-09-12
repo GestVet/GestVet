@@ -8,6 +8,8 @@ import FormMessage from './FormMessage'
 import Icon from './Icon'
 import SelectField from './SelectField'
 import TextField from './TextField'
+import { Button } from './ui/button'
+import { NativeSelectOption } from './ui/native-select'
 
 const esquema = z.object({
   sex: z.enum(['', 'male', 'female']),
@@ -46,7 +48,8 @@ export default function PetOwnerProfileForm(props: PetOwnerProfileFormProps) {
 
   return (
     <form
-      className="form"
+      noValidate
+      className="flex flex-col gap-5"
       onSubmit={onSubmit(
         handleSubmit((valores) => {
           guardar.mutate({
@@ -58,30 +61,32 @@ export default function PetOwnerProfileForm(props: PetOwnerProfileFormProps) {
         }),
       )}
     >
-      <SelectField id="sex" label="Sexo" field={register('sex')} placeholder="No especificado">
-        <option value="male">Macho</option>
-        <option value="female">Hembra</option>
-      </SelectField>
-      <TextField id="color" label="Color" field={register('color')} error={errores.color?.message} />
-      <TextField
-        id="microchip_number"
-        label="Microchip"
-        field={register('microchip_number')}
-        error={errores.microchip_number?.message}
-      />
-      <TextField
-        id="temperament"
-        label="Temperamento"
-        field={register('temperament')}
-        error={errores.temperament?.message}
-      />
+      <div className="grid gap-5 sm:grid-cols-2">
+        <SelectField id="sex" label="Sexo" field={register('sex')} placeholder="No especificado">
+          <NativeSelectOption value="male">Macho</NativeSelectOption>
+          <NativeSelectOption value="female">Hembra</NativeSelectOption>
+        </SelectField>
+        <TextField id="color" label="Color" field={register('color')} error={errores.color?.message} />
+        <TextField
+          id="microchip_number"
+          label="Microchip"
+          field={register('microchip_number')}
+          error={errores.microchip_number?.message}
+        />
+        <TextField
+          id="temperament"
+          label="Temperamento"
+          field={register('temperament')}
+          error={errores.temperament?.message}
+        />
+      </div>
 
       {guardar.isError ? <FormMessage tone="error">{guardar.errorMessage}</FormMessage> : null}
 
-      <button type="submit" className="btn btn-blue" disabled={guardar.isPending}>
+      <Button type="submit" className="self-start" disabled={guardar.isPending}>
         <Icon name="confirmar" size={16} />
-        <span>{guardar.isPending ? 'Guardando…' : 'Guardar'}</span>
-      </button>
+        <span>{guardar.isPending ? 'Guardando…' : 'Guardar ficha'}</span>
+      </Button>
     </form>
   )
 }

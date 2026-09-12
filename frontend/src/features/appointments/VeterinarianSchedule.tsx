@@ -28,12 +28,14 @@ export default function VeterinarianSchedule({ veterinarianId }: VeterinarianSch
   const items = horario.data?.items ?? []
   let contenido: ReactNode
   if (horario.isPending) {
-    contenido = <p className="empty">Cargando…</p>
+    contenido = <p className="m-0 text-sm text-muted-foreground">Cargando…</p>
   } else if (items.length === 0) {
-    contenido = <p className="empty">Todavía no publicó ningún tramo.</p>
+    contenido = (
+      <p className="m-0 text-sm text-muted-foreground">Todavía no publicó ningún tramo.</p>
+    )
   } else {
     contenido = (
-      <ul>
+      <ul className="m-0 flex list-none flex-col gap-1 p-0 text-sm">
         {items.map((tramo) => (
           <li key={tramo.id}>
             {FORMATO.format(new Date(tramo.starts_at))} –{' '}
@@ -45,9 +47,12 @@ export default function VeterinarianSchedule({ veterinarianId }: VeterinarianSch
   }
 
   return (
-    <div className="field">
-      <span className="muted">Horario publicado por este veterinario</span>
+    <section
+      aria-label="Horario publicado por este veterinario"
+      className="flex flex-col gap-2 rounded-xl bg-muted p-4"
+    >
+      <p className="m-0 text-sm font-medium">Horario publicado por este veterinario</p>
       {contenido}
-    </div>
+    </section>
   )
 }

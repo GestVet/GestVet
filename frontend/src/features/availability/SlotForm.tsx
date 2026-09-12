@@ -4,9 +4,11 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import { mySlotsQueryKey, publishSlot } from '../../api/availability'
-import FieldError from '../../components/FieldError'
 import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
+import SectionCard from '../../components/SectionCard'
+import TextField from '../../components/TextField'
+import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 
@@ -46,31 +48,34 @@ export default function SlotForm() {
   })
 
   return (
-    <section className="card">
-      <h2>Publicar un tramo</h2>
-      <p className="muted">
-        Un tramo dura entre quince minutos y doce horas, y no puede superponerse con otro tuyo.
-        Dos tramos contiguos sí valen.
-      </p>
-
+    <SectionCard
+      title="Publicar un tramo"
+      description="Un tramo dura entre quince minutos y doce horas, y no puede superponerse con otro tuyo. Dos tramos contiguos sí valen."
+    >
       <form
-        className="form"
+        noValidate
+        className="flex flex-col gap-5"
         onSubmit={onSubmit(
           handleSubmit((valores) => {
             publicar.mutate(valores)
           }),
         )}
       >
-        <div className="field">
-          <label htmlFor="starts_at">Desde</label>
-          <input id="starts_at" type="datetime-local" {...register('starts_at')} />
-          <FieldError message={formState.errors.starts_at?.message} />
-        </div>
-
-        <div className="field">
-          <label htmlFor="ends_at">Hasta</label>
-          <input id="ends_at" type="datetime-local" {...register('ends_at')} />
-          <FieldError message={formState.errors.ends_at?.message} />
+        <div className="grid gap-5 sm:grid-cols-2">
+          <TextField
+            id="starts_at"
+            label="Desde"
+            type="datetime-local"
+            field={register('starts_at')}
+            error={formState.errors.starts_at?.message}
+          />
+          <TextField
+            id="ends_at"
+            label="Hasta"
+            type="datetime-local"
+            field={register('ends_at')}
+            error={formState.errors.ends_at?.message}
+          />
         </div>
 
         {publicar.isError ? (
@@ -79,11 +84,17 @@ export default function SlotForm() {
           </FormMessage>
         ) : null}
 
-        <button type="submit" className="btn btn-green" disabled={publicar.isPending}>
+        <Button
+          type="submit"
+          variant="success"
+          size="lg"
+          className="h-10 self-start px-4"
+          disabled={publicar.isPending}
+        >
           <Icon name="agregar" size={16} />
           <span>{publicar.isPending ? 'Publicando…' : 'Publicar'}</span>
-        </button>
+        </Button>
       </form>
-    </section>
+    </SectionCard>
   )
 }

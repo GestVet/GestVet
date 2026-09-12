@@ -4,8 +4,9 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import { openHospitalization } from '../../api/hospitalizations'
-import FieldError from '../../components/FieldError'
 import FormMessage from '../../components/FormMessage'
+import TextareaField from '../../components/TextareaField'
+import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 
@@ -43,18 +44,21 @@ export default function OpenHospitalizationForm({ appointmentId }: OpenHospitali
 
   return (
     <form
-      className="form"
+      noValidate
+      className="flex flex-col gap-4"
       onSubmit={onSubmit(
         handleSubmit((valores) => {
           abrir.mutate(valores)
         }),
       )}
     >
-      <div className="field">
-        <label htmlFor="reason">Motivo de la internación</label>
-        <textarea id="reason" rows={2} {...register('reason')} />
-        <FieldError message={formState.errors.reason?.message} />
-      </div>
+      <TextareaField
+        id={`internacion-${String(appointmentId)}`}
+        label="Motivo de la internación"
+        rows={2}
+        field={register('reason')}
+        error={formState.errors.reason?.message}
+      />
 
       {abrir.isError ? (
         <FormMessage tone="error">
@@ -62,9 +66,9 @@ export default function OpenHospitalizationForm({ appointmentId }: OpenHospitali
         </FormMessage>
       ) : null}
 
-      <button type="submit" className="btn btn-green" disabled={abrir.isPending}>
-        <span>{abrir.isPending ? 'Abriendo…' : 'Internar'}</span>
-      </button>
+      <Button type="submit" variant="success" className="self-start" disabled={abrir.isPending}>
+        {abrir.isPending ? 'Abriendo…' : 'Internar'}
+      </Button>
     </form>
   )
 }

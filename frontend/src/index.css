@@ -1,22 +1,11 @@
 /*
  * Punto de entrada de estilos.
  *
- * El orden de las capas es la decision importante de este archivo. El CSS
- * escrito a mano de la interfaz actual vive en la capa `legacy`, entre el
- * reinicio de Tailwind y sus utilidades:
- *
- * - por encima de `base`, asi conserva el aspecto que tiene hoy aunque el
- *   reinicio de Tailwind borre margenes y tamanos por defecto;
- * - por debajo de `components` y `utilities`, asi nunca pisa a un componente
- *   de shadcn/ui ni a una clase de Tailwind escrita a proposito.
- *
- * Cuando la ultima pantalla deje de usar ese CSS, se borra la importacion y la
- * capa desaparece sin tocar nada mas.
+ * Toda la interfaz se construye con componentes de shadcn/ui y utilidades de
+ * Tailwind. No hay CSS escrito a mano: el color, el radio y la fuente viven en
+ * los tokens de abajo, y cambiarlos cambia cada pantalla.
  */
-@layer theme, base, legacy, components, utilities;
-
 @import "tailwindcss";
-@import "./style.css" layer(legacy);
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
@@ -43,6 +32,7 @@
     --color-destructive: var(--destructive);
     --color-success: var(--success);
     --color-success-foreground: var(--success-foreground);
+    --color-warning: var(--warning);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
     --color-muted-foreground: var(--muted-foreground);
@@ -68,8 +58,8 @@
 /*
  * Paleta de GestVet sobre los tokens de shadcn/ui.
  *
- * Los valores salen de la paleta de style.css, asi las pantallas migradas y las
- * que todavia no conviven sin saltos de color. Donde el color original no
+ * Los valores salen de la paleta que usaba la interfaz original, para que el
+ * producto conserve su identidad. Donde el color original no
  * alcanza el contraste de WCAG 2.2 AA se oscurece lo justo:
  *
  * - el verde #28a745 con texto blanco da 3,1 a 1; `--success` usa #1e7b34;
@@ -77,7 +67,9 @@
  *   `--muted-foreground` usa #5c6370;
  * - el borde #dddddd no llega a 3 a 1, que es lo minimo para distinguir un
  *   campo; `--input` usa #7f8a98 y `--border`, que solo separa, conserva el
- *   original.
+ *   original;
+ * - el ambar #b8860b no llega a 4,5 a 1 sobre su propio fondo claro;
+ *   `--warning` usa #8a6100.
  *
  * No hay tema oscuro: ninguna pantalla lo ofrece todavia.
  */
@@ -99,6 +91,7 @@
     --destructive: #c92a2a;
     --success: #1e7b34;
     --success-foreground: #ffffff;
+    --warning: #8a6100;
     --border: #dddddd;
     --input: #7f8a98;
     --ring: #0056b3;

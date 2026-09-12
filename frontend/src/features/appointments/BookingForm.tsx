@@ -5,6 +5,8 @@ import { FormProvider, useForm } from 'react-hook-form'
 import { appointmentsQueryKey, bookAppointment } from '../../api/appointments'
 import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
+import SectionCard from '../../components/SectionCard'
+import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 import BookingFields from './BookingFields'
@@ -41,10 +43,11 @@ export default function BookingForm() {
   })
 
   return (
-    <section className="card">
+    <SectionCard title="Cita con hora">
       <FormProvider {...formulario}>
         <form
-          className="form"
+          noValidate
+          className="flex flex-col gap-5"
           onSubmit={onSubmit(
             formulario.handleSubmit((valores) => {
               reservar.mutate(valores)
@@ -62,12 +65,18 @@ export default function BookingForm() {
             <FormMessage tone="ok">Cita reservada. Queda pendiente de confirmar.</FormMessage>
           ) : null}
 
-          <button type="submit" className="btn btn-green" disabled={reservar.isPending}>
+          <Button
+            type="submit"
+            variant="success"
+            size="lg"
+            className="h-10 self-start px-4"
+            disabled={reservar.isPending}
+          >
             <Icon name="agenda" size={16} />
             <span>{reservar.isPending ? 'Reservando…' : 'Reservar'}</span>
-          </button>
+          </Button>
         </form>
       </FormProvider>
-    </section>
+    </SectionCard>
   )
 }
