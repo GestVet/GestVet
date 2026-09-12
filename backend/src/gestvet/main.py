@@ -6,6 +6,9 @@ para montar sus routers. Ningún módulo importa a otro.
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -16,7 +19,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from gestvet.core.config import get_settings
-from gestvet.core.database import engine
+from gestvet.core.database import SessionFactory, engine
+from gestvet.core.whatsapp import ConsoleWhatsAppSender
 from gestvet.modules.accounts.adapters.api.admin_router import router as admin_router
 from gestvet.modules.accounts.adapters.api.auth_router import router as auth_router
 from gestvet.modules.accounts.adapters.api.router import router as clients_router
@@ -24,6 +28,16 @@ from gestvet.modules.accounts.adapters.api.veterinarians_router import (
     router as veterinarians_router,
 )
 from gestvet.modules.appointments.adapters.api.router import router as appointments_router
+from gestvet.modules.appointments.adapters.persistence.directories import (
+    SqlClientDirectory as SqlAppointmentClientDirectory,
+)
+from gestvet.modules.appointments.adapters.persistence.directories import (
+    SqlPetDirectory as SqlAppointmentPetDirectory,
+)
+from gestvet.modules.appointments.adapters.persistence.repositories import (
+    SqlAlchemyAppointmentRepository,
+)
+from gestvet.modules.appointments.use_cases.send_upcoming_reminders import SendUpcomingReminders
 from gestvet.modules.availability.adapters.api.router import router as availability_router
 from gestvet.modules.billing.adapters.api.router import router as billing_router
 from gestvet.modules.complaints.adapters.api.router import router as complaints_router
@@ -38,6 +52,13 @@ from gestvet.modules.reviews.adapters.api.router import router as reviews_router
 API_PREFIX = "/api/v1"
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
+
+# Cada cuánto se despierta el recordatorio de WhatsApp a revisar qué citas
+# entran a su ventana de 24h. Es un `asyncio.Task` en el propio proceso y no
+# un servicio aparte: alcanza para un solo proceso de API, que es como corre
+# esto hoy, y no agrega ninguna dependencia nueva al proyecto.
+REMINDER_POLL_INTERVAL_SECONDS = 30 * 60
 
 
 class HealthResponse(BaseModel):
@@ -52,12 +73,40 @@ class HealthResponse(BaseModel):
     version: str
 
 
+async def _send_due_reminders() -> None:
+    async with SessionFactory() as session:
+        use_case = SendUpcomingReminders(
+            SqlAlchemyAppointmentRepository(session),
+            SqlAppointmentClientDirectory(session),
+            SqlAppointmentPetDirectory(session),
+            ConsoleWhatsAppSender(),
+        )
+        await use_case()
+        await session.commit()
+
+
+async def _reminder_loop() -> None:
+    while True:
+        await asyncio.sleep(REMINDER_POLL_INTERVAL_SECONDS)
+        try:
+            await _send_due_reminders()
+        except Exception:
+            # Un fallo en una vuelta (por ejemplo, la base momentáneamente
+            # inalcanzable) no debe tumbar el proceso: se reintenta en la
+            # siguiente, con las mismas citas todavía sin `reminder_sent_at`.
+            logger.exception("Falló el envío de recordatorios de WhatsApp.")
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     # El esquema lo crean las migraciones de Alembic, también en desarrollo.
     # Crearlo al arrancar dejaba que la base local se apartara del historial de
     # migraciones sin que nadie se enterara hasta el despliegue.
+    reminder_task = asyncio.create_task(_reminder_loop())
     yield
+    reminder_task.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+        await reminder_task
     await engine.dispose()
 
 

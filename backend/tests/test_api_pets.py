@@ -257,6 +257,7 @@ async def test_el_dueno_actualiza_el_perfil_que_conoce(
     response = await client.patch(
         f"{PETS_URL}/{propia.id}/owner-profile",
         json={
+            "breed": "Mestizo",
             "sex": "female",
             "color": "Negro con blanco",
             "microchip_number": "985141000123456",
@@ -267,6 +268,7 @@ async def test_el_dueno_actualiza_el_perfil_que_conoce(
 
     assert response.status_code == 200
     body = response.json()
+    assert body["breed"] == "Mestizo"
     assert body["sex"] == "female"
     assert body["color"] == "Negro con blanco"
     assert body["microchip_number"] == "985141000123456"
@@ -284,7 +286,7 @@ async def test_un_cliente_no_actualiza_el_perfil_de_una_mascota_ajena(
 
     response = await client.patch(
         f"{PETS_URL}/{ajena.id}/owner-profile",
-        json={"color": "Negro"},
+        json={"breed": "Mestizo", "color": "Negro"},
         headers=authorization_for(ana),
     )
 
@@ -303,6 +305,7 @@ async def test_el_veterinario_actualiza_el_perfil_clinico(
     response = await client.patch(
         f"{PETS_URL}/{mascota.id}/clinical-profile",
         json={
+            "birth_date": "2020-05-17",
             "weight_kg": "18.5",
             "height_cm": "45",
             "is_sterilized": True,
@@ -313,6 +316,7 @@ async def test_el_veterinario_actualiza_el_perfil_clinico(
 
     assert response.status_code == 200
     body = response.json()
+    assert body["birth_date"] == "2020-05-17"
     assert body["weight_kg"] == "18.50"
     assert body["height_cm"] == "45.00"
     assert body["is_sterilized"] is True
@@ -330,7 +334,7 @@ async def test_el_veterinario_de_guardia_tambien_actualiza_el_perfil_clinico(
 
     response = await client.patch(
         f"{PETS_URL}/{mascota.id}/clinical-profile",
-        json={"weight_kg": "10", "is_sterilized": False},
+        json={"birth_date": "2020-05-17", "weight_kg": "10", "is_sterilized": False},
         headers=authorization_for(guardia),
     )
 
@@ -347,7 +351,7 @@ async def test_un_cliente_no_puede_actualizar_el_perfil_clinico(
 
     response = await client.patch(
         f"{PETS_URL}/{propia.id}/clinical-profile",
-        json={"weight_kg": "10"},
+        json={"birth_date": "2020-05-17", "weight_kg": "10"},
         headers=authorization_for(ana),
     )
 
@@ -366,7 +370,7 @@ async def test_el_admin_no_puede_actualizar_el_perfil_clinico(
 
     response = await client.patch(
         f"{PETS_URL}/{mascota.id}/clinical-profile",
-        json={"weight_kg": "10"},
+        json={"birth_date": "2020-05-17", "weight_kg": "10"},
         headers=authorization_for(admin),
     )
 
@@ -382,7 +386,7 @@ async def test_el_perfil_clinico_valida_el_peso(client: AsyncClient, session: As
 
     response = await client.patch(
         f"{PETS_URL}/{mascota.id}/clinical-profile",
-        json={"weight_kg": "-1"},
+        json={"birth_date": "2020-05-17", "weight_kg": "-1"},
         headers=authorization_for(veterinario),
     )
 

@@ -50,6 +50,10 @@ class AppointmentRepository(Protocol):
         self, veterinarian_id: int, starts_at: datetime, ends_at: datetime
     ) -> list[Appointment]: ...
 
+    async def find_due_for_reminder(
+        self, window_start: datetime, window_end: datetime
+    ) -> list[Appointment]: ...
+
     async def count_active_for(self, veterinarian_id: int) -> int: ...
 
 
@@ -62,9 +66,11 @@ class AppointmentTypeRepository(Protocol):
 
 
 class PetDirectory(Protocol):
-    """Lo que las citas necesitan saber de una mascota: de quién es."""
+    """Lo que las citas necesitan saber de una mascota: de quién es y su nombre."""
 
     async def is_owned_by(self, pet_id: int, owner_id: int) -> bool: ...
+
+    async def find_name(self, pet_id: int) -> str | None: ...
 
 
 class ScheduleDirectory(Protocol):

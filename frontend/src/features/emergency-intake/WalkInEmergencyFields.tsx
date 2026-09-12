@@ -1,6 +1,7 @@
 import type { FieldErrors, UseFormRegister } from 'react-hook-form'
 
 import FieldError from '../../components/FieldError'
+import SpeciesField from '../../components/SpeciesField'
 import TextField from '../../components/TextField'
 import type { WalkInEmergencyFormValues } from './formValues'
 
@@ -44,11 +45,14 @@ export default function WalkInEmergencyFields({ register, errors }: WalkInEmerge
         field={register('pet_name')}
         error={errors.pet_name?.message}
       />
-      <TextField
-        id="pet_species"
-        label="Especie"
-        field={register('pet_species')}
-        error={errors.pet_species?.message}
+      <SpeciesField
+        speciesId="pet_species"
+        otherId="pet_species_other"
+        speciesField={register('pet_species')}
+        otherField={register('pet_species_other')}
+        speciesError={errors.pet_species?.message}
+        otherError={errors.pet_species_other?.message}
+        initiallyOther={false}
       />
 
       <div className="field">

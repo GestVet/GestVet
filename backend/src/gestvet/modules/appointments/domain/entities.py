@@ -142,6 +142,10 @@ class Appointment:
     status: AppointmentStatus = AppointmentStatus.PENDING
     cancellation_reason: str = ""
     updated_by: int | None = None
+    # Cuándo se mandó el recordatorio de WhatsApp, para no mandarlo dos veces.
+    # `None` significa "todavía no". No es un estado de la cita: convive con
+    # cualquiera de los de arriba.
+    reminder_sent_at: datetime | None = None
     id: int | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
@@ -183,6 +187,9 @@ class Appointment:
 
     def mark_no_show(self, actor_id: int) -> None:
         self._move_to(AppointmentStatus.NO_SHOW, actor_id)
+
+    def mark_reminder_sent(self, now: datetime | None = None) -> None:
+        self.reminder_sent_at = now or datetime.now(UTC)
 
     def effective_status(self, now: datetime | None = None) -> AppointmentStatus:
         """El estado que corresponde en este instante.

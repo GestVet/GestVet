@@ -22,6 +22,7 @@ from sqlalchemy import DateTime, bindparam, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from gestvet.core.identity import Role
+from gestvet.modules.appointments.ports.client_directory import ClientContact
 
 # Una consulta escrita a mano no pasa por el sistema de tipos de SQLAlchemy,
 # así que un `datetime` llegaría crudo al driver: en SQLite eso cae en el
@@ -33,6 +34,10 @@ _MOMENT = DateTime(timezone=True)
 _PET_IS_OWNED = text(
     "SELECT 1 FROM pets WHERE id = :pet_id AND owner_id = :owner_id AND is_active = :active"
 )
+
+_PET_NAME = text("SELECT name FROM pets WHERE id = :pet_id")
+
+_CLIENT_CONTACT = text("SELECT first_name, last_name, phone FROM users WHERE id = :client_id")
 
 _SCHEDULE_COVERS = text(
     "SELECT 1 FROM availability_slots "
@@ -73,6 +78,21 @@ class SqlPetDirectory:
             )
         ).first()
         return row is not None
+
+    async def find_name(self, pet_id: int) -> str | None:
+        row = (await self._session.execute(_PET_NAME, {"pet_id": pet_id})).first()
+        return row.name if row else None
+
+
+class SqlClientDirectory:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def find_contact(self, client_id: int) -> ClientContact | None:
+        row = (await self._session.execute(_CLIENT_CONTACT, {"client_id": client_id})).first()
+        if row is None:
+            return None
+        return ClientContact(name=f"{row.first_name} {row.last_name}".strip(), phone=row.phone)
 
 
 class SqlScheduleDirectory:

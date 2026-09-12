@@ -19,6 +19,7 @@ from gestvet.modules.pets.ports.pet_repository import PetRepository
 class UpdatePetOwnerProfileCommand:
     pet_id: int
     owner_id: int
+    breed: str
     sex: PetSex | None
     color: str
     microchip_number: str
@@ -36,6 +37,7 @@ class UpdatePetOwnerProfile:
             raise PetNotFound(command.pet_id)
 
         pet.update_owner_profile(
+            breed=command.breed,
             sex=command.sex,
             color=command.color,
             microchip_number=command.microchip_number,

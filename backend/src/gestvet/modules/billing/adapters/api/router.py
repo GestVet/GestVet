@@ -19,9 +19,11 @@ from gestvet.core.identity import STAFF_ROLES, Principal, Role
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from gestvet.modules.billing.adapters.api.dependencies import (
     AppointmentDirectoryDep,
+    ClientDirectoryDep,
     PaymentGatewayDep,
     PaymentRepositoryDep,
     QrChargeRepositoryDep,
+    WhatsAppSenderDep,
 )
 from gestvet.modules.billing.adapters.api.schemas import (
     CreateQrChargeRequest,
@@ -232,9 +234,11 @@ async def confirm_qr_charge(
     charges: QrChargeRepositoryDep,
     payments: PaymentRepositoryDep,
     activity: ActivityRecorderDep,
+    clients: ClientDirectoryDep,
+    whatsapp: WhatsAppSenderDep,
 ) -> QrChargeResponse:
     try:
-        charge = await ConfirmQrCharge(charges, payments, activity)(
+        charge = await ConfirmQrCharge(charges, payments, activity, clients, whatsapp)(
             ConfirmQrChargeCommand(
                 charge_id=charge_id,
                 requester_id=principal.user_id,

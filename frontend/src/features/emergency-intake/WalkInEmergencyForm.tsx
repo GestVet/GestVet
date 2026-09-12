@@ -7,6 +7,7 @@ import { openWalkInEmergency } from '../../api/appointments'
 import { registerWalkInClient } from '../../api/directory'
 import { registerPetForOwner } from '../../api/pets'
 import type { AppointmentResponse } from '../../api/types'
+import { OTHER_SPECIES_OPTION } from '../../components/petSpecies'
 import FormMessage from '../../components/FormMessage'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
@@ -47,7 +48,10 @@ export default function WalkInEmergencyForm() {
         const mascota = await registerPetForOwner({
           owner_id: clienteIdRef.current,
           name: valores.pet_name,
-          species: valores.pet_species,
+          species:
+            valores.pet_species === OTHER_SPECIES_OPTION
+              ? (valores.pet_species_other ?? '')
+              : valores.pet_species,
         })
         mascotaIdRef.current = mascota.id
       }

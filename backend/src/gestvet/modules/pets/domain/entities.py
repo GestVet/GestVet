@@ -109,9 +109,21 @@ class Pet:
         return self.owner_id == owner_id
 
     def update_owner_profile(
-        self, *, sex: PetSex | None, color: str, microchip_number: str, temperament: str
+        self,
+        *,
+        breed: str,
+        sex: PetSex | None,
+        color: str,
+        microchip_number: str,
+        temperament: str,
     ) -> None:
-        """Datos que conoce el dueño, no el consultorio."""
+        """Datos que conoce el dueño, no el consultorio.
+
+        La raza entra acá y no en el perfil clínico porque un dueño la conoce
+        de memoria tan bien como el color o el temperamento; a diferencia de
+        la fecha de nacimiento, no hace falta que un veterinario la confirme.
+        """
+        self.breed = _require_text(breed, "raza", MAX_BREED_LENGTH)
         self.sex = sex
         self.color = _trim(color, "color", MAX_COLOR_LENGTH)
         self.microchip_number = _trim(microchip_number, "microchip", MAX_MICROCHIP_LENGTH)
@@ -120,16 +132,25 @@ class Pet:
     def update_clinical_profile(
         self,
         *,
+        birth_date: date,
         weight_kg: Decimal | None,
         height_cm: Decimal | None,
         is_sterilized: bool | None,
         allergies: str,
     ) -> None:
-        """Datos que se miden o se confirman en consulta."""
+        """Datos que se miden o se confirman en consulta.
+
+        La fecha de nacimiento entra acá y no en el perfil del dueño: en un
+        alta exprés de emergencia queda con la fecha del día, a corregir por
+        el veterinario en la primera consulta real, no por el dueño desde su
+        ficha.
+        """
+        _require_plausible_birth_date(birth_date)
         if weight_kg is not None:
             _require_plausible_weight(weight_kg)
         if height_cm is not None:
             _require_plausible_height(height_cm)
+        self.birth_date = birth_date
         self.weight_kg = weight_kg
         self.height_cm = height_cm
         self.is_sterilized = is_sterilized

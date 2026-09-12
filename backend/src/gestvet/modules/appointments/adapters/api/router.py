@@ -19,8 +19,10 @@ from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from gestvet.modules.appointments.adapters.api.dependencies import (
     AppointmentRepositoryDep,
     AppointmentTypeRepositoryDep,
+    ClientDirectoryDep,
     PetDirectoryDep,
     ScheduleDirectoryDep,
+    WhatsAppSenderDep,
 )
 from gestvet.modules.appointments.adapters.api.schemas import (
     AppointmentPageResponse,
@@ -225,11 +227,16 @@ async def _change_status(
     principal: Principal,
     appointments: AppointmentRepositoryDep,
     activity: ActivityRecorderDep,
+    clients: ClientDirectoryDep,
+    pets: PetDirectoryDep,
+    whatsapp: WhatsAppSenderDep,
     target: AppointmentStatus,
     reason: str = "",
 ) -> AppointmentResponse:
     try:
-        appointment = await ChangeAppointmentStatus(appointments, activity)(
+        appointment = await ChangeAppointmentStatus(
+            appointments, activity, clients, pets, whatsapp
+        )(
             ChangeStatusCommand(
                 appointment_id=appointment_id,
                 actor_id=principal.user_id,
@@ -257,9 +264,19 @@ async def confirm_appointment(
     veterinarian: VeterinarianDep,
     appointments: AppointmentRepositoryDep,
     activity: ActivityRecorderDep,
+    clients: ClientDirectoryDep,
+    pets: PetDirectoryDep,
+    whatsapp: WhatsAppSenderDep,
 ) -> AppointmentResponse:
     return await _change_status(
-        appointment_id, veterinarian, appointments, activity, AppointmentStatus.CONFIRMED
+        appointment_id,
+        veterinarian,
+        appointments,
+        activity,
+        clients,
+        pets,
+        whatsapp,
+        AppointmentStatus.CONFIRMED,
     )
 
 
@@ -273,9 +290,19 @@ async def complete_appointment(
     veterinarian: VeterinarianDep,
     appointments: AppointmentRepositoryDep,
     activity: ActivityRecorderDep,
+    clients: ClientDirectoryDep,
+    pets: PetDirectoryDep,
+    whatsapp: WhatsAppSenderDep,
 ) -> AppointmentResponse:
     return await _change_status(
-        appointment_id, veterinarian, appointments, activity, AppointmentStatus.COMPLETED
+        appointment_id,
+        veterinarian,
+        appointments,
+        activity,
+        clients,
+        pets,
+        whatsapp,
+        AppointmentStatus.COMPLETED,
     )
 
 
@@ -289,9 +316,19 @@ async def mark_appointment_no_show(
     veterinarian: VeterinarianDep,
     appointments: AppointmentRepositoryDep,
     activity: ActivityRecorderDep,
+    clients: ClientDirectoryDep,
+    pets: PetDirectoryDep,
+    whatsapp: WhatsAppSenderDep,
 ) -> AppointmentResponse:
     return await _change_status(
-        appointment_id, veterinarian, appointments, activity, AppointmentStatus.NO_SHOW
+        appointment_id,
+        veterinarian,
+        appointments,
+        activity,
+        clients,
+        pets,
+        whatsapp,
+        AppointmentStatus.NO_SHOW,
     )
 
 
@@ -306,6 +343,9 @@ async def cancel_appointment(
     principal: PrincipalDep,
     appointments: AppointmentRepositoryDep,
     activity: ActivityRecorderDep,
+    clients: ClientDirectoryDep,
+    pets: PetDirectoryDep,
+    whatsapp: WhatsAppSenderDep,
 ) -> AppointmentResponse:
     # Cancelar lo pueden hacer las dos partes, así que acá basta con estar
     # autenticado: el caso de uso comprueba que participe en esa cita.
@@ -314,6 +354,9 @@ async def cancel_appointment(
         principal,
         appointments,
         activity,
+        clients,
+        pets,
+        whatsapp,
         AppointmentStatus.CANCELLED,
         reason=payload.reason,
     )

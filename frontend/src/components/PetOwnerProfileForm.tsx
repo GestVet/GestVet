@@ -4,12 +4,14 @@ import { z } from 'zod'
 
 import { onSubmit } from '../hooks/formSubmit'
 import { usePetOwnerProfileUpdate } from '../hooks/usePetProfile'
+import FieldError from './FieldError'
 import FormMessage from './FormMessage'
 import Icon from './Icon'
 import SelectField from './SelectField'
 import TextField from './TextField'
 
 const esquema = z.object({
+  breed: z.string().min(1, 'Ingresá la raza'),
   sex: z.enum(['', 'male', 'female']),
   color: z.string().max(80),
   microchip_number: z.string().max(40),
@@ -20,6 +22,7 @@ type Formulario = z.infer<typeof esquema>
 
 interface PetOwnerProfileFormProps {
   readonly petId: number
+  readonly breed: string
   readonly sex: 'male' | 'female' | null
   readonly color: string
   readonly microchipNumber: string
@@ -28,6 +31,7 @@ interface PetOwnerProfileFormProps {
 
 function valoresIniciales(props: PetOwnerProfileFormProps): Formulario {
   return {
+    breed: props.breed,
     sex: props.sex ?? '',
     color: props.color,
     microchip_number: props.microchipNumber,
@@ -50,6 +54,7 @@ export default function PetOwnerProfileForm(props: PetOwnerProfileFormProps) {
       onSubmit={onSubmit(
         handleSubmit((valores) => {
           guardar.mutate({
+            breed: valores.breed,
             sex: valores.sex === '' ? null : valores.sex,
             color: valores.color,
             microchip_number: valores.microchip_number,
@@ -58,6 +63,11 @@ export default function PetOwnerProfileForm(props: PetOwnerProfileFormProps) {
         }),
       )}
     >
+      <div className="field">
+        <label htmlFor="breed">Raza</label>
+        <input id="breed" {...register('breed')} />
+        <FieldError message={errores.breed?.message} />
+      </div>
       <SelectField id="sex" label="Sexo" field={register('sex')} placeholder="No especificado">
         <option value="male">Macho</option>
         <option value="female">Hembra</option>

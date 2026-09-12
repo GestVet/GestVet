@@ -2,6 +2,32 @@
 
 Sistema web responsive para la gestión veterinaria: usuarios, mascotas, disponibilidad, citas, analítica e inteligencia asistida.
 
+## Funcionalidades
+
+Por módulo, lo que el sistema resuelve hoy:
+
+**Cuentas y acceso** (`accounts`) — registro público de clientes (siempre como rol `client`, nunca elegido por quien se registra), alta de personal por administración, recuperación de contraseña por enlace de un solo uso, turno de guardia y respaldo de emergencias entre veterinarios. El DNI es obligatorio al registrarse. Cuando alguien llega a una emergencia sin cuenta, el personal puede darlo de alta en el momento con nombre, DNI y teléfono ("alta exprés"): la cuenta nace con un correo de relleno, inutilizable para entrar, y el personal completa el correo real después desde la ficha del cliente.
+
+**Mascotas** (`pets`) — alta y baja por el dueño, con la especie elegida de una lista (más "Otro" a texto libre). La raza la edita el dueño cuando quiera; la fecha de nacimiento la confirma solo el veterinario, porque en una emergencia queda provisoria (la del día del alta exprés) hasta la primera consulta real. Los datos clínicos (peso, altura, esterilización, alergias) los carga el veterinario en consulta. El personal corrige el estado de una mascota si hubo un error de carga.
+
+**Agenda** (`availability`) — publicación de tramos horarios por cada veterinario; una cita solo se agenda dentro de un tramo publicado.
+
+**Citas** (`appointments`) — reserva, confirmación, finalización, cancelación (con motivo obligatorio) y marca de inasistencia, a mano o calculada sola al leer una cita que quedó vencida sin cerrar (no hace falta un proceso en segundo plano para eso). Apertura de emergencias sin elegir veterinario ni hora: el sistema asigna al que está de guardia, o a un veterinario normal habilitado como respaldo si no hay ninguno de guardia libre. El motivo de consulta muestra un aviso de "precio estimado, sujeto a variar según la atención".
+
+**Historia clínica** (`medical_records`) — entradas por tipo (consulta, vacuna, cirugía, control, carta de consentimiento, otro), adjuntos por entrada, reporte en PDF de la historia completa de una mascota. La carta de consentimiento o el acuerdo de responsabilidad firmado en papel se escanea y se sube como un adjunto más: no hace falta ninguna pantalla aparte.
+
+**Pagos** (`billing`) — registro manual de pagos (efectivo, Yape, transferencia, otro), anulación con motivo, cobro por QR con el monto de catálogo o un monto libre que fija el personal (con un margen acotado sobre citas normales, sin margen en emergencias, porque el costo real recién se sabe al terminar la atención), reporte de ingresos por medio de pago. La confirmación de un cobro por QR avisa al cliente por WhatsApp.
+
+**Reseñas** (`reviews`) — calificación y comentario de un cliente sobre el veterinario que lo atendió, solo tras una cita completada, con un filtro básico de lenguaje ofensivo. El promedio queda visible al elegir veterinario para reservar.
+
+**Reclamos** (`complaints`) — un cliente reclama sobre una cita propia, con el veterinario reclamado derivado de la cita (nunca elegido a mano), y puede adjuntar evidencia. La administración los revisa.
+
+**Internaciones** (`hospitalizations`) — apertura desde una cita completada, con notas de seguimiento y alta médica; el cliente ve el historial de internación de su mascota en modo lectura desde su propia ficha.
+
+**Panel de indicadores** (`insights`, solo administración) — cuatro señales calculadas con reglas fijas sobre datos que el sistema ya registra, sin ningún modelo de inteligencia artificial de por medio: recordatorios de cuidado vencido (vacuna o control), riesgo de inasistencia (un cliente con historial de citas sin cerrar y una cita próxima), pagos que se alejan del monto típico de su tipo de cita, y veterinarios con reseñas bajas o reclamos recientes.
+
+**Notificaciones por WhatsApp** — confirmación de cita, recordatorio 24 horas antes (un proceso periódico dentro del propio backend, sin infraestructura nueva) y aviso de pago por QR confirmado. El adaptador de hoy, `ConsoleWhatsAppSender`, registra el mensaje en el log del servidor en vez de mandarlo de verdad, así que todo el flujo se puede probar completo sin ninguna cuenta externa. Falta conectar una cuenta real de WhatsApp Business API — ver la sección "WhatsApp Business API — pendiente" más abajo.
+
 ## Base tecnológica
 
 ### Backend
@@ -53,7 +79,13 @@ backend/
         ├── accounts/             # cuentas, acceso y administración
         ├── pets/                 # mascotas
         ├── availability/         # agenda de los veterinarios
-        └── appointments/         # citas y motivos de consulta
+        ├── appointments/         # citas, motivos de consulta y emergencias
+        ├── medical_records/      # historia clínica y adjuntos
+        ├── billing/              # pagos, cobros por QR y reportes
+        ├── reviews/              # reseñas de veterinarios
+        ├── complaints/           # reclamos de clientes
+        ├── hospitalizations/     # internaciones
+        └── insights/             # panel de indicadores (BI con reglas fijas)
             ├── domain/           # Python puro: entidades y reglas
             ├── ports/            # interfaces que el negocio exige
             ├── use_cases/        # orquestación de las reglas
@@ -61,6 +93,8 @@ backend/
                 ├── api/          # FastAPI
                 └── persistence/  # SQLAlchemy
 ```
+
+Los diez módulos comparten exactamente esa misma forma de cuatro capas; se muestra una sola vez para no repetirla diez veces.
 
 Los módulos de dominio cuelgan de `modules/` y no de la raíz del paquete. Es lo que permite que los contratos los nombren con un comodín exacto y no lleven ni una excepción: el núcleo compartido y la raíz de composición quedan fuera por estar en otro sitio del árbol, no por estar exentos.
 
@@ -265,13 +299,18 @@ La identidad visual viene del proyecto original: el azul institucional, el verde
 
 | Pantalla | Quién |
 | --- | --- |
-| Portada, acceso y registro | cualquiera |
+| Portada, acceso, registro y recuperación de contraseña | cualquiera |
 | Panel y perfil | cuenta autenticada |
 | Citas | cuenta autenticada, recortado por rol |
 | Mis mascotas y reservar | cliente |
 | Mi agenda | veterinarios |
 | Clientes | personal de la clínica |
+| Emergencia (cliente nuevo) | personal de la clínica |
 | Personal | administración |
+| Pagos | administración |
+| Reclamos | administración |
+| Indicadores | administración |
+| Movimientos | administración |
 
 Las guardas de ruta son una comodidad de la interfaz, no una medida de seguridad: quien llegue igual a una pantalla se encuentra con un 401 o un 403 del servidor. La autorización de verdad vive en el backend y está cubierta por pruebas.
 
@@ -306,6 +345,19 @@ El padrón de clientes es dato personal: solo lo ve el personal de la clínica.
 | `GET /api/v1/auth/me` | cuenta autenticada |
 | `GET /api/v1/clients` | administración y veterinarios |
 | `GET /api/v1/activity` | administración |
+
+## WhatsApp Business API — pendiente
+
+El código ya está listo del lado de GestVet. `gestvet.core.whatsapp.WhatsAppSender` es el puerto (un `Protocol`, sin saber nada de negocio) y está conectado en tres puntos: confirmar una cita, confirmar un pago por QR, y un recordatorio 24 horas antes que corre en un `asyncio.Task` dentro del propio proceso del backend, sin agregar ninguna dependencia nueva ni un servicio aparte. El adaptador de hoy, `ConsoleWhatsAppSender`, registra cada mensaje en el log en vez de mandarlo, así que todo el flujo se prueba completo en desarrollo.
+
+Lo que falta depende de la clínica, no del código:
+
+1. **Elegir el camino**: directo con Meta (Cloud API — gratis salvo el costo por conversación, pero con una verificación de negocio que puede demorar) o vía un intermediario (Twilio, 360dialog, etc. — más rápido de activar, con un costo mensual fijo además del costo por mensaje).
+2. **Verificar el negocio** ante Meta con el RUC y los documentos de la clínica.
+3. **Dar de alta las plantillas de mensaje** (confirmación de cita, recordatorio, pago confirmado) para que Meta las apruebe: un mensaje fuera de plantilla no se puede mandar fuera de una conversación que el cliente ya inició.
+4. **Reemplazar el adaptador**: una clase nueva que satisfaga `WhatsAppSender` llamando a la API real, y una línea a cambiar en `get_whatsapp_sender()` de `appointments/adapters/api/dependencies.py` y de `billing/adapters/api/dependencies.py`. Ningún caso de uso cambia; el puerto es el mismo.
+
+Hasta que exista esa cuenta, todo mensaje queda solo en el log del servidor, visible para quien opere el despliegue.
 
 ## Convenciones iniciales
 
