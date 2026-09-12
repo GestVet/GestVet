@@ -7,8 +7,10 @@ contratos de Import Linter lo verifican.
 
 from __future__ import annotations
 
+import hashlib
+import secrets
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 # El rol vive en el núcleo compartido, no acá: lo necesitan todos los módulos
 # para autorizar, y si lo poseyera `accounts` todos tendrían que importarlo.
@@ -69,6 +71,48 @@ class User:
 
     def activate(self) -> None:
         self.is_active = True
+
+
+# Una hora es suficiente para que quien pidió el enlace lo use, y corto para
+# que uno olvidado en una bandeja de entrada no quede utilizable indefinidamente.
+RESET_TOKEN_TTL = timedelta(hours=1)
+
+
+@dataclass(slots=True)
+class PasswordResetToken:
+    """Un enlace de recuperación, de un solo uso.
+
+    Se guarda el hash del token y nunca el valor en claro, igual que una
+    contraseña: quien lea la base no puede reconstruir el enlace.
+    """
+
+    user_id: int
+    token_hash: str
+    expires_at: datetime
+    used_at: datetime | None = None
+    id: int | None = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+    def is_valid(self, now: datetime) -> bool:
+        return self.used_at is None and now < self.expires_at
+
+    def mark_used(self, now: datetime) -> None:
+        self.used_at = now
+
+
+def generate_reset_token() -> str:
+    """Valor en claro que se manda por correo. Nunca se guarda tal cual."""
+    return secrets.token_urlsafe(32)
+
+
+def hash_reset_token(token: str) -> str:
+    """Huella del token para buscarlo y compararlo sin guardar el valor real.
+
+    No hace falta el costo de `bcrypt`: el token ya es de alta entropía, así
+    que no hay nada que una función lenta proteja contra fuerza bruta que
+    SHA-256 no proteja igual.
+    """
+    return hashlib.sha256(token.encode()).hexdigest()
 
 
 def normalize_email(raw: str) -> str:

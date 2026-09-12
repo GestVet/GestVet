@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { z } from 'zod'
 
 import { login } from '../../api/auth'
@@ -58,6 +58,7 @@ export default function LoginView() {
             {...register('password')}
           />
           <FieldError message={formState.errors.password?.message} />
+          <Link to="/olvide-contrasena">¿Olvidaste tu contraseña?</Link>
         </div>
 
         {acceder.isError ? (

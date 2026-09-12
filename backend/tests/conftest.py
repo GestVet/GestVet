@@ -26,7 +26,10 @@ from gestvet.core.identity import Role
 from gestvet.core.security import BcryptPasswordHasher
 from gestvet.core.tokens import JwtTokenService
 from gestvet.main import create_app
-from gestvet.modules.accounts.adapters.api.dependencies import get_password_hasher
+from gestvet.modules.accounts.adapters.api.dependencies import (
+    get_email_sender,
+    get_password_hasher,
+)
 from gestvet.modules.accounts.adapters.persistence import models as accounts_models
 from gestvet.modules.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
@@ -119,7 +122,19 @@ def users(session: AsyncSession) -> SqlAlchemyUserRepository:
 
 
 @pytest.fixture
-async def client(session: AsyncSession) -> AsyncIterator[AsyncClient]:
+def sent_emails() -> list[tuple[str, str]]:
+    """Correos que un caso de uso pidió mandar durante la prueba.
+
+    Cada elemento es (destinatario, URL). Ninguna prueba manda correo de
+    verdad: `client` reemplaza el remitente real por uno que solo anota acá.
+    """
+    return []
+
+
+@pytest.fixture
+async def client(
+    session: AsyncSession, sent_emails: list[tuple[str, str]]
+) -> AsyncIterator[AsyncClient]:
     app = create_app()
 
     async def override_session() -> AsyncIterator[AsyncSession]:
@@ -133,9 +148,14 @@ async def client(session: AsyncSession) -> AsyncIterator[AsyncClient]:
             await session.rollback()
             raise
 
+    class RecordingEmailSender:
+        async def send_password_reset(self, *, to: str, reset_url: str) -> None:
+            sent_emails.append((to, reset_url))
+
     app.dependency_overrides[get_session] = override_session
     app.dependency_overrides[get_password_hasher] = lambda: TEST_HASHER
     app.dependency_overrides[get_token_service] = lambda: TEST_TOKEN_SERVICE
+    app.dependency_overrides[get_email_sender] = lambda: RecordingEmailSender()
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as http_client:

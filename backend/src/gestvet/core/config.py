@@ -23,6 +23,10 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite+aiosqlite:///./gestvet.db"
     cors_allowed_origins: list[str] = ["http://localhost:5173"]
+    # Con qué origen arma el enlace de recuperación de contraseña que manda
+    # por correo. No es lo mismo que CORS: ese protege al servidor, este es
+    # simplemente dónde vive el frontend que va a atender el enlace.
+    frontend_base_url: str = "http://localhost:5173"
 
     jwt_secret_key: str = INSECURE_DEFAULT_SECRET
     jwt_algorithm: str = "HS256"

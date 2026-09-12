@@ -85,3 +85,8 @@ class RoleNotBackupEligible(AccountsError):
             "Solo un veterinario normal puede serlo."
         )
         self.role = role
+
+
+class InvalidResetToken(AccountsError):
+    def __init__(self) -> None:
+        super().__init__("El enlace de recuperación no es válido o ya venció.")
