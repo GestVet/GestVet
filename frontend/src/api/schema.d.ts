@@ -314,6 +314,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar pagos */
+        get: operations["list_payments_api_v1_payments_get"];
+        put?: never;
+        /** Registrar un pago */
+        post: operations["register_payment_api_v1_payments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cuánto se cobró y por qué medio */
+        get: operations["payment_report_api_v1_payments_report_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/{payment_id}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Anular un pago registrado por error */
+        post: operations["void_payment_api_v1_payments__payment_id__void_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pets": {
         parameters: {
             query?: never;
@@ -497,7 +549,7 @@ export interface components {
          *     historial.
          * @enum {string}
          */
-        ActivityKind: "signed_in" | "client_registered" | "profile_updated" | "staff_registered" | "user_status_changed" | "guard_duty_toggled" | "pet_registered" | "pet_status_changed" | "pet_status_corrected" | "slot_published" | "slot_withdrawn" | "appointment_booked" | "emergency_opened" | "appointment_confirmed" | "appointment_completed" | "appointment_cancelled" | "clinical_entry_added";
+        ActivityKind: "signed_in" | "client_registered" | "profile_updated" | "staff_registered" | "user_status_changed" | "guard_duty_toggled" | "pet_registered" | "pet_status_changed" | "pet_status_corrected" | "slot_published" | "slot_withdrawn" | "appointment_booked" | "emergency_opened" | "appointment_confirmed" | "appointment_completed" | "appointment_cancelled" | "clinical_entry_added" | "payment_registered" | "payment_voided";
         /** ActivityPageResponse */
         ActivityPageResponse: {
             /** Items */
@@ -756,6 +808,16 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** MethodTotalResponse */
+        MethodTotalResponse: {
+            /** Count */
+            count: number;
+            method: components["schemas"]["PaymentMethod"];
+            /** Method Label */
+            method_label: string;
+            /** Total */
+            total: string;
+        };
         /** OpenEmergencyRequest */
         OpenEmergencyRequest: {
             /**
@@ -765,6 +827,61 @@ export interface components {
             description: string;
             /** Pet Id */
             pet_id: number;
+        };
+        /**
+         * PaymentMethod
+         * @enum {string}
+         */
+        PaymentMethod: "cash" | "yape" | "bank_transfer" | "other";
+        /** PaymentPageResponse */
+        PaymentPageResponse: {
+            /** Items */
+            items: components["schemas"]["PaymentResponse"][];
+            /** Total */
+            total: number;
+        };
+        /** PaymentReportResponse */
+        PaymentReportResponse: {
+            /** Grand Total */
+            grand_total: string;
+            /** Items */
+            items: components["schemas"]["MethodTotalResponse"][];
+        };
+        /** PaymentResponse */
+        PaymentResponse: {
+            /** Amount */
+            amount: string;
+            /** Appointment Id */
+            appointment_id: number;
+            /** Client Id */
+            client_id: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: number;
+            /** Is Voided */
+            is_voided: boolean;
+            method: components["schemas"]["PaymentMethod"];
+            /** Method Label */
+            method_label: string;
+            /** Notes */
+            notes: string;
+            /**
+             * Paid At
+             * Format: date-time
+             */
+            paid_at: string;
+            /** Reference */
+            reference: string;
+            /** Registered By */
+            registered_by: number;
+            /** Void Reason */
+            void_reason: string;
+            /** Voided At */
+            voided_at: string | null;
         };
         /** PetPageResponse */
         PetPageResponse: {
@@ -831,6 +948,24 @@ export interface components {
              * @default
              */
             phone: string;
+        };
+        /** RegisterPaymentRequest */
+        RegisterPaymentRequest: {
+            /** Amount */
+            amount: number | string;
+            /** Appointment Id */
+            appointment_id: number;
+            method: components["schemas"]["PaymentMethod"];
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            /**
+             * Reference
+             * @default
+             */
+            reference: string;
         };
         /** RegisterPetRequest */
         RegisterPetRequest: {
@@ -979,6 +1114,11 @@ export interface components {
             /** Id */
             id: number;
             role: components["schemas"]["Role"];
+        };
+        /** VoidPaymentRequest */
+        VoidPaymentRequest: {
+            /** Reason */
+            reason: string;
         };
     };
     responses: never;
@@ -1680,6 +1820,149 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClinicalEntryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_payments_api_v1_payments_get: {
+        parameters: {
+            query?: {
+                appointment_id?: number | null;
+                /** @description Filtra por medio */
+                method?: components["schemas"]["PaymentMethod"] | null;
+                /** @description Incluye los anulados */
+                include_voided?: boolean;
+                /** @description Desde */
+                starts_after?: string | null;
+                /** @description Hasta */
+                ends_before?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentPageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_payment_api_v1_payments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterPaymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    payment_report_api_v1_payments_report_get: {
+        parameters: {
+            query?: {
+                /** @description Desde */
+                starts_after?: string | null;
+                /** @description Hasta */
+                ends_before?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentReportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    void_payment_api_v1_payments__payment_id__void_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoidPaymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentResponse"];
                 };
             };
             /** @description Validation Error */

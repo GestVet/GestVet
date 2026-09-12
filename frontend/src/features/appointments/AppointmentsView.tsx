@@ -7,24 +7,12 @@ import {
   fetchAppointments,
 } from '../../api/appointments'
 import type { AppointmentStatus } from '../../api/types'
-import StatusBadge from '../../components/StatusBadge'
 import TableShell from '../../components/TableShell'
 import { useIsVeterinarian } from '../../store/session'
-import AppointmentActions from './AppointmentActions'
+import AppointmentRow from './AppointmentRow'
 import AppointmentsFilters from './AppointmentsFilters'
 
 const COLUMNAS = ['Fecha', 'Duración', 'Estado', 'Descripción', 'Acciones'] as const
-
-// El tono de la etiqueta sale del estado, y el estado viene del contrato: si
-// el backend agrega uno nuevo, este mapa deja de compilar.
-const TONO: Record<AppointmentStatus, string> = {
-  pending: 'pending',
-  confirmed: 'confirmed',
-  completed: 'completed',
-  cancelled: 'cancelled',
-}
-
-const FORMATO = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
 
 export default function AppointmentsView() {
   const atiende = useIsVeterinarian()
@@ -72,20 +60,7 @@ export default function AppointmentsView() {
           emptyMessage="No hay citas para mostrar."
         >
           {items.map((cita) => (
-            <tr key={cita.id}>
-              <td>{FORMATO.format(new Date(cita.scheduled_at))}</td>
-              <td>{cita.duration_minutes} min</td>
-              <td>
-                <StatusBadge label={cita.status_label} tone={TONO[cita.status]} />
-                {cita.cancellation_reason ? (
-                  <p className="muted">{cita.cancellation_reason}</p>
-                ) : null}
-              </td>
-              <td>{cita.description}</td>
-              <td>
-                <AppointmentActions appointment={cita} />
-              </td>
-            </tr>
+            <AppointmentRow key={cita.id} cita={cita} />
           ))}
         </TableShell>
       </section>
