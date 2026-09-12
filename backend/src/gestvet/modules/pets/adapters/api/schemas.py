@@ -7,14 +7,20 @@ regla que impide pedir un rol al registrarse.
 from __future__ import annotations
 
 from datetime import date, datetime
+from decimal import Decimal
 
 from pydantic import BaseModel, Field
 
 from gestvet.modules.pets.domain.entities import (
+    MAX_ALLERGIES_LENGTH,
     MAX_BREED_LENGTH,
+    MAX_COLOR_LENGTH,
+    MAX_MICROCHIP_LENGTH,
     MAX_NAME_LENGTH,
     MAX_SPECIES_LENGTH,
+    MAX_TEMPERAMENT_LENGTH,
     Pet,
+    PetSex,
 )
 
 
@@ -34,6 +40,20 @@ class CorrectPetStatusRequest(BaseModel):
     reason: str = Field(min_length=1, max_length=300)
 
 
+class UpdatePetOwnerProfileRequest(BaseModel):
+    sex: PetSex | None = None
+    color: str = Field(default="", max_length=MAX_COLOR_LENGTH)
+    microchip_number: str = Field(default="", max_length=MAX_MICROCHIP_LENGTH)
+    temperament: str = Field(default="", max_length=MAX_TEMPERAMENT_LENGTH)
+
+
+class UpdatePetClinicalProfileRequest(BaseModel):
+    weight_kg: Decimal | None = Field(default=None, gt=0)
+    height_cm: Decimal | None = Field(default=None, gt=0)
+    is_sterilized: bool | None = None
+    allergies: str = Field(default="", max_length=MAX_ALLERGIES_LENGTH)
+
+
 class PetResponse(BaseModel):
     id: int
     name: str
@@ -43,6 +63,14 @@ class PetResponse(BaseModel):
     age_in_years: int
     owner_id: int
     is_active: bool
+    sex: PetSex | None
+    color: str
+    microchip_number: str
+    temperament: str
+    weight_kg: Decimal | None
+    height_cm: Decimal | None
+    is_sterilized: bool | None
+    allergies: str
     created_at: datetime
 
     @classmethod
@@ -56,6 +84,14 @@ class PetResponse(BaseModel):
             age_in_years=pet.age_in_years(),
             owner_id=pet.owner_id,
             is_active=pet.is_active,
+            sex=pet.sex,
+            color=pet.color,
+            microchip_number=pet.microchip_number,
+            temperament=pet.temperament,
+            weight_kg=pet.weight_kg,
+            height_cm=pet.height_cm,
+            is_sterilized=pet.is_sterilized,
+            allergies=pet.allergies,
             created_at=pet.created_at,
         )
 

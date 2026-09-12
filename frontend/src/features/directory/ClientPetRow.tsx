@@ -1,7 +1,9 @@
 import { Fragment, useState } from 'react'
 
 import type { PetResponse } from '../../api/types'
+import PetProfilePanel from '../../components/PetProfilePanel'
 import StatusBadge from '../../components/StatusBadge'
+import { useIsVeterinarian } from '../../store/session'
 import ClientPetHistory from './ClientPetHistory'
 
 interface ClientPetRowProps {
@@ -12,12 +14,15 @@ interface ClientPetRowProps {
 
 export default function ClientPetRow({ mascota, corrigiendo, onCorregir }: ClientPetRowProps) {
   const [expandido, setExpandido] = useState(false)
+  const esVeterinario = useIsVeterinarian()
 
   return (
     <Fragment>
       <tr>
         <td>{mascota.name}</td>
         <td>{mascota.species}</td>
+        <td>{mascota.weight_kg ? `${mascota.weight_kg} kg` : '—'}</td>
+        <td>{mascota.height_cm ? `${mascota.height_cm} cm` : '—'}</td>
         <td>
           <StatusBadge
             label={mascota.is_active ? 'Activa' : 'Fallecida'}
@@ -32,17 +37,29 @@ export default function ClientPetRow({ mascota, corrigiendo, onCorregir }: Clien
               setExpandido(!expandido)
             }}
           >
-            {expandido ? 'Ocultar historia' : 'Ver historia clínica'}
+            {expandido ? 'Ocultar detalles' : 'Ver más detalles'}
           </button>
-          <button type="button" className="btn btn-plain" disabled={corrigiendo} onClick={onCorregir}>
+          <button
+            type="button"
+            className="btn btn-plain"
+            disabled={corrigiendo}
+            onClick={onCorregir}
+          >
             Corregir a {mascota.is_active ? 'fallecida' : 'activa'}
           </button>
         </td>
       </tr>
       {expandido ? (
         <tr>
-          <td colSpan={4}>
-            <ClientPetHistory petId={mascota.id} />
+          <td colSpan={6}>
+            <div className="stack">
+              <PetProfilePanel
+                mascota={mascota}
+                canEditOwnerFields={false}
+                canEditClinicalFields={esVeterinario}
+              />
+              <ClientPetHistory petId={mascota.id} />
+            </div>
           </td>
         </tr>
       ) : null}

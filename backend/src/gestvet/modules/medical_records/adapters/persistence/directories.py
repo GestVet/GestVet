@@ -17,13 +17,18 @@ _PET_EXISTS = text("SELECT 1 FROM pets WHERE id = :pet_id")
 _PET_IS_OWNED = text("SELECT 1 FROM pets WHERE id = :pet_id AND owner_id = :owner_id")
 
 # El reporte necesita el nombre del dueño, que vive en `users`: sigue siendo
-# una lectura cruda contra una tabla ajena, no una importación de código.
+# una lectura cruda contra una tabla ajena, no una importación de código. La
+# etiqueta de "sexo" se arma acá y no importando `PetSex` de `pets`, por la
+# misma razón: ese enum es código de otro módulo de dominio.
 _PET_SUMMARY = text(
-    "SELECT pets.name, pets.species, pets.breed, "
-    "users.first_name, users.last_name "
+    "SELECT pets.name, pets.species, pets.breed, pets.sex, pets.color, "
+    "pets.microchip_number, pets.temperament, pets.weight_kg, pets.height_cm, "
+    "pets.is_sterilized, pets.allergies, users.first_name, users.last_name "
     "FROM pets JOIN users ON users.id = pets.owner_id "
     "WHERE pets.id = :pet_id"
 )
+
+_SEX_LABELS = {"male": "Macho", "female": "Hembra"}
 
 
 class SqlPetDirectory:
@@ -44,10 +49,32 @@ class SqlPetDirectory:
         row = (await self._session.execute(_PET_SUMMARY, {"pet_id": pet_id})).first()
         if row is None:
             return None
-        name, species, breed, first_name, last_name = row
+        (
+            name,
+            species,
+            breed,
+            sex,
+            color,
+            microchip_number,
+            temperament,
+            weight_kg,
+            height_cm,
+            is_sterilized,
+            allergies,
+            first_name,
+            last_name,
+        ) = row
         return PetSummary(
             name=name,
             species=species,
             breed=breed,
             owner_name=f"{first_name} {last_name}".strip(),
+            sex_label=_SEX_LABELS.get(sex, "No especificado"),
+            color=color,
+            microchip_number=microchip_number,
+            temperament=temperament,
+            weight_kg=weight_kg,
+            height_cm=height_cm,
+            is_sterilized=is_sterilized,
+            allergies=allergies,
         )

@@ -1,5 +1,11 @@
 import { api } from '../services/api'
-import type { PetPageResponse, PetResponse, RegisterPetRequest } from './types'
+import type {
+  PetPageResponse,
+  PetResponse,
+  RegisterPetRequest,
+  UpdatePetClinicalProfileRequest,
+  UpdatePetOwnerProfileRequest,
+} from './types'
 
 export const myPetsQueryKey = ['pets', 'mine'] as const
 
@@ -38,5 +44,24 @@ export async function correctPetStatus(
     is_active: isActive,
     reason,
   })
+  return data
+}
+
+export async function updatePetOwnerProfile(
+  petId: number,
+  payload: UpdatePetOwnerProfileRequest,
+): Promise<PetResponse> {
+  const { data } = await api.patch<PetResponse>(`/pets/${String(petId)}/owner-profile`, payload)
+  return data
+}
+
+export async function updatePetClinicalProfile(
+  petId: number,
+  payload: UpdatePetClinicalProfileRequest,
+): Promise<PetResponse> {
+  const { data } = await api.patch<PetResponse>(
+    `/pets/${String(petId)}/clinical-profile`,
+    payload,
+  )
   return data
 }

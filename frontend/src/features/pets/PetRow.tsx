@@ -1,6 +1,7 @@
 import { Fragment, useState } from 'react'
 
 import type { PetResponse } from '../../api/types'
+import PetProfilePanel from '../../components/PetProfilePanel'
 import StatusBadge from '../../components/StatusBadge'
 import PetHistory from './PetHistory'
 
@@ -20,6 +21,8 @@ export default function PetRow({ mascota, dandoDeBaja, onDarDeBaja }: PetRowProp
         <td>{mascota.species}</td>
         <td>{mascota.breed}</td>
         <td>{mascota.age_in_years} años</td>
+        <td>{mascota.weight_kg ? `${mascota.weight_kg} kg` : '—'}</td>
+        <td>{mascota.height_cm ? `${mascota.height_cm} cm` : '—'}</td>
         <td>
           <StatusBadge
             label={mascota.is_active ? 'Activa' : 'Fallecida'}
@@ -34,10 +37,15 @@ export default function PetRow({ mascota, dandoDeBaja, onDarDeBaja }: PetRowProp
               setExpandido(!expandido)
             }}
           >
-            {expandido ? 'Ocultar historia' : 'Ver historia clínica'}
+            {expandido ? 'Ocultar detalles' : 'Ver más detalles'}
           </button>
           {mascota.is_active ? (
-            <button type="button" className="btn btn-plain" disabled={dandoDeBaja} onClick={onDarDeBaja}>
+            <button
+              type="button"
+              className="btn btn-plain"
+              disabled={dandoDeBaja}
+              onClick={onDarDeBaja}
+            >
               Registrar fallecimiento
             </button>
           ) : (
@@ -49,8 +57,15 @@ export default function PetRow({ mascota, dandoDeBaja, onDarDeBaja }: PetRowProp
       </tr>
       {expandido ? (
         <tr>
-          <td colSpan={6}>
-            <PetHistory petId={mascota.id} />
+          <td colSpan={8}>
+            <div className="stack">
+              <PetProfilePanel
+                mascota={mascota}
+                canEditOwnerFields={true}
+                canEditClinicalFields={false}
+              />
+              <PetHistory petId={mascota.id} />
+            </div>
           </td>
         </tr>
       ) : null}

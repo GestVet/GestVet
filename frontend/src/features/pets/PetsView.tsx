@@ -7,7 +7,7 @@ import { errorMessage } from '../../services/api'
 import PetForm from './PetForm'
 import PetRow from './PetRow'
 
-const COLUMNAS = ['Nombre', 'Especie', 'Raza', 'Edad', 'Estado', 'Acciones'] as const
+const COLUMNAS = ['Nombre', 'Especie', 'Raza', 'Edad', 'Peso', 'Altura', 'Estado', 'Acciones'] as const
 
 export default function PetsView() {
   const queryClient = useQueryClient()

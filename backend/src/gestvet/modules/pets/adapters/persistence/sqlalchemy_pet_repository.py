@@ -38,7 +38,16 @@ class SqlAlchemyPetRepository:
         row.breed = pet.breed
         row.birth_date = pet.birth_date
         row.is_active = pet.is_active
+        row.sex = pet.sex.value if pet.sex is not None else None
+        row.color = pet.color
+        row.microchip_number = pet.microchip_number
+        row.temperament = pet.temperament
+        row.weight_kg = pet.weight_kg
+        row.height_cm = pet.height_cm
+        row.is_sterilized = pet.is_sterilized
+        row.allergies = pet.allergies
         await self._session.flush()
+        await self._session.refresh(row)
         return row_to_entity(row)
 
     async def search(self, query: PetQuery) -> Page[Pet]:

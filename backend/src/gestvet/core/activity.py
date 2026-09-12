@@ -40,6 +40,8 @@ class ActivityKind(StrEnum):
     PET_REGISTERED = "pet_registered"
     PET_STATUS_CHANGED = "pet_status_changed"
     PET_STATUS_CORRECTED = "pet_status_corrected"
+    PET_PROFILE_UPDATED = "pet_profile_updated"
+    PET_CLINICAL_PROFILE_UPDATED = "pet_clinical_profile_updated"
     SLOT_PUBLISHED = "slot_published"
     SLOT_WITHDRAWN = "slot_withdrawn"
     APPOINTMENT_BOOKED = "appointment_booked"
@@ -68,6 +70,8 @@ _KIND_LABELS: dict[ActivityKind, str] = {
     ActivityKind.PET_REGISTERED: "Registró una mascota",
     ActivityKind.PET_STATUS_CHANGED: "Cambió el estado de una mascota",
     ActivityKind.PET_STATUS_CORRECTED: "Corrigió el estado de una mascota",
+    ActivityKind.PET_PROFILE_UPDATED: "Actualizó el perfil de una mascota",
+    ActivityKind.PET_CLINICAL_PROFILE_UPDATED: "Actualizó los datos clínicos de una mascota",
     ActivityKind.SLOT_PUBLISHED: "Publicó un tramo de disponibilidad",
     ActivityKind.SLOT_WITHDRAWN: "Retiró un tramo de disponibilidad",
     ActivityKind.APPOINTMENT_BOOKED: "Reservó una cita",

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from decimal import Decimal
 
 from gestvet.modules.medical_records.adapters.reports.pdf import ReportLabClinicalHistoryReport
 from gestvet.modules.medical_records.domain.attachment import Attachment
@@ -11,7 +12,20 @@ from gestvet.modules.medical_records.ports.pet_directory import PetSummary
 
 RENDERER = ReportLabClinicalHistoryReport()
 
-PET = PetSummary(name="Rocco", species="Perro", breed="Mestizo", owner_name="Ana Quispe")
+PET = PetSummary(
+    name="Rocco",
+    species="Perro",
+    breed="Mestizo",
+    owner_name="Ana Quispe",
+    sex_label="Macho",
+    color="Marrón",
+    microchip_number="985141000123456",
+    temperament="Dócil",
+    weight_kg=Decimal("18.5"),
+    height_cm=Decimal("45"),
+    is_sterilized=True,
+    allergies="Ninguna conocida",
+)
 
 
 def _entrada(**overrides: object) -> ClinicalEntry:
@@ -29,6 +43,27 @@ def _entrada(**overrides: object) -> ClinicalEntry:
 
 def test_un_reporte_sin_entradas_igual_produce_un_pdf() -> None:
     pdf = RENDERER.render(PET, [], {})
+
+    assert pdf.startswith(b"%PDF")
+
+
+def test_un_perfil_sin_datos_clinicos_cargados_igual_produce_un_pdf() -> None:
+    pet_incompleto = PetSummary(
+        name="Firulais",
+        species="Gato",
+        breed="",
+        owner_name="Beto Salas",
+        sex_label="No especificado",
+        color="",
+        microchip_number="",
+        temperament="",
+        weight_kg=None,
+        height_cm=None,
+        is_sterilized=None,
+        allergies="",
+    )
+
+    pdf = RENDERER.render(pet_incompleto, [], {})
 
     assert pdf.startswith(b"%PDF")
 

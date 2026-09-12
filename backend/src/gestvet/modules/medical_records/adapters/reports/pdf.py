@@ -71,10 +71,20 @@ class ReportLabClinicalHistoryReport:
 
     def _pet_table(self, pet: PetSummary) -> Table:
         especie = f"{pet.species} / {pet.breed}" if pet.breed else pet.species
+        peso = f"{pet.weight_kg} kg" if pet.weight_kg is not None else "—"
+        altura = f"{pet.height_cm} cm" if pet.height_cm is not None else "—"
+        esterilizado = _si_no_o_desconocido(pet.is_sterilized)
         filas = [
             ["Mascota", escape(pet.name)],
             ["Especie / raza", escape(especie)],
             ["Dueño", escape(pet.owner_name)],
+            ["Sexo", escape(pet.sex_label)],
+            ["Color", escape(pet.color) or "—"],
+            ["Peso / altura", f"{peso} / {altura}"],
+            ["Esterilizado", esterilizado],
+            ["Microchip", escape(pet.microchip_number) or "—"],
+            ["Temperamento", escape(pet.temperament) or "—"],
+            ["Alergias", escape(pet.allergies) or "—"],
             ["Emitido", _a_hora_local(datetime.now(UTC))],
         ]
         tabla = Table(filas, colWidths=[4 * cm, 12 * cm])
@@ -128,3 +138,9 @@ class ReportLabClinicalHistoryReport:
 
 def _a_hora_local(momento: datetime) -> str:
     return (momento + _CLINIC_UTC_OFFSET).strftime(_FORMATO_FECHA)
+
+
+def _si_no_o_desconocido(valor: bool | None) -> str:
+    if valor is None:
+        return "No evaluado"
+    return "Sí" if valor else "No"

@@ -244,3 +244,155 @@ async def test_la_busqueda_y_el_filtro_de_estado(
 
     assert [i["name"] for i in por_especie.json()["items"]] == ["Luna"]
     assert [i["name"] for i in activas.json()["items"]] == ["Rocco"]
+
+
+async def test_el_dueno_actualiza_el_perfil_que_conoce(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    ana = await _client_account(session)
+    pets = SqlAlchemyPetRepository(session)
+    propia = await pets.add(build_pet(owner_id=ana.id or 0))
+    await session.commit()
+
+    response = await client.patch(
+        f"{PETS_URL}/{propia.id}/owner-profile",
+        json={
+            "sex": "female",
+            "color": "Negro con blanco",
+            "microchip_number": "985141000123456",
+            "temperament": "Juguetona",
+        },
+        headers=authorization_for(ana),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["sex"] == "female"
+    assert body["color"] == "Negro con blanco"
+    assert body["microchip_number"] == "985141000123456"
+    assert body["temperament"] == "Juguetona"
+
+
+async def test_un_cliente_no_actualiza_el_perfil_de_una_mascota_ajena(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    ana = await _client_account(session)
+    beto = await _client_account(session, "beto@example.com")
+    pets = SqlAlchemyPetRepository(session)
+    ajena = await pets.add(build_pet(owner_id=beto.id or 0))
+    await session.commit()
+
+    response = await client.patch(
+        f"{PETS_URL}/{ajena.id}/owner-profile",
+        json={"color": "Negro"},
+        headers=authorization_for(ana),
+    )
+
+    assert response.status_code == 404
+
+
+async def test_el_veterinario_actualiza_el_perfil_clinico(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    ana = await _client_account(session)
+    veterinario = await _staff_account(session)
+    pets = SqlAlchemyPetRepository(session)
+    mascota = await pets.add(build_pet(owner_id=ana.id or 0))
+    await session.commit()
+
+    response = await client.patch(
+        f"{PETS_URL}/{mascota.id}/clinical-profile",
+        json={
+            "weight_kg": "18.5",
+            "height_cm": "45",
+            "is_sterilized": True,
+            "allergies": "Ninguna conocida",
+        },
+        headers=authorization_for(veterinario),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["weight_kg"] == "18.50"
+    assert body["height_cm"] == "45.00"
+    assert body["is_sterilized"] is True
+    assert body["allergies"] == "Ninguna conocida"
+
+
+async def test_el_veterinario_de_guardia_tambien_actualiza_el_perfil_clinico(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    ana = await _client_account(session)
+    guardia = await _staff_account(session, Role.EMERGENCY_VETERINARIAN)
+    pets = SqlAlchemyPetRepository(session)
+    mascota = await pets.add(build_pet(owner_id=ana.id or 0))
+    await session.commit()
+
+    response = await client.patch(
+        f"{PETS_URL}/{mascota.id}/clinical-profile",
+        json={"weight_kg": "10", "is_sterilized": False},
+        headers=authorization_for(guardia),
+    )
+
+    assert response.status_code == 200
+
+
+async def test_un_cliente_no_puede_actualizar_el_perfil_clinico(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    ana = await _client_account(session)
+    pets = SqlAlchemyPetRepository(session)
+    propia = await pets.add(build_pet(owner_id=ana.id or 0))
+    await session.commit()
+
+    response = await client.patch(
+        f"{PETS_URL}/{propia.id}/clinical-profile",
+        json={"weight_kg": "10"},
+        headers=authorization_for(ana),
+    )
+
+    assert response.status_code == 403
+
+
+async def test_el_admin_no_puede_actualizar_el_perfil_clinico(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """Es un acto clínico, igual que agregar una entrada: solo veterinarios."""
+    ana = await _client_account(session)
+    admin = await _staff_account(session, Role.ADMIN)
+    pets = SqlAlchemyPetRepository(session)
+    mascota = await pets.add(build_pet(owner_id=ana.id or 0))
+    await session.commit()
+
+    response = await client.patch(
+        f"{PETS_URL}/{mascota.id}/clinical-profile",
+        json={"weight_kg": "10"},
+        headers=authorization_for(admin),
+    )
+
+    assert response.status_code == 403
+
+
+async def test_el_perfil_clinico_valida_el_peso(client: AsyncClient, session: AsyncSession) -> None:
+    ana = await _client_account(session)
+    veterinario = await _staff_account(session)
+    pets = SqlAlchemyPetRepository(session)
+    mascota = await pets.add(build_pet(owner_id=ana.id or 0))
+    await session.commit()
+
+    response = await client.patch(
+        f"{PETS_URL}/{mascota.id}/clinical-profile",
+        json={"weight_kg": "-1"},
+        headers=authorization_for(veterinario),
+    )
+
+    assert response.status_code == 422
+
+
+async def test_sin_credencial_no_actualiza_ningun_perfil(client: AsyncClient) -> None:
+    assert (
+        await client.patch(f"{PETS_URL}/1/owner-profile", json={"color": "Negro"})
+    ).status_code == 401
+    assert (
+        await client.patch(f"{PETS_URL}/1/clinical-profile", json={"weight_kg": "10"})
+    ).status_code == 401

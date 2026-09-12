@@ -4,10 +4,17 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
 
 import pytest
 
-from gestvet.modules.pets.domain.entities import MAX_PLAUSIBLE_AGE_YEARS, Pet
+from gestvet.modules.pets.domain.entities import (
+    MAX_PLAUSIBLE_AGE_YEARS,
+    MAX_PLAUSIBLE_HEIGHT_CM,
+    MAX_PLAUSIBLE_WEIGHT_KG,
+    Pet,
+    PetSex,
+)
 from gestvet.modules.pets.domain.exceptions import InvalidPetData
 
 
@@ -92,3 +99,79 @@ def test_la_pertenencia_se_pregunta_a_la_entidad() -> None:
     mascota = _pet(owner_id=7)
     assert mascota.belongs_to(7)
     assert not mascota.belongs_to(8)
+
+
+def test_el_perfil_del_dueno_queda_vacio_por_defecto() -> None:
+    mascota = _pet()
+
+    assert mascota.sex is None
+    assert mascota.color == ""
+    assert mascota.microchip_number == ""
+    assert mascota.temperament == ""
+
+
+def test_el_dueno_actualiza_su_parte_del_perfil() -> None:
+    mascota = _pet()
+
+    mascota.update_owner_profile(
+        sex=PetSex.MALE, color="Marrón", microchip_number="985141000123456", temperament="Dócil"
+    )
+
+    assert mascota.sex is PetSex.MALE
+    assert mascota.color == "Marrón"
+    assert mascota.microchip_number == "985141000123456"
+    assert mascota.temperament == "Dócil"
+
+
+def test_actualizar_el_perfil_del_dueno_no_toca_los_datos_clinicos() -> None:
+    mascota = _pet()
+    mascota.update_clinical_profile(
+        weight_kg=Decimal("10"), height_cm=Decimal("30"), is_sterilized=True, allergies="Polen"
+    )
+
+    mascota.update_owner_profile(sex=PetSex.FEMALE, color="", microchip_number="", temperament="")
+
+    assert mascota.weight_kg == Decimal("10")
+    assert mascota.is_sterilized is True
+
+
+def test_el_veterinario_actualiza_el_perfil_clinico() -> None:
+    mascota = _pet()
+
+    mascota.update_clinical_profile(
+        weight_kg=Decimal("18.5"),
+        height_cm=Decimal("45"),
+        is_sterilized=False,
+        allergies="Ninguna conocida",
+    )
+
+    assert mascota.weight_kg == Decimal("18.5")
+    assert mascota.height_cm == Decimal("45")
+    assert mascota.is_sterilized is False
+    assert mascota.allergies == "Ninguna conocida"
+
+
+@pytest.mark.parametrize("peso", [Decimal("0"), Decimal("-1"), MAX_PLAUSIBLE_WEIGHT_KG + 1])
+def test_el_peso_debe_ser_plausible(peso: Decimal) -> None:
+    mascota = _pet()
+    with pytest.raises(InvalidPetData):
+        mascota.update_clinical_profile(
+            weight_kg=peso, height_cm=None, is_sterilized=None, allergies=""
+        )
+
+
+@pytest.mark.parametrize("altura", [Decimal("0"), Decimal("-1"), MAX_PLAUSIBLE_HEIGHT_CM + 1])
+def test_la_altura_debe_ser_plausible(altura: Decimal) -> None:
+    mascota = _pet()
+    with pytest.raises(InvalidPetData):
+        mascota.update_clinical_profile(
+            weight_kg=None, height_cm=altura, is_sterilized=None, allergies=""
+        )
+
+
+def test_el_texto_libre_del_perfil_clinico_no_puede_exceder_su_largo() -> None:
+    mascota = _pet()
+    with pytest.raises(InvalidPetData):
+        mascota.update_clinical_profile(
+            weight_kg=None, height_cm=None, is_sterilized=None, allergies="x" * 301
+        )
