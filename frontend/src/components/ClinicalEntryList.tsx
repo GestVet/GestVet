@@ -1,4 +1,5 @@
 import ClinicalEntryRow from './ClinicalEntryRow'
+import ClinicalHistoryReportButton from './ClinicalHistoryReportButton'
 import TableShell from './TableShell'
 
 const COLUMNAS = [
@@ -55,20 +56,23 @@ export default function ClinicalEntryList({
   canManageAttachments,
 }: ClinicalEntryListProps) {
   return (
-    <TableShell
-      columns={COLUMNAS}
-      isLoading={isLoading}
-      isEmpty={items.length === 0}
-      emptyMessage="Todavía no hay entradas en la historia clínica."
-    >
-      {items.map((entrada) => (
-        <ClinicalEntryRow
-          key={entrada.id}
-          entrada={entrada}
-          petId={petId}
-          canManageAttachments={canManageAttachments}
-        />
-      ))}
-    </TableShell>
+    <div className="stack">
+      <ClinicalHistoryReportButton petId={petId} />
+      <TableShell
+        columns={COLUMNAS}
+        isLoading={isLoading}
+        isEmpty={items.length === 0}
+        emptyMessage="Todavía no hay entradas en la historia clínica."
+      >
+        {items.map((entrada) => (
+          <ClinicalEntryRow
+            key={entrada.id}
+            entrada={entrada}
+            petId={petId}
+            canManageAttachments={canManageAttachments}
+          />
+        ))}
+      </TableShell>
+    </div>
   )
 }

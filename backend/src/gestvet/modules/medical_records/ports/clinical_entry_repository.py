@@ -26,3 +26,12 @@ class ClinicalEntryRepository(Protocol):
     async def get(self, entry_id: int) -> ClinicalEntry | None: ...
 
     async def search(self, query: ClinicalEntryQuery) -> Page[ClinicalEntry]: ...
+
+    async def list_all_for_pet(self, pet_id: int) -> list[ClinicalEntry]:
+        """Historia completa, sin paginar, del más antiguo al más nuevo.
+
+        Un reporte no puede recortar entradas: a diferencia de `search`, que
+        sirve a una pantalla con paginación, esto lo usa el PDF, que necesita
+        todo.
+        """
+        ...

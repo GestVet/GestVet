@@ -49,6 +49,14 @@ class SqlAlchemyClinicalEntryRepository:
         )
         return Page(items=[row_to_entity(row) for row in rows.scalars().all()], total=total)
 
+    async def list_all_for_pet(self, pet_id: int) -> list[ClinicalEntry]:
+        rows = await self._session.execute(
+            select(ClinicalEntryRow)
+            .where(ClinicalEntryRow.pet_id == pet_id)
+            .order_by(ClinicalEntryRow.occurred_at.asc(), ClinicalEntryRow.id.asc())
+        )
+        return [row_to_entity(row) for row in rows.scalars().all()]
+
     def _apply_filters(
         self, statement: Select[tuple[ClinicalEntryRow]], query: ClinicalEntryQuery
     ) -> Select[tuple[ClinicalEntryRow]]:

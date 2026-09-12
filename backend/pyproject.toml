@@ -15,6 +15,7 @@ dependencies = [
     "python-multipart==0.0.20",
     "sqlalchemy==2.0.52",
     "uvicorn[standard]==0.52.4",
+    "reportlab==5.0.1",
 ]
 
 [dependency-groups]
@@ -138,6 +139,7 @@ forbidden_modules = [
     "jwt",
     "pydantic",
     "pydantic_settings",
+    "reportlab",
     "sqlalchemy",
     "starlette",
     "uvicorn",

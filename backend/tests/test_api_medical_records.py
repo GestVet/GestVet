@@ -212,6 +212,75 @@ async def test_el_filtro_por_tipo(client: AsyncClient, session: AsyncSession) ->
     assert body["items"][0]["kind"] == "vaccine"
 
 
+async def test_un_veterinario_descarga_el_reporte(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+    await client.post(
+        URL,
+        json={**ENTRADA, "pet_id": escenario.mascota.id},
+        headers=authorization_for(escenario.veterinario),
+    )
+
+    response = await client.get(
+        f"{URL}/report",
+        params={"pet_id": escenario.mascota.id},
+        headers=authorization_for(escenario.veterinario),
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert "attachment; filename=" in response.headers["content-disposition"]
+    assert response.content.startswith(b"%PDF")
+
+
+async def test_el_dueno_descarga_el_reporte_de_su_propia_mascota(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+
+    response = await client.get(
+        f"{URL}/report",
+        params={"pet_id": escenario.mascota.id},
+        headers=authorization_for(escenario.cliente),
+    )
+
+    assert response.status_code == 200
+    assert response.content.startswith(b"%PDF")
+
+
+async def test_un_cliente_no_descarga_el_reporte_de_una_mascota_ajena(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+    users = SqlAlchemyUserRepository(session)
+    otro = await users.add(build_user("beto@example.com"))
+    await session.commit()
+
+    response = await client.get(
+        f"{URL}/report",
+        params={"pet_id": escenario.mascota.id},
+        headers=authorization_for(otro),
+    )
+
+    assert response.status_code == 404
+
+
+async def test_no_se_descarga_el_reporte_de_una_mascota_inexistente(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+
+    response = await client.get(
+        f"{URL}/report",
+        params={"pet_id": 999},
+        headers=authorization_for(escenario.veterinario),
+    )
+
+    assert response.status_code == 404
+
+
 async def test_sin_credencial_no_se_llega_a_ninguna_parte(client: AsyncClient) -> None:
     assert (await client.get(URL, params={"pet_id": 1})).status_code == 401
     assert (await client.post(URL, json={**ENTRADA, "pet_id": 1})).status_code == 401
+    assert (await client.get(f"{URL}/report", params={"pet_id": 1})).status_code == 401

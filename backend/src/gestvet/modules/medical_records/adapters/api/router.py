@@ -7,9 +7,10 @@ cliente solo ve la de sus propias mascotas; el caso de uso aplica ese recorte.
 
 from __future__ import annotations
 
+import re
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile, status
 
 from gestvet.core.activity_log import ActivityRecorderDep
 from gestvet.core.auth import PrincipalDep, require_roles
@@ -19,6 +20,7 @@ from gestvet.modules.medical_records.adapters.api.dependencies import (
     AttachmentRepositoryDep,
     AttachmentStorageDep,
     ClinicalEntryRepositoryDep,
+    ClinicalHistoryReportRendererDep,
     PetDirectoryDep,
 )
 from gestvet.modules.medical_records.adapters.api.schemas import (
@@ -39,6 +41,9 @@ from gestvet.modules.medical_records.ports.clinical_entry_repository import Clin
 from gestvet.modules.medical_records.use_cases.add_clinical_entry import (
     AddClinicalEntry,
     AddClinicalEntryCommand,
+)
+from gestvet.modules.medical_records.use_cases.build_clinical_history_report import (
+    BuildClinicalHistoryReport,
 )
 from gestvet.modules.medical_records.use_cases.delete_attachment import (
     DeleteAttachment,
@@ -121,6 +126,32 @@ async def list_clinical_entries(
     )
 
 
+@router.get(
+    "/report",
+    summary="Descargar en PDF toda la historia clínica de una mascota",
+)
+async def download_clinical_history_report(
+    principal: PrincipalDep,
+    entries: ClinicalEntryRepositoryDep,
+    attachments: AttachmentRepositoryDep,
+    pets: PetDirectoryDep,
+    renderer: ClinicalHistoryReportRendererDep,
+    pet_id: Annotated[int, Query(ge=1, description="Mascota consultada")],
+) -> Response:
+    try:
+        build_report = BuildClinicalHistoryReport(entries, attachments, pets, renderer)
+        pet_name, pdf_bytes = await build_report(
+            pet_id, requester_id=principal.user_id, is_staff=principal.role in STAFF_ROLES
+        )
+    except PetNotFound as error:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{_nombre_de_archivo(pet_name)}"'},
+    )
+
+
 @router.post(
     "/{entry_id}/attachments",
     response_model=AttachmentResponse,
@@ -172,3 +203,8 @@ async def delete_attachment(
         )
     except AttachmentNotFound as error:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+
+
+def _nombre_de_archivo(pet_name: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", pet_name.lower()).strip("-") or "mascota"
+    return f"historia-clinica-{slug}.pdf"
