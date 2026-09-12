@@ -27,6 +27,11 @@ class Settings(BaseSettings):
     # por correo. No es lo mismo que CORS: ese protege al servidor, este es
     # simplemente dónde vive el frontend que va a atender el enlace.
     frontend_base_url: str = "http://localhost:5173"
+    # Con qué origen arma la URL de un adjunto. Se reemplaza junto con el
+    # adaptador de almacenamiento el día que un archivo termine en un bucket
+    # en vez de en el disco del propio servidor.
+    api_base_url: str = "http://localhost:8000"
+    attachments_storage_dir: str = "./var/attachments"
 
     jwt_secret_key: str = INSECURE_DEFAULT_SECRET
     jwt_algorithm: str = "HS256"

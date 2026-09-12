@@ -23,6 +23,10 @@ export type ActivityPageResponse = components['schemas']['ActivityPageResponse']
 export type PetResponse = components['schemas']['PetResponse']
 export type PetPageResponse = components['schemas']['PetPageResponse']
 export type RegisterPetRequest = components['schemas']['RegisterPetRequest']
+export type PetSex = components['schemas']['PetSex']
+export type UpdatePetOwnerProfileRequest = components['schemas']['UpdatePetOwnerProfileRequest']
+export type UpdatePetClinicalProfileRequest =
+  components['schemas']['UpdatePetClinicalProfileRequest']
 
 export type SlotResponse = components['schemas']['SlotResponse']
 export type SlotListResponse = components['schemas']['SlotListResponse']
@@ -39,6 +43,7 @@ export type ClinicalEntryResponse = components['schemas']['ClinicalEntryResponse
 export type ClinicalEntryPageResponse = components['schemas']['ClinicalEntryPageResponse']
 export type AddClinicalEntryRequest = components['schemas']['AddClinicalEntryRequest']
 export type EntryKind = components['schemas']['EntryKind']
+export type AttachmentResponse = components['schemas']['AttachmentResponse']
 
 export type PaymentResponse = components['schemas']['PaymentResponse']
 export type PaymentPageResponse = components['schemas']['PaymentPageResponse']

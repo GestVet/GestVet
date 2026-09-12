@@ -40,6 +40,8 @@ class ActivityKind(StrEnum):
     PET_REGISTERED = "pet_registered"
     PET_STATUS_CHANGED = "pet_status_changed"
     PET_STATUS_CORRECTED = "pet_status_corrected"
+    PET_PROFILE_UPDATED = "pet_profile_updated"
+    PET_CLINICAL_PROFILE_UPDATED = "pet_clinical_profile_updated"
     SLOT_PUBLISHED = "slot_published"
     SLOT_WITHDRAWN = "slot_withdrawn"
     APPOINTMENT_BOOKED = "appointment_booked"
@@ -48,6 +50,8 @@ class ActivityKind(StrEnum):
     APPOINTMENT_COMPLETED = "appointment_completed"
     APPOINTMENT_CANCELLED = "appointment_cancelled"
     CLINICAL_ENTRY_ADDED = "clinical_entry_added"
+    ATTACHMENT_UPLOADED = "attachment_uploaded"
+    ATTACHMENT_DELETED = "attachment_deleted"
     PAYMENT_REGISTERED = "payment_registered"
     PAYMENT_VOIDED = "payment_voided"
 
@@ -66,6 +70,8 @@ _KIND_LABELS: dict[ActivityKind, str] = {
     ActivityKind.PET_REGISTERED: "Registró una mascota",
     ActivityKind.PET_STATUS_CHANGED: "Cambió el estado de una mascota",
     ActivityKind.PET_STATUS_CORRECTED: "Corrigió el estado de una mascota",
+    ActivityKind.PET_PROFILE_UPDATED: "Actualizó el perfil de una mascota",
+    ActivityKind.PET_CLINICAL_PROFILE_UPDATED: "Actualizó los datos clínicos de una mascota",
     ActivityKind.SLOT_PUBLISHED: "Publicó un tramo de disponibilidad",
     ActivityKind.SLOT_WITHDRAWN: "Retiró un tramo de disponibilidad",
     ActivityKind.APPOINTMENT_BOOKED: "Reservó una cita",
@@ -74,6 +80,8 @@ _KIND_LABELS: dict[ActivityKind, str] = {
     ActivityKind.APPOINTMENT_COMPLETED: "Completó una cita",
     ActivityKind.APPOINTMENT_CANCELLED: "Canceló una cita",
     ActivityKind.CLINICAL_ENTRY_ADDED: "Agregó una entrada a la historia clínica",
+    ActivityKind.ATTACHMENT_UPLOADED: "Adjuntó un archivo a la historia clínica",
+    ActivityKind.ATTACHMENT_DELETED: "Quitó un adjunto de la historia clínica",
     ActivityKind.PAYMENT_REGISTERED: "Registró un pago",
     ActivityKind.PAYMENT_VOIDED: "Anuló un pago",
 }

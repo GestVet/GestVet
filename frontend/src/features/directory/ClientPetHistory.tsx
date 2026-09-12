@@ -18,7 +18,12 @@ export default function ClientPetHistory({ petId }: ClientPetHistoryProps) {
 
   return (
     <div className="stack">
-      <ClinicalEntryList items={historia.data?.items ?? []} isLoading={historia.isPending} />
+      <ClinicalEntryList
+        items={historia.data?.items ?? []}
+        isLoading={historia.isPending}
+        petId={petId}
+        canManageAttachments={puedeCargar}
+      />
       {puedeCargar ? <ClinicalEntryForm petId={petId} /> : null}
     </div>
   )

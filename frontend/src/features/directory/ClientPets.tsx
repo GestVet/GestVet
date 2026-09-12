@@ -60,6 +60,8 @@ export default function ClientPets({ ownerId }: ClientPetsProps) {
           <tr>
             <th>Nombre</th>
             <th>Especie</th>
+            <th>Peso</th>
+            <th>Altura</th>
             <th>Estado</th>
             <th>Acciones</th>
           </tr>

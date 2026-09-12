@@ -12,16 +12,42 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
+from decimal import Decimal
+from enum import StrEnum
 
 from gestvet.modules.pets.domain.exceptions import InvalidPetData
 
 MAX_NAME_LENGTH = 60
 MAX_SPECIES_LENGTH = 40
 MAX_BREED_LENGTH = 60
+MAX_COLOR_LENGTH = 80
+MAX_MICROCHIP_LENGTH = 40
+MAX_TEMPERAMENT_LENGTH = 120
+MAX_ALLERGIES_LENGTH = 300
 
 # Ninguna especie domestica se acerca a esto. Un valor mayor no es una mascota
 # longeva, es una fecha mal tipeada.
 MAX_PLAUSIBLE_AGE_YEARS = 60
+
+# Cubre desde un hámster hasta un gran danés sin abrir la puerta a un dato mal
+# tipeado. Un caballo o una vaca no son mascotas de esta clínica.
+MAX_PLAUSIBLE_WEIGHT_KG = Decimal("120")
+MAX_PLAUSIBLE_HEIGHT_CM = Decimal("200")
+
+
+class PetSex(StrEnum):
+    MALE = "male"
+    FEMALE = "female"
+
+    @property
+    def label(self) -> str:
+        return _SEX_LABELS[self]
+
+
+_SEX_LABELS: dict[PetSex, str] = {
+    PetSex.MALE: "Macho",
+    PetSex.FEMALE: "Hembra",
+}
 
 
 @dataclass(slots=True)
@@ -32,6 +58,17 @@ class Pet:
     birth_date: date
     owner_id: int
     is_active: bool = True
+    # Lo carga el dueño: lo conoce de memoria, no necesita medirlo.
+    sex: PetSex | None = None
+    color: str = ""
+    microchip_number: str = ""
+    temperament: str = ""
+    # Lo carga el veterinario: son datos clínicos, medidos o confirmados en
+    # consulta.
+    weight_kg: Decimal | None = None
+    height_cm: Decimal | None = None
+    is_sterilized: bool | None = None
+    allergies: str = ""
     id: int | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
@@ -40,6 +77,14 @@ class Pet:
         self.species = _require_text(self.species, "especie", MAX_SPECIES_LENGTH)
         self.breed = _require_text(self.breed, "raza", MAX_BREED_LENGTH)
         _require_plausible_birth_date(self.birth_date)
+        self.color = _trim(self.color, "color", MAX_COLOR_LENGTH)
+        self.microchip_number = _trim(self.microchip_number, "microchip", MAX_MICROCHIP_LENGTH)
+        self.temperament = _trim(self.temperament, "temperamento", MAX_TEMPERAMENT_LENGTH)
+        self.allergies = _trim(self.allergies, "alergias", MAX_ALLERGIES_LENGTH)
+        if self.weight_kg is not None:
+            _require_plausible_weight(self.weight_kg)
+        if self.height_cm is not None:
+            _require_plausible_height(self.height_cm)
 
     def age_in_years(self, today: date | None = None) -> int:
         """Edad cumplida.
@@ -63,11 +108,45 @@ class Pet:
     def belongs_to(self, owner_id: int) -> bool:
         return self.owner_id == owner_id
 
+    def update_owner_profile(
+        self, *, sex: PetSex | None, color: str, microchip_number: str, temperament: str
+    ) -> None:
+        """Datos que conoce el dueño, no el consultorio."""
+        self.sex = sex
+        self.color = _trim(color, "color", MAX_COLOR_LENGTH)
+        self.microchip_number = _trim(microchip_number, "microchip", MAX_MICROCHIP_LENGTH)
+        self.temperament = _trim(temperament, "temperamento", MAX_TEMPERAMENT_LENGTH)
+
+    def update_clinical_profile(
+        self,
+        *,
+        weight_kg: Decimal | None,
+        height_cm: Decimal | None,
+        is_sterilized: bool | None,
+        allergies: str,
+    ) -> None:
+        """Datos que se miden o se confirman en consulta."""
+        if weight_kg is not None:
+            _require_plausible_weight(weight_kg)
+        if height_cm is not None:
+            _require_plausible_height(height_cm)
+        self.weight_kg = weight_kg
+        self.height_cm = height_cm
+        self.is_sterilized = is_sterilized
+        self.allergies = _trim(allergies, "alergias", MAX_ALLERGIES_LENGTH)
+
 
 def _require_text(raw: str, field_name: str, max_length: int) -> str:
     value = raw.strip()
     if not value:
         raise InvalidPetData(f"El campo {field_name!r} es obligatorio.")
+    if len(value) > max_length:
+        raise InvalidPetData(f"El campo {field_name!r} admite {max_length} caracteres como máximo.")
+    return value
+
+
+def _trim(raw: str, field_name: str, max_length: int) -> str:
+    value = raw.strip()
     if len(value) > max_length:
         raise InvalidPetData(f"El campo {field_name!r} admite {max_length} caracteres como máximo.")
     return value
@@ -82,3 +161,17 @@ def _require_plausible_birth_date(birth_date: date, today: date | None = None) -
             f"La fecha de nacimiento supera los {MAX_PLAUSIBLE_AGE_YEARS} años. "
             "Revisá el dato antes de guardarlo."
         )
+
+
+def _require_plausible_weight(weight_kg: Decimal) -> None:
+    if weight_kg <= 0:
+        raise InvalidPetData("El peso debe ser positivo.")
+    if weight_kg > MAX_PLAUSIBLE_WEIGHT_KG:
+        raise InvalidPetData(f"El peso supera los {MAX_PLAUSIBLE_WEIGHT_KG} kg. Revisá el dato.")
+
+
+def _require_plausible_height(height_cm: Decimal) -> None:
+    if height_cm <= 0:
+        raise InvalidPetData("La altura debe ser positiva.")
+    if height_cm > MAX_PLAUSIBLE_HEIGHT_CM:
+        raise InvalidPetData(f"La altura supera los {MAX_PLAUSIBLE_HEIGHT_CM} cm. Revisá el dato.")

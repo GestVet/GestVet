@@ -1,8 +1,10 @@
 """Adaptador de entrada HTTP para mascotas.
 
-Un cliente administra las suyas y solo las suyas. El personal de la clínica
-puede consultarlas porque las necesita para atender una cita, pero no las da de
-alta ni las modifica.
+Un cliente administra las suyas y solo las suyas: el alta, la baja y los datos
+que conoce de memoria (sexo, color, microchip, temperamento). El personal de
+la clínica las consulta para atender una cita, y un veterinario además carga
+los datos clínicos (peso, altura, esterilización, alergias) de cualquier
+mascota: son datos que se confirman en consulta, no en el padrón del dueño.
 """
 
 from __future__ import annotations
@@ -13,7 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from gestvet.core.activity_log import ActivityRecorderDep
 from gestvet.core.auth import require_roles
-from gestvet.core.identity import STAFF_ROLES, Principal, Role
+from gestvet.core.identity import STAFF_ROLES, VETERINARIAN_ROLES, Principal, Role
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from gestvet.modules.pets.adapters.api.dependencies import PetRepositoryDep
 from gestvet.modules.pets.adapters.api.schemas import (
@@ -22,6 +24,8 @@ from gestvet.modules.pets.adapters.api.schemas import (
     PetPageResponse,
     PetResponse,
     RegisterPetRequest,
+    UpdatePetClinicalProfileRequest,
+    UpdatePetOwnerProfileRequest,
 )
 from gestvet.modules.pets.domain.exceptions import InvalidPetData, PetNotFound, PetStatusIsFinal
 from gestvet.modules.pets.ports.pet_repository import PetQuery
@@ -32,11 +36,20 @@ from gestvet.modules.pets.use_cases.correct_pet_status import (
 )
 from gestvet.modules.pets.use_cases.list_pets import ListPets
 from gestvet.modules.pets.use_cases.register_pet import RegisterPet, RegisterPetCommand
+from gestvet.modules.pets.use_cases.update_pet_clinical_profile import (
+    UpdatePetClinicalProfile,
+    UpdatePetClinicalProfileCommand,
+)
+from gestvet.modules.pets.use_cases.update_pet_owner_profile import (
+    UpdatePetOwnerProfile,
+    UpdatePetOwnerProfileCommand,
+)
 
 router = APIRouter()
 
 ClientDep = Annotated[Principal, Depends(require_roles(Role.CLIENT))]
 StaffDep = Annotated[Principal, Depends(require_roles(*STAFF_ROLES))]
+VeterinarianDep = Annotated[Principal, Depends(require_roles(*VETERINARIAN_ROLES))]
 
 
 @router.post(
@@ -152,6 +165,66 @@ async def correct_pet_status(
                 actor_id=staff.user_id,
                 is_active=payload.is_active,
                 reason=payload.reason,
+            )
+        )
+    except PetNotFound as error:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    except InvalidPetData as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
+    return PetResponse.from_entity(pet)
+
+
+@router.patch(
+    "/{pet_id}/owner-profile",
+    response_model=PetResponse,
+    summary="Actualizar sexo, color, microchip y temperamento de una mascota propia",
+)
+async def update_pet_owner_profile(
+    pet_id: int,
+    payload: UpdatePetOwnerProfileRequest,
+    client: ClientDep,
+    pets: PetRepositoryDep,
+    activity: ActivityRecorderDep,
+) -> PetResponse:
+    try:
+        pet = await UpdatePetOwnerProfile(pets, activity)(
+            UpdatePetOwnerProfileCommand(
+                pet_id=pet_id,
+                owner_id=client.user_id,
+                sex=payload.sex,
+                color=payload.color,
+                microchip_number=payload.microchip_number,
+                temperament=payload.temperament,
+            )
+        )
+    except PetNotFound as error:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    except InvalidPetData as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
+    return PetResponse.from_entity(pet)
+
+
+@router.patch(
+    "/{pet_id}/clinical-profile",
+    response_model=PetResponse,
+    summary="Actualizar peso, altura, esterilización y alergias de una mascota",
+)
+async def update_pet_clinical_profile(
+    pet_id: int,
+    payload: UpdatePetClinicalProfileRequest,
+    veterinarian: VeterinarianDep,
+    pets: PetRepositoryDep,
+    activity: ActivityRecorderDep,
+) -> PetResponse:
+    try:
+        pet = await UpdatePetClinicalProfile(pets, activity)(
+            UpdatePetClinicalProfileCommand(
+                pet_id=pet_id,
+                updated_by=veterinarian.user_id,
+                weight_kg=payload.weight_kg,
+                height_cm=payload.height_cm,
+                is_sterilized=payload.is_sterilized,
+                allergies=payload.allergies,
             )
         )
     except PetNotFound as error:

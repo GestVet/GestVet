@@ -26,3 +26,11 @@ export async function addClinicalEntry(
   const { data } = await api.post<ClinicalEntryResponse>('/medical-records', payload)
   return data
 }
+
+export async function downloadClinicalHistoryReport(petId: number): Promise<Blob> {
+  const { data } = await api.get<Blob>('/medical-records/report', {
+    params: { pet_id: petId },
+    responseType: 'blob',
+  })
+  return data
+}
