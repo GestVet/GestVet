@@ -13,12 +13,18 @@ from typing import Annotated
 from fastapi import Depends
 
 from gestvet.core.auth import SessionDep
+from gestvet.core.email import ConsoleEmailSender
 from gestvet.core.security import BcryptPasswordHasher
 from gestvet.modules.accounts.adapters.persistence.directories import SqlAppointmentDirectory
+from gestvet.modules.accounts.adapters.persistence.sqlalchemy_password_reset_repository import (
+    SqlAlchemyPasswordResetRepository,
+)
 from gestvet.modules.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
 from gestvet.modules.accounts.ports.appointment_directory import AppointmentDirectory
+from gestvet.modules.accounts.ports.email_sender import EmailSender
+from gestvet.modules.accounts.ports.password_reset_repository import PasswordResetRepository
 from gestvet.modules.accounts.ports.user_repository import PasswordHasher, UserRepository
 
 
@@ -34,6 +40,18 @@ def get_appointment_directory(session: SessionDep) -> AppointmentDirectory:
     return SqlAppointmentDirectory(session)
 
 
+def get_password_reset_repository(session: SessionDep) -> PasswordResetRepository:
+    return SqlAlchemyPasswordResetRepository(session)
+
+
+def get_email_sender() -> EmailSender:
+    return ConsoleEmailSender()
+
+
 UserRepositoryDep = Annotated[UserRepository, Depends(get_user_repository)]
 PasswordHasherDep = Annotated[PasswordHasher, Depends(get_password_hasher)]
 AppointmentDirectoryDep = Annotated[AppointmentDirectory, Depends(get_appointment_directory)]
+PasswordResetRepositoryDep = Annotated[
+    PasswordResetRepository, Depends(get_password_reset_repository)
+]
+EmailSenderDep = Annotated[EmailSender, Depends(get_email_sender)]

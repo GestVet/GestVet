@@ -10,14 +10,20 @@ from fastapi import APIRouter, HTTPException, status
 
 from gestvet.core.activity_log import ActivityRecorderDep
 from gestvet.core.auth import UNAUTHENTICATED_HEADERS, PrincipalDep, TokenServiceDep
+from gestvet.core.config import get_settings
 from gestvet.modules.accounts.adapters.api.dependencies import (
+    EmailSenderDep,
     PasswordHasherDep,
+    PasswordResetRepositoryDep,
     UserRepositoryDep,
 )
 from gestvet.modules.accounts.adapters.api.schemas import (
     AccessTokenResponse,
+    ForgotPasswordRequest,
     LoginRequest,
+    MessageResponse,
     RegisterClientRequest,
+    ResetPasswordRequest,
     UpdateProfileRequest,
     UserResponse,
 )
@@ -26,6 +32,7 @@ from gestvet.modules.accounts.domain.exceptions import (
     InactiveAccount,
     InvalidCredentials,
     InvalidEmail,
+    InvalidResetToken,
     UserNotFound,
 )
 from gestvet.modules.accounts.use_cases.authenticate_user import (
@@ -34,8 +41,18 @@ from gestvet.modules.accounts.use_cases.authenticate_user import (
 )
 from gestvet.modules.accounts.use_cases.manage_accounts import UpdateProfile, UpdateProfileCommand
 from gestvet.modules.accounts.use_cases.register_client import RegisterClient, RegisterClientCommand
+from gestvet.modules.accounts.use_cases.request_password_reset import (
+    RequestPasswordReset,
+    RequestPasswordResetCommand,
+)
+from gestvet.modules.accounts.use_cases.reset_password import ResetPassword, ResetPasswordCommand
 
 router = APIRouter()
+
+# Misma respuesta exista o no la cuenta: si el mensaje cambiara con el
+# resultado, cualquiera podría usar el formulario para averiguar qué correos
+# están registrados.
+FORGOT_PASSWORD_MESSAGE = "Si el correo está registrado, te enviamos instrucciones."
 
 
 @router.post(
@@ -128,3 +145,39 @@ async def update_current_user(
     except UserNotFound as error:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
     return UserResponse.from_entity(user)
+
+
+@router.post(
+    "/forgot-password",
+    response_model=MessageResponse,
+    summary="Pedir un enlace de recuperación de contraseña",
+)
+async def forgot_password(
+    payload: ForgotPasswordRequest,
+    users: UserRepositoryDep,
+    tokens: PasswordResetRepositoryDep,
+    email_sender: EmailSenderDep,
+) -> MessageResponse:
+    use_case = RequestPasswordReset(users, tokens, email_sender, get_settings().frontend_base_url)
+    await use_case(RequestPasswordResetCommand(email=str(payload.email)))
+    return MessageResponse(message=FORGOT_PASSWORD_MESSAGE)
+
+
+@router.post(
+    "/reset-password",
+    response_model=MessageResponse,
+    summary="Fijar una contraseña nueva con el enlace recibido",
+)
+async def reset_password(
+    payload: ResetPasswordRequest,
+    users: UserRepositoryDep,
+    tokens: PasswordResetRepositoryDep,
+    hasher: PasswordHasherDep,
+) -> MessageResponse:
+    try:
+        await ResetPassword(users, tokens, hasher)(
+            ResetPasswordCommand(token=payload.token, new_password=payload.new_password)
+        )
+    except InvalidResetToken as error:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
+    return MessageResponse(message="Contraseña actualizada. Ya podés iniciar sesión.")

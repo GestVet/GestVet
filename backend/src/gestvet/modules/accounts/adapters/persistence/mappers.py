@@ -6,8 +6,8 @@ Este archivo es la razón por la que el dominio puede ignorar SQLAlchemy.
 from __future__ import annotations
 
 from gestvet.core.timestamps import as_utc
-from gestvet.modules.accounts.adapters.persistence.models import UserRow
-from gestvet.modules.accounts.domain.entities import Role, User
+from gestvet.modules.accounts.adapters.persistence.models import PasswordResetTokenRow, UserRow
+from gestvet.modules.accounts.domain.entities import PasswordResetToken, Role, User
 
 
 def row_to_entity(row: UserRow) -> User:
@@ -36,4 +36,25 @@ def entity_to_row(user: User) -> UserRow:
         is_active=user.is_active,
         can_cover_emergencies=user.can_cover_emergencies,
         created_at=user.created_at,
+    )
+
+
+def reset_token_row_to_entity(row: PasswordResetTokenRow) -> PasswordResetToken:
+    return PasswordResetToken(
+        id=row.id,
+        user_id=row.user_id,
+        token_hash=row.token_hash,
+        expires_at=as_utc(row.expires_at),
+        used_at=as_utc(row.used_at) if row.used_at else None,
+        created_at=as_utc(row.created_at),
+    )
+
+
+def reset_token_entity_to_row(token: PasswordResetToken) -> PasswordResetTokenRow:
+    return PasswordResetTokenRow(
+        user_id=token.user_id,
+        token_hash=token.token_hash,
+        expires_at=token.expires_at,
+        used_at=token.used_at,
+        created_at=token.created_at,
     )

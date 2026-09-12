@@ -2,9 +2,11 @@ import { createBrowserRouter } from 'react-router'
 
 import AppointmentsView from '../features/appointments/AppointmentsView'
 import BookingView from '../features/appointments/BookingView'
+import ForgotPasswordView from '../features/auth/ForgotPasswordView'
 import LoginView from '../features/auth/LoginView'
 import ProfileView from '../features/auth/ProfileView'
 import RegisterView from '../features/auth/RegisterView'
+import ResetPasswordView from '../features/auth/ResetPasswordView'
 import AvailabilityView from '../features/availability/AvailabilityView'
 import ActivityView from '../features/directory/ActivityView'
 import ClientsView from '../features/directory/ClientsView'
@@ -29,6 +31,8 @@ const router = createBrowserRouter(
         { index: true, Component: HomeView },
         { path: 'acceso', Component: LoginView },
         { path: 'registro', Component: RegisterView },
+        { path: 'olvide-contrasena', Component: ForgotPasswordView },
+        { path: 'restablecer-contrasena', Component: ResetPasswordView },
         {
           // Las rutas de abajo exigen sesión. Es una comodidad de la
           // interfaz: la autorización de verdad la aplica el servidor en cada

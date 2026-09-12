@@ -21,6 +21,8 @@ from tests.conftest import VALID_PASSWORD, authorization_for, build_user
 REGISTER_URL = "/api/v1/auth/register"
 LOGIN_URL = "/api/v1/auth/login"
 CLIENTS_URL = "/api/v1/clients"
+FORGOT_PASSWORD_URL = "/api/v1/auth/forgot-password"
+RESET_PASSWORD_URL = "/api/v1/auth/reset-password"
 
 NEW_CLIENT = {
     "email": "Ana.Quispe@Example.com",
@@ -205,6 +207,92 @@ async def test_una_cuenta_desactivada_pierde_el_acceso_sin_esperar_al_vencimient
     await session.commit()
 
     assert (await client.get(CLIENTS_URL, headers=cabeceras)).status_code == 401
+
+
+async def test_pedir_recuperacion_responde_igual_exista_o_no_la_cuenta(
+    client: AsyncClient,
+) -> None:
+    await client.post(REGISTER_URL, json=NEW_CLIENT)
+
+    con_cuenta = await client.post(FORGOT_PASSWORD_URL, json={"email": NEW_CLIENT["email"]})
+    sin_cuenta = await client.post(FORGOT_PASSWORD_URL, json={"email": "nadie@example.com"})
+
+    assert con_cuenta.status_code == 200
+    assert sin_cuenta.status_code == 200
+    assert con_cuenta.json() == sin_cuenta.json()
+
+
+async def test_pedir_recuperacion_solo_manda_correo_si_la_cuenta_existe(
+    client: AsyncClient, sent_emails: list[tuple[str, str]]
+) -> None:
+    await client.post(REGISTER_URL, json=NEW_CLIENT)
+
+    await client.post(FORGOT_PASSWORD_URL, json={"email": "nadie@example.com"})
+    assert sent_emails == []
+
+    await client.post(FORGOT_PASSWORD_URL, json={"email": NEW_CLIENT["email"]})
+    assert len(sent_emails) == 1
+    assert sent_emails[0][0] == "ana.quispe@example.com"
+
+
+async def test_restablecer_la_contrasena_con_el_enlace_recibido(
+    client: AsyncClient, sent_emails: list[tuple[str, str]]
+) -> None:
+    await client.post(REGISTER_URL, json=NEW_CLIENT)
+    await client.post(FORGOT_PASSWORD_URL, json={"email": NEW_CLIENT["email"]})
+    token = sent_emails[0][1].rsplit("token=", 1)[1]
+    nueva_contrasena = "otra-contrasena-bien-larga"
+
+    restablecida = await client.post(
+        RESET_PASSWORD_URL, json={"token": token, "new_password": nueva_contrasena}
+    )
+    assert restablecida.status_code == 200
+
+    con_la_nueva = await client.post(
+        LOGIN_URL, json={"email": NEW_CLIENT["email"], "password": nueva_contrasena}
+    )
+    con_la_vieja = await client.post(
+        LOGIN_URL, json={"email": NEW_CLIENT["email"], "password": VALID_PASSWORD}
+    )
+    assert con_la_nueva.status_code == 200
+    assert con_la_vieja.status_code == 401
+
+
+async def test_el_enlace_no_sirve_una_segunda_vez(
+    client: AsyncClient, sent_emails: list[tuple[str, str]]
+) -> None:
+    await client.post(REGISTER_URL, json=NEW_CLIENT)
+    await client.post(FORGOT_PASSWORD_URL, json={"email": NEW_CLIENT["email"]})
+    token = sent_emails[0][1].rsplit("token=", 1)[1]
+    cuerpo = {"token": token, "new_password": "otra-contrasena-bien-larga"}
+    await client.post(RESET_PASSWORD_URL, json=cuerpo)
+
+    response = await client.post(
+        RESET_PASSWORD_URL, json={"token": token, "new_password": "una-tercera-contrasena"}
+    )
+
+    assert response.status_code == 400
+
+
+async def test_restablecer_con_un_token_inventado_falla(client: AsyncClient) -> None:
+    response = await client.post(
+        RESET_PASSWORD_URL,
+        json={"token": "esto-no-lo-emitio-el-servidor", "new_password": VALID_PASSWORD},
+    )
+
+    assert response.status_code == 400
+
+
+async def test_restablecer_valida_el_largo_de_la_contrasena_nueva(
+    client: AsyncClient, sent_emails: list[tuple[str, str]]
+) -> None:
+    await client.post(REGISTER_URL, json=NEW_CLIENT)
+    await client.post(FORGOT_PASSWORD_URL, json={"email": NEW_CLIENT["email"]})
+    token = sent_emails[0][1].rsplit("token=", 1)[1]
+
+    response = await client.post(RESET_PASSWORD_URL, json={"token": token, "new_password": "corta"})
+
+    assert response.status_code == 422
 
 
 async def test_el_padron_acota_el_tamano_de_pagina(
