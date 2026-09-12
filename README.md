@@ -17,6 +17,7 @@ Sistema web responsive para la gestión veterinaria: usuarios, mascotas, disponi
 
 - Node.js 24+ y pnpm 12
 - React 19.3.0
+- shadcn/ui 4.21 sobre Radix, con Tailwind CSS 4.3
 - Vite 8.3.0
 - TypeScript 6.0.3
 - react-router 8.3.1 en modo librería
@@ -80,6 +81,7 @@ El frontend usa **arquitectura por características**, con límites verificados 
 frontend/src/
 ├── api/          contrato generado desde OpenAPI y funciones de consulta
 ├── components/   piezas de interfaz compartidas, incluido el registro de iconos
+│   └── ui/       componentes de shadcn/ui, generados por su CLI
 ├── features/     un módulo por pantalla; no pueden importarse entre sí
 ├── hooks/        ayudas transversales
 ├── router/       rutas y guardas
@@ -90,6 +92,34 @@ frontend/src/
 `main.tsx` es la raíz de composición y está declarada como tal, con una política propia que le permite alcanzar todas las capas. No está exenta: un archivo exento no tiene reglas, y este las tiene, solo que amplias. El armazón de la interfaz vive en `components` porque es lo que es, un componente compartido.
 
 Ningún archivo puede ser un *barrel file*, es decir uno que solo reexporta. Enturbian los límites, esconden dependencias circulares y hacen que un import arrastre módulos que nadie pidió.
+
+## shadcn/ui y Tailwind
+
+La interfaz se construye con shadcn/ui sobre Tailwind CSS, y cualquier tabla usa TanStack Table. Para agregar un componente:
+
+```powershell
+Set-Location frontend
+pnpm dlx shadcn@latest add dialog
+```
+
+Los componentes caen en `src/components/ui`. Es código que genera y actualiza el CLI de shadcn, así que se respeta su forma:
+
+- **Nombres en kebab-case.** La carpeta tiene su propia convención de nombres en vez de una excepción, porque renombrar los archivos rompería cada `shadcn add`.
+- **Dos reglas no aplican ahí.** Cada archivo agrupa una familia de componentes y algunos exportan sus variantes. El resto del lint, tipado estricto incluido, se aplica igual.
+- **Lucide y Radix solo se importan dentro de `ui`.** El resto de la aplicación usa el registro único de iconos y los componentes ya tematizados; el lint rechaza la importación directa.
+
+El `cn` que usan los componentes viene del paquete `cn`, que es lo que emite hoy el registro de shadcn. No hay `src/lib`: el `.gitignore` de la raíz ignora cualquier carpeta `lib/`, y un archivo ahí nunca llegaría al repositorio.
+
+### Convivencia con el CSS actual
+
+Las pantallas existentes siguen usando el CSS escrito a mano de `src/style.css` hasta migrar. El orden de capas de `src/index.css` es lo que evita que las dos cosas se pisen:
+
+- El CSS actual vive en la capa `legacy`, **por encima** del reinicio de Tailwind, así las pantallas conservan su aspecto.
+- Y **por debajo** de los componentes y las utilidades de Tailwind, así nunca pisa a shadcn.
+
+Las tablas actuales se excluyen de las de shadcn con `data-slot`, que es el atributo que llevan todos sus componentes. Cuando la última pantalla deje de usar `style.css`, se borra su importación y la capa desaparece.
+
+El tema es el neutral por defecto de shadcn. La identidad visual propia del producto está pendiente y se define aparte.
 
 ## Requisitos
 

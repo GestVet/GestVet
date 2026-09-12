@@ -41,6 +41,9 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  /* El tema de shadcn/ui pinta el body; se repone el de la interfaz actual. */
+  background: var(--fondo);
+  color: var(--texto);
 }
 
 a {
@@ -60,6 +63,37 @@ h2,
 h3 {
   color: var(--azul);
   margin: 0 0 0.5rem;
+}
+
+/*
+ * El reinicio de Tailwind borra los tamanos, pesos y margenes que el navegador
+ * da por defecto, y esta hoja se escribio contando con ellos. Estos valores son
+ * los del navegador, repuestos a mano para que las pantallas actuales no
+ * cambien. Se van con el resto de la capa legacy.
+ */
+h1 {
+  font-size: 2em;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 1.5em;
+  font-weight: 700;
+}
+
+h3 {
+  font-size: 1.17em;
+  font-weight: 700;
+}
+
+p {
+  margin-block: 1em;
+}
+
+ul {
+  list-style: disc;
+  margin-block: 1em;
+  padding-inline-start: 2.5rem;
 }
 
 /* ---------------------------------------------------------------- armazón */
@@ -297,20 +331,26 @@ h3 {
   overflow-x: auto;
 }
 
-table {
+/*
+ * Las tablas de shadcn/ui llevan el atributo data-slot y quedan fuera de estas
+ * reglas. Sin la exclusion, las mayusculas y el espaciado de las tablas
+ * actuales se filtrarian dentro de las tablas nuevas, porque sus utilidades no
+ * declaran esas propiedades.
+ */
+table:not([data-slot]) {
   border-collapse: collapse;
   min-width: 100%;
 }
 
-th,
-td {
+th:not([data-slot]),
+td:not([data-slot]) {
   border-bottom: 1px solid var(--borde-suave);
   padding: 0.65rem 0.75rem;
   text-align: left;
   white-space: nowrap;
 }
 
-th {
+th:not([data-slot]) {
   color: var(--texto-suave);
   font-size: 0.8rem;
   letter-spacing: 0.03em;
