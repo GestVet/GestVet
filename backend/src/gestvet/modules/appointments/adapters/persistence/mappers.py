@@ -49,6 +49,7 @@ def row_to_entity(row: AppointmentRow) -> Appointment:
         status=AppointmentStatus(row.status),
         cancellation_reason=row.cancellation_reason,
         updated_by=row.updated_by,
+        reminder_sent_at=as_utc(row.reminder_sent_at) if row.reminder_sent_at else None,
         created_at=as_utc(row.created_at),
     )
 
@@ -65,5 +66,6 @@ def entity_to_row(appointment: Appointment) -> AppointmentRow:
         status=appointment.status.value,
         cancellation_reason=appointment.cancellation_reason,
         updated_by=appointment.updated_by,
+        reminder_sent_at=appointment.reminder_sent_at,
         created_at=appointment.created_at,
     )

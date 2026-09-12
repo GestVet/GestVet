@@ -4,6 +4,8 @@ import PetProfileSummary from './PetProfileSummary'
 
 interface PetProfileLike {
   readonly id: number
+  readonly breed: string
+  readonly birth_date: string
   readonly sex: 'male' | 'female' | null
   readonly color: string
   readonly microchip_number: string
@@ -25,7 +27,8 @@ interface PetProfilePanelProps {
  *
  * La ficha siempre se ve entera: lo que cambia según quién mira es si además
  * aparece un formulario para editarla. El dueño edita lo que conoce de
- * memoria; el veterinario, lo que mide o confirma en consulta.
+ * memoria, raza incluida; el veterinario, lo que mide o confirma en consulta,
+ * y también la fecha de nacimiento, que en una emergencia queda provisoria.
  */
 export default function PetProfilePanel({
   mascota,
@@ -38,6 +41,7 @@ export default function PetProfilePanel({
       {canEditOwnerFields ? (
         <PetOwnerProfileForm
           petId={mascota.id}
+          breed={mascota.breed}
           sex={mascota.sex}
           color={mascota.color}
           microchipNumber={mascota.microchip_number}
@@ -47,6 +51,7 @@ export default function PetProfilePanel({
       {canEditClinicalFields ? (
         <PetClinicalProfileForm
           petId={mascota.id}
+          birthDate={mascota.birth_date}
           weightKg={mascota.weight_kg}
           heightCm={mascota.height_cm}
           isSterilized={mascota.is_sterilized}

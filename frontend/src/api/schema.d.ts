@@ -756,7 +756,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Actualizar peso, altura, esterilización y alergias de una mascota */
+        /** Actualizar fecha de nacimiento, peso, altura, esterilización y alergias */
         patch: operations["update_pet_clinical_profile_api_v1_pets__pet_id__clinical_profile_patch"];
         trace?: never;
     };
@@ -790,7 +790,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Actualizar sexo, color, microchip y temperamento de una mascota propia */
+        /** Actualizar raza, sexo, color, microchip y temperamento de una mascota propia */
         patch: operations["update_pet_owner_profile_api_v1_pets__pet_id__owner_profile_patch"];
         trace?: never;
     };
@@ -1843,6 +1843,11 @@ export interface components {
              * @default
              */
             allergies: string;
+            /**
+             * Birth Date
+             * Format: date
+             */
+            birth_date: string;
             /** Height Cm */
             height_cm?: number | string | null;
             /** Is Sterilized */
@@ -1852,6 +1857,8 @@ export interface components {
         };
         /** UpdatePetOwnerProfileRequest */
         UpdatePetOwnerProfileRequest: {
+            /** Breed */
+            breed: string;
             /**
              * Color
              * @default

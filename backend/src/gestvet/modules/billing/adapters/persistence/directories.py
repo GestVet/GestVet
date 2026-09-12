@@ -11,7 +11,11 @@ from decimal import Decimal
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from gestvet.modules.billing.ports.client_directory import ClientContact
+
 _FIND_CLIENT_ID = text("SELECT client_id FROM appointments WHERE id = :appointment_id")
+
+_CLIENT_CONTACT = text("SELECT first_name, last_name, phone FROM users WHERE id = :client_id")
 
 _FIND_AMOUNT_DUE = text(
     "SELECT appointment_types.price FROM appointments "
@@ -57,3 +61,14 @@ class SqlAppointmentDirectory:
             await self._session.execute(_IS_EMERGENCY, {"appointment_id": appointment_id})
         ).first()
         return bool(row.is_emergency) if row else False
+
+
+class SqlClientDirectory:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def find_contact(self, client_id: int) -> ClientContact | None:
+        row = (await self._session.execute(_CLIENT_CONTACT, {"client_id": client_id})).first()
+        if row is None:
+            return None
+        return ClientContact(name=f"{row.first_name} {row.last_name}".strip(), phone=row.phone)

@@ -10,6 +10,7 @@ import Icon from './Icon'
 import SelectField from './SelectField'
 
 const esquema = z.object({
+  birth_date: z.string().min(1, 'Ingresá la fecha de nacimiento'),
   weight_kg: z.string(),
   height_cm: z.string(),
   is_sterilized: z.enum(['', 'true', 'false']),
@@ -20,6 +21,7 @@ type Formulario = z.infer<typeof esquema>
 
 interface PetClinicalProfileFormProps {
   readonly petId: number
+  readonly birthDate: string
   readonly weightKg: string | null
   readonly heightCm: string | null
   readonly isSterilized: boolean | null
@@ -33,6 +35,7 @@ function esterilizadoInicial(valor: boolean | null): '' | 'true' | 'false' {
 
 function valoresIniciales(props: PetClinicalProfileFormProps): Formulario {
   return {
+    birth_date: props.birthDate,
     weight_kg: props.weightKg ?? '',
     height_cm: props.heightCm ?? '',
     is_sterilized: esterilizadoInicial(props.isSterilized),
@@ -55,6 +58,7 @@ export default function PetClinicalProfileForm(props: PetClinicalProfileFormProp
       onSubmit={onSubmit(
         handleSubmit((valores) => {
           guardar.mutate({
+            birth_date: valores.birth_date,
             weight_kg: valores.weight_kg === '' ? null : valores.weight_kg,
             height_cm: valores.height_cm === '' ? null : valores.height_cm,
             is_sterilized: valores.is_sterilized === '' ? null : valores.is_sterilized === 'true',
@@ -63,6 +67,11 @@ export default function PetClinicalProfileForm(props: PetClinicalProfileFormProp
         }),
       )}
     >
+      <div className="field">
+        <label htmlFor="birth_date">Fecha de nacimiento</label>
+        <input id="birth_date" type="date" {...register('birth_date')} />
+        <FieldError message={errores.birth_date?.message} />
+      </div>
       <div className="field">
         <label htmlFor="weight_kg">Peso (kg)</label>
         <input id="weight_kg" type="number" step="0.1" min="0" {...register('weight_kg')} />

@@ -54,6 +54,7 @@ class CorrectPetStatusRequest(BaseModel):
 
 
 class UpdatePetOwnerProfileRequest(BaseModel):
+    breed: str = Field(min_length=1, max_length=MAX_BREED_LENGTH)
     sex: PetSex | None = None
     color: str = Field(default="", max_length=MAX_COLOR_LENGTH)
     microchip_number: str = Field(default="", max_length=MAX_MICROCHIP_LENGTH)
@@ -61,6 +62,7 @@ class UpdatePetOwnerProfileRequest(BaseModel):
 
 
 class UpdatePetClinicalProfileRequest(BaseModel):
+    birth_date: date
     weight_kg: Decimal | None = Field(default=None, gt=0)
     height_cm: Decimal | None = Field(default=None, gt=0)
     is_sterilized: bool | None = None
