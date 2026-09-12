@@ -80,6 +80,7 @@ export const useSession = create<SessionState>((set) => ({
 // a repetir la comparacion contra dos roles, y la regla de complejidad lo
 // contaba en cada componente.
 const ROLES_QUE_ATIENDEN = new Set(['veterinarian', 'emergency_veterinarian'])
+const ROLES_DE_PERSONAL = new Set(['admin', 'veterinarian', 'emergency_veterinarian'])
 
 export function useIsVeterinarian(): boolean {
   return useSession((state) => state.user !== null && ROLES_QUE_ATIENDEN.has(state.user.role))
@@ -87,4 +88,8 @@ export function useIsVeterinarian(): boolean {
 
 export function useIsAdmin(): boolean {
   return useSession((state) => state.user?.role === 'admin')
+}
+
+export function useIsStaff(): boolean {
+  return useSession((state) => state.user !== null && ROLES_DE_PERSONAL.has(state.user.role))
 }

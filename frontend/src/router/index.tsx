@@ -8,6 +8,7 @@ import ProfileView from '../features/auth/ProfileView'
 import RegisterView from '../features/auth/RegisterView'
 import ResetPasswordView from '../features/auth/ResetPasswordView'
 import AvailabilityView from '../features/availability/AvailabilityView'
+import PaymentsReportView from '../features/billing/PaymentsReportView'
 import ActivityView from '../features/directory/ActivityView'
 import ClientsView from '../features/directory/ClientsView'
 import StaffView from '../features/directory/StaffView'
@@ -63,6 +64,7 @@ const router = createBrowserRouter(
           element: <RequireSession roles={ADMIN} />,
           children: [
             { path: 'personal', Component: StaffView },
+            { path: 'pagos', Component: PaymentsReportView },
             { path: 'movimientos', Component: ActivityView },
           ],
         },

@@ -40,6 +40,13 @@ export type ClinicalEntryPageResponse = components['schemas']['ClinicalEntryPage
 export type AddClinicalEntryRequest = components['schemas']['AddClinicalEntryRequest']
 export type EntryKind = components['schemas']['EntryKind']
 
+export type PaymentResponse = components['schemas']['PaymentResponse']
+export type PaymentPageResponse = components['schemas']['PaymentPageResponse']
+export type RegisterPaymentRequest = components['schemas']['RegisterPaymentRequest']
+export type PaymentMethod = components['schemas']['PaymentMethod']
+export type PaymentReportResponse = components['schemas']['PaymentReportResponse']
+export type MethodTotalResponse = components['schemas']['MethodTotalResponse']
+
 export type UserRole = UserResponse['role']
 
 export type AppointmentStatus = AppointmentResponse['status']
