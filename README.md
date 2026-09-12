@@ -127,7 +127,9 @@ Donde un color original no alcanza el contraste de WCAG 2.2 AA se oscurece lo ju
 
 ### Migración por áreas
 
-Las pantallas pasan a shadcn de a un área por vez, verificadas en escritorio y celular. Hechas: acceso, registro y recuperación de contraseña. Los campos compartidos `TextField`, `FieldError` y `FormMessage` ya usan shadcn, así que los formularios que los usan, migrados o no, tienen el mismo campo accesible.
+Las pantallas pasan a shadcn de a un área por vez, verificadas en escritorio y celular. Hechas: acceso, registro y recuperación de contraseña; el armazón (menú, pie y avisos) y la portada.
+
+Con sesión iniciada, el menú va en una barra lateral desde 1024 px y detrás de un botón en pantallas más angostas: un administrador tiene nueve entradas y en una barra superior no entraban ni en escritorio. Las entradas siguen saliendo de `features/shell/navigation.ts`. Los campos compartidos `TextField`, `FieldError` y `FormMessage` ya usan shadcn, así que los formularios que los usan, migrados o no, tienen el mismo campo accesible.
 
 ## Requisitos
 

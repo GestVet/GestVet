@@ -9,7 +9,11 @@ export default function ToastStack() {
   }
 
   return (
-    <div className="toast-stack" role="status" aria-live="polite">
+    <div
+      className="fixed right-4 bottom-4 z-50 flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-2"
+      role="status"
+      aria-live="polite"
+    >
       {toasts.map((toast) => (
         <ToastItem key={toast.id} id={toast.id} tone={toast.tone} message={toast.message} />
       ))}

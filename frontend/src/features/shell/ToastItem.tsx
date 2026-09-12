@@ -1,9 +1,17 @@
 import { useEffect } from 'react'
 
 import Icon from '../../components/Icon'
+import { Button } from '../../components/ui/button'
 import { useNotifications } from '../../store/notifications'
 
 const AUTO_DISMISS_MS = 8_000
+
+// El tono lo lleva el icono y no un borde de color: el texto queda siempre en
+// el color de lectura, y el aviso se entiende igual sin distinguir colores.
+const ICON_TONE = {
+  info: 'text-primary',
+  warning: 'text-chart-4',
+} as const
 
 interface ToastItemProps {
   readonly id: string
@@ -24,19 +32,20 @@ export default function ToastItem({ id, tone, message }: ToastItemProps) {
   }, [id, dismiss])
 
   return (
-    <div className={`toast toast-${tone}`}>
-      <Icon name="alerta" size={16} />
-      <span>{message}</span>
-      <button
+    <div className="flex items-start gap-3 rounded-xl bg-card p-3 text-sm text-card-foreground shadow-lg ring-1 ring-foreground/10">
+      <Icon name="alerta" size={18} className={`mt-0.5 shrink-0 ${ICON_TONE[tone]}`} />
+      <p className="m-0 flex-1">{message}</p>
+      <Button
         type="button"
-        className="toast-close"
+        variant="ghost"
+        size="icon-sm"
         aria-label="Descartar"
         onClick={() => {
           dismiss(id)
         }}
       >
-        ×
-      </button>
+        <Icon name="cancelar" size={16} />
+      </Button>
     </div>
   )
 }

@@ -1,7 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { RouterProvider } from 'react-router'
+// El de `react-router/dom` es el que le pasa `flushSync` de react-dom al
+// router. Sin el, la opcion `flushSync` de `navigate` se ignora en silencio.
+import { RouterProvider } from 'react-router/dom'
 
 import router from './router'
 import './index.css'
