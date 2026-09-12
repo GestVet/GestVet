@@ -22,6 +22,7 @@ class PaymentMethod(StrEnum):
     CASH = "cash"
     YAPE = "yape"
     BANK_TRANSFER = "bank_transfer"
+    QR = "qr"
     OTHER = "other"
 
     @property
@@ -33,15 +34,17 @@ _METHOD_LABELS: dict[PaymentMethod, str] = {
     PaymentMethod.CASH: "Efectivo",
     PaymentMethod.YAPE: "Yape",
     PaymentMethod.BANK_TRANSFER: "Transferencia bancaria",
+    PaymentMethod.QR: "QR",
     PaymentMethod.OTHER: "Otro",
 }
 
 
 @dataclass(slots=True)
 class Payment:
-    """Un cobro registrado a mano, nunca una pasarela de por medio.
+    """Un cobro ya completo: a mano, o confirmado por una pasarela (QR).
 
-    Una vez registrado no se edita ni se borra: un error se corrige
+    Ver `QrCharge` para el trámite previo de un cobro por QR, que todavía no
+    es un pago. Una vez registrado no se edita ni se borra: un error se corrige
     anulándolo, con motivo, y quien necesite el monto correcto registra un
     pago nuevo. Es la misma idea que ya usa la bitácora: el historial no se
     reescribe.

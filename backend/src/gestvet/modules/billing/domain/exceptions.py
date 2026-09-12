@@ -32,3 +32,15 @@ class AppointmentNotFound(BillingError):
     def __init__(self, appointment_id: int) -> None:
         super().__init__(f"No existe la cita {appointment_id}.")
         self.appointment_id = appointment_id
+
+
+class QrChargeNotFound(BillingError):
+    def __init__(self, charge_id: int) -> None:
+        super().__init__(f"No existe el cobro {charge_id}.")
+        self.charge_id = charge_id
+
+
+class QrChargeNotPending(BillingError):
+    def __init__(self, charge_id: int) -> None:
+        super().__init__(f"El cobro {charge_id} ya no está pendiente.")
+        self.charge_id = charge_id

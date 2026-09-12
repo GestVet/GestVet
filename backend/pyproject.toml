@@ -13,9 +13,10 @@ dependencies = [
     "pydantic-settings==2.15.0",
     "pyjwt==2.13.0",
     "python-multipart==0.0.20",
+    "qrcode[pil]==8.2",
+    "reportlab==5.0.1",
     "sqlalchemy==2.0.52",
     "uvicorn[standard]==0.52.4",
-    "reportlab==5.0.1",
 ]
 
 [dependency-groups]
@@ -139,6 +140,7 @@ forbidden_modules = [
     "jwt",
     "pydantic",
     "pydantic_settings",
+    "qrcode",
     "reportlab",
     "sqlalchemy",
     "starlette",

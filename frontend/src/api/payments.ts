@@ -4,6 +4,7 @@ import type {
   PaymentPageResponse,
   PaymentReportResponse,
   PaymentResponse,
+  QrChargeResponse,
   RegisterPaymentRequest,
 } from './types'
 
@@ -45,5 +46,28 @@ export async function fetchPaymentReport(
   filter: PaymentsFilter = {},
 ): Promise<PaymentReportResponse> {
   const { data } = await api.get<PaymentReportResponse>('/payments/report', { params: filter })
+  return data
+}
+
+export function qrChargeQueryKey(chargeId: number) {
+  return ['payments', 'qr-charge', chargeId] as const
+}
+
+export async function createQrCharge(appointmentId: number): Promise<QrChargeResponse> {
+  const { data } = await api.post<QrChargeResponse>('/payments/qr-charges', {
+    appointment_id: appointmentId,
+  })
+  return data
+}
+
+export async function fetchQrCharge(chargeId: number): Promise<QrChargeResponse> {
+  const { data } = await api.get<QrChargeResponse>(`/payments/qr-charges/${String(chargeId)}`)
+  return data
+}
+
+export async function confirmQrCharge(chargeId: number): Promise<QrChargeResponse> {
+  const { data } = await api.post<QrChargeResponse>(
+    `/payments/qr-charges/${String(chargeId)}/confirm`,
+  )
   return data
 }

@@ -35,6 +35,7 @@ def test_el_monto_debe_ser_positivo() -> None:
 def test_cada_metodo_tiene_etiqueta() -> None:
     assert PaymentMethod.YAPE.label == "Yape"
     assert PaymentMethod.BANK_TRANSFER.label == "Transferencia bancaria"
+    assert PaymentMethod.QR.label == "QR"
 
 
 def test_un_pago_recien_creado_no_esta_anulado() -> None:

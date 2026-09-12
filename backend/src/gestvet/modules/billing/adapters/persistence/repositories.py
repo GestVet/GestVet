@@ -4,9 +4,15 @@ from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from gestvet.core.pagination import Page
-from gestvet.modules.billing.adapters.persistence.mappers import entity_to_row, row_to_entity
-from gestvet.modules.billing.adapters.persistence.models import PaymentRow
+from gestvet.modules.billing.adapters.persistence.mappers import (
+    entity_to_row,
+    qr_charge_entity_to_row,
+    qr_charge_row_to_entity,
+    row_to_entity,
+)
+from gestvet.modules.billing.adapters.persistence.models import PaymentRow, QrChargeRow
 from gestvet.modules.billing.domain.entities import Payment, PaymentMethod
+from gestvet.modules.billing.domain.qr_charge import QrCharge
 from gestvet.modules.billing.ports.payment_repository import MethodTotal, PaymentQuery
 
 
@@ -78,3 +84,40 @@ class SqlAlchemyPaymentRepository:
         if query.ends_before is not None:
             statement = statement.where(PaymentRow.paid_at < query.ends_before)
         return statement
+
+
+class SqlAlchemyQrChargeRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def add(self, charge: QrCharge) -> QrCharge:
+        row = qr_charge_entity_to_row(charge)
+        self._session.add(row)
+        await self._session.flush()
+        await self._session.refresh(row)
+        return qr_charge_row_to_entity(row)
+
+    async def get(self, charge_id: int) -> QrCharge | None:
+        row = await self._session.get(QrChargeRow, charge_id)
+        return qr_charge_row_to_entity(row) if row else None
+
+    async def save(self, charge: QrCharge) -> QrCharge:
+        row = await self._session.get(QrChargeRow, charge.id)
+        if row is None:
+            raise ValueError(f"El cobro {charge.id} ya no existe.")
+        row.status = charge.status.value
+        row.payment_id = charge.payment_id
+        row.confirmed_at = charge.confirmed_at
+        await self._session.flush()
+        return qr_charge_row_to_entity(row)
+
+    async def find_latest_for_appointment(self, appointment_id: int) -> QrCharge | None:
+        row = (
+            await self._session.execute(
+                select(QrChargeRow)
+                .where(QrChargeRow.appointment_id == appointment_id)
+                .order_by(QrChargeRow.id.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        return qr_charge_row_to_entity(row) if row else None

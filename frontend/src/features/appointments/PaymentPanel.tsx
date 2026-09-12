@@ -6,6 +6,7 @@ import { errorMessage } from '../../services/api'
 import { useIsStaff } from '../../store/session'
 import PaymentForm from './PaymentForm'
 import PaymentsTable from './PaymentsTable'
+import QrPaymentPanel from './QrPaymentPanel'
 
 interface PaymentPanelProps {
   readonly appointmentId: number
@@ -60,6 +61,7 @@ export default function PaymentPanel({ appointmentId }: PaymentPanelProps) {
         />
       )}
 
+      {activo === undefined ? <QrPaymentPanel appointmentId={appointmentId} /> : null}
       {puedeCobrar && activo === undefined ? <PaymentForm appointmentId={appointmentId} /> : null}
     </div>
   )

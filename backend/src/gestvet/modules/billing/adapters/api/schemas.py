@@ -14,6 +14,7 @@ from gestvet.modules.billing.domain.entities import (
     Payment,
     PaymentMethod,
 )
+from gestvet.modules.billing.domain.qr_charge import QrCharge, QrChargeStatus
 from gestvet.modules.billing.ports.payment_repository import MethodTotal
 
 
@@ -89,3 +90,38 @@ class MethodTotalResponse(BaseModel):
 class PaymentReportResponse(BaseModel):
     items: list[MethodTotalResponse]
     grand_total: Decimal
+
+
+class CreateQrChargeRequest(BaseModel):
+    appointment_id: int = Field(ge=1)
+
+
+class QrChargeResponse(BaseModel):
+    id: int
+    appointment_id: int
+    client_id: int
+    amount: Decimal
+    status: QrChargeStatus
+    status_label: str
+    qr_image_data_url: str
+    expires_at: datetime
+    confirmed_at: datetime | None
+    payment_id: int | None
+    created_at: datetime
+
+    @classmethod
+    def from_entity(cls, charge: QrCharge) -> QrChargeResponse:
+        status = charge.effective_status()
+        return cls(
+            id=charge.id or 0,
+            appointment_id=charge.appointment_id,
+            client_id=charge.client_id,
+            amount=charge.amount,
+            status=status,
+            status_label=status.label,
+            qr_image_data_url=charge.qr_image_data_url,
+            expires_at=charge.expires_at,
+            confirmed_at=charge.confirmed_at,
+            payment_id=charge.payment_id,
+            created_at=charge.created_at,
+        )

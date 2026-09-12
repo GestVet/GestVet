@@ -383,6 +383,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/payments/qr-charges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generar un QR para cobrar una cita */
+        post: operations["create_qr_charge_api_v1_payments_qr_charges_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/qr-charges/{charge_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar el estado de un cobro por QR */
+        get: operations["get_qr_charge_api_v1_payments_qr_charges__charge_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/qr-charges/{charge_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Simular la confirmación del banco (modo de prueba) */
+        post: operations["confirm_qr_charge_api_v1_payments_qr_charges__charge_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/payments/report": {
         parameters: {
             query?: never;
@@ -874,6 +925,11 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /** CreateQrChargeRequest */
+        CreateQrChargeRequest: {
+            /** Appointment Id */
+            appointment_id: number;
+        };
         /**
          * EntryKind
          * @enum {string}
@@ -946,7 +1002,7 @@ export interface components {
          * PaymentMethod
          * @enum {string}
          */
-        PaymentMethod: "cash" | "yape" | "bank_transfer" | "other";
+        PaymentMethod: "cash" | "yape" | "bank_transfer" | "qr" | "other";
         /** PaymentPageResponse */
         PaymentPageResponse: {
             /** Items */
@@ -1064,6 +1120,41 @@ export interface components {
              */
             starts_at: string;
         };
+        /** QrChargeResponse */
+        QrChargeResponse: {
+            /** Amount */
+            amount: string;
+            /** Appointment Id */
+            appointment_id: number;
+            /** Client Id */
+            client_id: number;
+            /** Confirmed At */
+            confirmed_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Id */
+            id: number;
+            /** Payment Id */
+            payment_id: number | null;
+            /** Qr Image Data Url */
+            qr_image_data_url: string;
+            status: components["schemas"]["QrChargeStatus"];
+            /** Status Label */
+            status_label: string;
+        };
+        /**
+         * QrChargeStatus
+         * @enum {string}
+         */
+        QrChargeStatus: "pending" | "paid" | "expired" | "cancelled";
         /** RegisterClientRequest */
         RegisterClientRequest: {
             /**
@@ -2157,6 +2248,101 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaymentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_qr_charge_api_v1_payments_qr_charges_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateQrChargeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QrChargeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_qr_charge_api_v1_payments_qr_charges__charge_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                charge_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QrChargeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_qr_charge_api_v1_payments_qr_charges__charge_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                charge_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QrChargeResponse"];
                 };
             };
             /** @description Validation Error */

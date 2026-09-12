@@ -19,13 +19,17 @@ from gestvet.core.identity import STAFF_ROLES, Principal, Role
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from gestvet.modules.billing.adapters.api.dependencies import (
     AppointmentDirectoryDep,
+    PaymentGatewayDep,
     PaymentRepositoryDep,
+    QrChargeRepositoryDep,
 )
 from gestvet.modules.billing.adapters.api.schemas import (
+    CreateQrChargeRequest,
     MethodTotalResponse,
     PaymentPageResponse,
     PaymentReportResponse,
     PaymentResponse,
+    QrChargeResponse,
     RegisterPaymentRequest,
     VoidPaymentRequest,
 )
@@ -35,9 +39,17 @@ from gestvet.modules.billing.domain.exceptions import (
     InvalidPayment,
     PaymentAlreadyVoided,
     PaymentNotFound,
+    QrChargeNotFound,
+    QrChargeNotPending,
 )
 from gestvet.modules.billing.ports.payment_repository import PaymentQuery
 from gestvet.modules.billing.use_cases.build_payment_report import BuildPaymentReport
+from gestvet.modules.billing.use_cases.confirm_qr_charge import (
+    ConfirmQrCharge,
+    ConfirmQrChargeCommand,
+)
+from gestvet.modules.billing.use_cases.create_qr_charge import CreateQrCharge, CreateQrChargeCommand
+from gestvet.modules.billing.use_cases.get_qr_charge import GetQrCharge
 from gestvet.modules.billing.use_cases.list_payments import ListPayments, scope_to
 from gestvet.modules.billing.use_cases.register_payment import (
     RegisterPayment,
@@ -153,3 +165,75 @@ async def payment_report(
         items=[MethodTotalResponse.from_entity(item) for item in items],
         grand_total=sum((item.total for item in items), start=Decimal(0)),
     )
+
+
+@router.post(
+    "/qr-charges",
+    response_model=QrChargeResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Generar un QR para cobrar una cita",
+)
+async def create_qr_charge(
+    payload: CreateQrChargeRequest,
+    principal: PrincipalDep,
+    charges: QrChargeRepositoryDep,
+    appointments: AppointmentDirectoryDep,
+    gateway: PaymentGatewayDep,
+) -> QrChargeResponse:
+    try:
+        charge = await CreateQrCharge(charges, appointments, gateway)(
+            CreateQrChargeCommand(
+                appointment_id=payload.appointment_id,
+                requester_id=principal.user_id,
+                is_staff=principal.role in STAFF_ROLES,
+            )
+        )
+    except AppointmentNotFound as error:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    return QrChargeResponse.from_entity(charge)
+
+
+@router.get(
+    "/qr-charges/{charge_id}",
+    response_model=QrChargeResponse,
+    summary="Consultar el estado de un cobro por QR",
+)
+async def get_qr_charge(
+    charge_id: int,
+    principal: PrincipalDep,
+    charges: QrChargeRepositoryDep,
+) -> QrChargeResponse:
+    try:
+        charge = await GetQrCharge(charges)(
+            charge_id, requester_id=principal.user_id, is_staff=principal.role in STAFF_ROLES
+        )
+    except QrChargeNotFound as error:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    return QrChargeResponse.from_entity(charge)
+
+
+@router.post(
+    "/qr-charges/{charge_id}/confirm",
+    response_model=QrChargeResponse,
+    summary="Simular la confirmación del banco (modo de prueba)",
+)
+async def confirm_qr_charge(
+    charge_id: int,
+    principal: PrincipalDep,
+    charges: QrChargeRepositoryDep,
+    payments: PaymentRepositoryDep,
+    activity: ActivityRecorderDep,
+) -> QrChargeResponse:
+    try:
+        charge = await ConfirmQrCharge(charges, payments, activity)(
+            ConfirmQrChargeCommand(
+                charge_id=charge_id,
+                requester_id=principal.user_id,
+                is_staff=principal.role in STAFF_ROLES,
+            )
+        )
+    except QrChargeNotFound as error:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    except QrChargeNotPending as error:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
+    return QrChargeResponse.from_entity(charge)

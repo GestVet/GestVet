@@ -51,6 +51,9 @@ export type RegisterPaymentRequest = components['schemas']['RegisterPaymentReque
 export type PaymentMethod = components['schemas']['PaymentMethod']
 export type PaymentReportResponse = components['schemas']['PaymentReportResponse']
 export type MethodTotalResponse = components['schemas']['MethodTotalResponse']
+export type CreateQrChargeRequest = components['schemas']['CreateQrChargeRequest']
+export type QrChargeResponse = components['schemas']['QrChargeResponse']
+export type QrChargeStatus = components['schemas']['QrChargeStatus']
 
 export type UserRole = UserResponse['role']
 
