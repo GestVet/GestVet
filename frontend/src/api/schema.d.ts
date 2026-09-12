@@ -262,6 +262,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/medical-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historia clínica de una mascota */
+        get: operations["list_clinical_entries_api_v1_medical_records_get"];
+        put?: never;
+        /** Agregar una entrada a la historia clínica */
+        post: operations["add_clinical_entry_api_v1_medical_records_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pets": {
         parameters: {
             query?: never;
@@ -445,7 +463,7 @@ export interface components {
          *     historial.
          * @enum {string}
          */
-        ActivityKind: "signed_in" | "client_registered" | "profile_updated" | "staff_registered" | "user_status_changed" | "guard_duty_toggled" | "pet_registered" | "pet_status_changed" | "pet_status_corrected" | "slot_published" | "slot_withdrawn" | "appointment_booked" | "emergency_opened" | "appointment_confirmed" | "appointment_completed" | "appointment_cancelled";
+        ActivityKind: "signed_in" | "client_registered" | "profile_updated" | "staff_registered" | "user_status_changed" | "guard_duty_toggled" | "pet_registered" | "pet_status_changed" | "pet_status_corrected" | "slot_published" | "slot_withdrawn" | "appointment_booked" | "emergency_opened" | "appointment_confirmed" | "appointment_completed" | "appointment_cancelled" | "clinical_entry_added";
         /** ActivityPageResponse */
         ActivityPageResponse: {
             /** Items */
@@ -473,6 +491,30 @@ export interface components {
             /** User Name */
             user_name: string;
             user_role: components["schemas"]["Role"];
+        };
+        /** AddClinicalEntryRequest */
+        AddClinicalEntryRequest: {
+            /** Appointment Id */
+            appointment_id?: number | null;
+            /**
+             * Diagnosis
+             * @default
+             */
+            diagnosis: string;
+            kind: components["schemas"]["EntryKind"];
+            /** Notes */
+            notes: string;
+            /** Occurred At */
+            occurred_at?: string | null;
+            /** Pet Id */
+            pet_id: number;
+            /**
+             * Treatment
+             * @default
+             */
+            treatment: string;
+            /** Weight Kg */
+            weight_kg?: number | string | null;
         };
         /** AppointmentPageResponse */
         AppointmentPageResponse: {
@@ -586,6 +628,45 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** ClinicalEntryPageResponse */
+        ClinicalEntryPageResponse: {
+            /** Items */
+            items: components["schemas"]["ClinicalEntryResponse"][];
+            /** Total */
+            total: number;
+        };
+        /** ClinicalEntryResponse */
+        ClinicalEntryResponse: {
+            /** Appointment Id */
+            appointment_id: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Diagnosis */
+            diagnosis: string;
+            /** Id */
+            id: number;
+            kind: components["schemas"]["EntryKind"];
+            /** Kind Label */
+            kind_label: string;
+            /** Notes */
+            notes: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Pet Id */
+            pet_id: number;
+            /** Treatment */
+            treatment: string;
+            /** Veterinarian Id */
+            veterinarian_id: number;
+            /** Weight Kg */
+            weight_kg: string | null;
+        };
         /** CorrectPetStatusRequest */
         CorrectPetStatusRequest: {
             /** Is Active */
@@ -593,6 +674,11 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /**
+         * EntryKind
+         * @enum {string}
+         */
+        EntryKind: "consultation" | "vaccine" | "surgery" | "follow_up" | "other";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1414,6 +1500,75 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    list_clinical_entries_api_v1_medical_records_get: {
+        parameters: {
+            query: {
+                /** @description Mascota consultada */
+                pet_id: number;
+                /** @description Filtra por tipo */
+                kind?: components["schemas"]["EntryKind"] | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClinicalEntryPageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_clinical_entry_api_v1_medical_records_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddClinicalEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClinicalEntryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

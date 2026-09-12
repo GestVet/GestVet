@@ -2,8 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { correctPetStatus, fetchPetsOfOwner, petsOfOwnerQueryKey } from '../../api/pets'
 import FormMessage from '../../components/FormMessage'
-import StatusBadge from '../../components/StatusBadge'
 import { errorMessage } from '../../services/api'
+import ClientPetRow from './ClientPetRow'
 
 interface ClientPetsProps {
   readonly ownerId: number
@@ -66,28 +66,14 @@ export default function ClientPets({ ownerId }: ClientPetsProps) {
         </thead>
         <tbody>
           {items.map((mascota) => (
-            <tr key={mascota.id}>
-              <td>{mascota.name}</td>
-              <td>{mascota.species}</td>
-              <td>
-                <StatusBadge
-                  label={mascota.is_active ? 'Activa' : 'Fallecida'}
-                  tone={mascota.is_active ? 'completed' : undefined}
-                />
-              </td>
-              <td>
-                <button
-                  type="button"
-                  className="btn btn-plain"
-                  disabled={corregir.isPending}
-                  onClick={() => {
-                    pedirCorreccion(mascota.id, !mascota.is_active)
-                  }}
-                >
-                  Corregir a {mascota.is_active ? 'fallecida' : 'activa'}
-                </button>
-              </td>
-            </tr>
+            <ClientPetRow
+              key={mascota.id}
+              mascota={mascota}
+              corrigiendo={corregir.isPending}
+              onCorregir={() => {
+                pedirCorreccion(mascota.id, !mascota.is_active)
+              }}
+            />
           ))}
         </tbody>
       </table>

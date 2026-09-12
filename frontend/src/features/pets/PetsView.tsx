@@ -2,10 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { changePetStatus, fetchMyPets, myPetsQueryKey } from '../../api/pets'
 import FormMessage from '../../components/FormMessage'
-import StatusBadge from '../../components/StatusBadge'
 import TableShell from '../../components/TableShell'
 import { errorMessage } from '../../services/api'
 import PetForm from './PetForm'
+import PetRow from './PetRow'
 
 const COLUMNAS = ['Nombre', 'Especie', 'Raza', 'Edad', 'Estado', 'Acciones'] as const
 
@@ -44,42 +44,20 @@ export default function PetsView() {
           emptyMessage="Todavía no registraste ninguna mascota."
         >
           {items.map((mascota) => (
-            <tr key={mascota.id}>
-              <td>{mascota.name}</td>
-              <td>{mascota.species}</td>
-              <td>{mascota.breed}</td>
-              <td>{mascota.age_in_years} años</td>
-              <td>
-                <StatusBadge
-                  label={mascota.is_active ? 'Activa' : 'Fallecida'}
-                  tone={mascota.is_active ? 'completed' : undefined}
-                />
-              </td>
-              <td>
-                {mascota.is_active ? (
-                  <button
-                    type="button"
-                    className="btn btn-plain"
-                    disabled={darDeBaja.isPending}
-                    onClick={() => {
-                      if (
-                        window.confirm(
-                          `¿Confirmás que ${mascota.name} falleció? Esta acción no se puede deshacer; solo el personal de la clínica puede corregirla si fue un error.`,
-                        )
-                      ) {
-                        darDeBaja.mutate(mascota.id)
-                      }
-                    }}
-                  >
-                    Registrar fallecimiento
-                  </button>
-                ) : (
-                  <span className="muted">
-                    Si fue un error, pedile al personal de la clínica que lo corrija.
-                  </span>
-                )}
-              </td>
-            </tr>
+            <PetRow
+              key={mascota.id}
+              mascota={mascota}
+              dandoDeBaja={darDeBaja.isPending}
+              onDarDeBaja={() => {
+                if (
+                  window.confirm(
+                    `¿Confirmás que ${mascota.name} falleció? Esta acción no se puede deshacer; solo el personal de la clínica puede corregirla si fue un error.`,
+                  )
+                ) {
+                  darDeBaja.mutate(mascota.id)
+                }
+              }}
+            />
           ))}
         </TableShell>
       </section>

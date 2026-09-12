@@ -23,6 +23,7 @@ from gestvet.modules.accounts.adapters.api.veterinarians_router import (
 )
 from gestvet.modules.appointments.adapters.api.router import router as appointments_router
 from gestvet.modules.availability.adapters.api.router import router as availability_router
+from gestvet.modules.medical_records.adapters.api.router import router as medical_records_router
 from gestvet.modules.pets.adapters.api.router import router as pets_router
 
 API_PREFIX = "/api/v1"
@@ -92,6 +93,9 @@ def create_app() -> FastAPI:
     )
     app.include_router(
         appointments_router, prefix=f"{API_PREFIX}/appointments", tags=["appointments"]
+    )
+    app.include_router(
+        medical_records_router, prefix=f"{API_PREFIX}/medical-records", tags=["medical-records"]
     )
     return app
 

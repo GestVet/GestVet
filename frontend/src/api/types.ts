@@ -32,6 +32,11 @@ export type AppointmentTypeListResponse = components['schemas']['AppointmentType
 export type BookAppointmentRequest = components['schemas']['BookAppointmentRequest']
 export type OpenEmergencyRequest = components['schemas']['OpenEmergencyRequest']
 
+export type ClinicalEntryResponse = components['schemas']['ClinicalEntryResponse']
+export type ClinicalEntryPageResponse = components['schemas']['ClinicalEntryPageResponse']
+export type AddClinicalEntryRequest = components['schemas']['AddClinicalEntryRequest']
+export type EntryKind = components['schemas']['EntryKind']
+
 export type UserRole = UserResponse['role']
 
 export type AppointmentStatus = AppointmentResponse['status']
