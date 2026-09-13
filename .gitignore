@@ -245,3 +245,7 @@ backend/.venv/
 # Volcado del esquema OpenAPI. Es un intermedio de `pnpm generate:api`: lo que
 # se versiona es el tipo derivado, frontend/src/api/schema.d.ts.
 backend/openapi.json
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
+.playwright/
+.claude
