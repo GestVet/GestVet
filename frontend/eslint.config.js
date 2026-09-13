@@ -116,8 +116,9 @@ export default tseslint.config(
   //
   // Los iconos de la aplicacion salen del registro de src/components/icons.ts,
   // que es la unica fuente de verdad. Lucide y Radix llegan como dependencias
-  // de shadcn/ui y solo pueden usarse dentro de src/components/ui; el resto de
-  // la aplicacion usa el registro y los componentes ya tematizados.
+  // de shadcn/ui y solo pueden usarse dentro de src/components/ui y, en el
+  // caso de Lucide, en el registro; el resto de la aplicacion usa el registro
+  // y los componentes ya tematizados.
   // ---------------------------------------------------------------------
   {
     files: [
@@ -125,6 +126,7 @@ export default tseslint.config(
       'src/components/*.{ts,tsx}',
       'src/main.tsx',
     ],
+    ignores: ['src/components/icons.ts'],
     rules: {
       'no-restricted-imports': [
         'error',

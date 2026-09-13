@@ -1,4 +1,4 @@
-import { ICON_VIEWBOX, ICONS, type IconName } from './icons'
+import { ICONS, type IconName } from './icons'
 
 interface IconProps {
   readonly name: IconName
@@ -14,28 +14,27 @@ interface IconProps {
 }
 
 const DEFAULT_SIZE = 20
+const STROKE_WIDTH = 1.75
 
 /**
  * El unico componente que dibuja iconos en el frontend.
  *
- * El trazo sale del registro de `icons.ts`, asi que cambiar un icono es editar
- * una linea alli y verlo propagado por cada pantalla. `IconName` viene del
- * mismo registro, de modo que pedir un icono inexistente no compila.
+ * El icono sale del registro de `icons.ts`, asi que cambiarlo es editar una
+ * linea alli y verlo propagado por cada pantalla. `IconName` viene del mismo
+ * registro, de modo que pedir un icono inexistente no compila.
  */
 export default function Icon({ name, size = DEFAULT_SIZE, label, className }: IconProps) {
+  const Glyph = ICONS[name]
+
   return (
-    <svg
+    <Glyph
       className={className}
-      width={size}
-      height={size}
-      viewBox={ICON_VIEWBOX}
-      fill="currentColor"
+      size={size}
+      strokeWidth={STROKE_WIDTH}
       role={label ? 'img' : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}
       focusable="false"
-    >
-      <path d={ICONS[name]} />
-    </svg>
+    />
   )
 }
