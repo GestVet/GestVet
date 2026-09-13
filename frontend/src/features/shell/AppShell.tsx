@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router'
 
 import { useSession } from '../../store/session'
+import AppFooter from './AppFooter'
 import Brand from './Brand'
 import GuestHeader from './GuestHeader'
 import MobileMenu from './MobileMenu'
@@ -11,34 +12,36 @@ import ToastStack from './ToastStack'
 import { useClientAppointmentAlerts } from './useClientAppointmentAlerts'
 import { useVeterinarianEmergencyAlerts } from './useVeterinarianEmergencyAlerts'
 
-const ANIO = new Date().getFullYear()
-
 /**
  * El armazon de todas las pantallas.
  *
  * Con sesion, el menu va en una barra lateral en pantallas anchas y detras de
  * un boton en las angostas: un administrador tiene nueve entradas y en una
  * barra superior no entraban ni en escritorio. Sin sesion basta la marca y
- * los dos accesos.
+ * los dos accesos. El desbordamiento horizontal se recorta porque el heroe
+ * de la landing se estira al ancho de la ventana.
  */
 export default function AppShell() {
   const user = useSession((state) => state.user)
   useClientAppointmentAlerts()
   useVeterinarianEmergencyAlerts()
 
+  const invitados = user === null
   const content = (
     <>
       <ToastStack />
       <main
         id="contenido"
         tabIndex={-1}
-        className="mx-auto w-full max-w-[1100px] flex-1 px-4 py-6 outline-none sm:px-6"
+        className={
+          invitados
+            ? 'w-full flex-1 px-4 py-6 outline-none sm:px-6'
+            : 'mx-auto w-full max-w-[1100px] flex-1 px-4 py-6 outline-none sm:px-6'
+        }
       >
         <Outlet />
       </main>
-      <footer className="border-t px-4 py-4 text-center text-sm text-muted-foreground">
-        © {ANIO} GestVet · Av. Prof. César Vallejo 95, Víctor Larco Herrera, Trujillo
-      </footer>
+      <AppFooter invitados={invitados} />
     </>
   )
 
@@ -53,7 +56,7 @@ export default function AppShell() {
 
   if (user === null) {
     return (
-      <div className="flex min-h-screen flex-col">
+      <div className="landing flex min-h-screen flex-col overflow-x-clip bg-background font-sans text-foreground">
         {skipLink}
         <GuestHeader />
         {content}
