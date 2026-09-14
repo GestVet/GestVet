@@ -59,6 +59,13 @@ from gestvet.modules.medical_records.adapters.api.router import router as medica
 from gestvet.modules.medical_records.adapters.api.vaccinations_router import (
     router as vaccinations_router,
 )
+from gestvet.modules.medical_records.adapters.persistence.directories import (
+    SqlOwnerContactDirectory,
+)
+from gestvet.modules.medical_records.adapters.persistence.repositories import (
+    SqlAlchemyVaccinationRepository,
+)
+from gestvet.modules.medical_records.use_cases.send_vaccine_reminders import SendVaccineReminders
 from gestvet.modules.pets.adapters.api.catalog_router import router as pet_catalog_router
 from gestvet.modules.pets.adapters.api.router import router as pets_router
 from gestvet.modules.reviews.adapters.api.router import router as reviews_router
@@ -68,10 +75,11 @@ API_PREFIX = "/api/v1"
 settings = get_settings()
 logger = get_logger("gestvet.app")
 
-# Cada cuánto se despierta el recordatorio de WhatsApp a revisar qué citas
-# entran a su ventana de 24h. Es un `asyncio.Task` en el propio proceso y no
-# un servicio aparte: alcanza para un solo proceso de API, que es como corre
-# esto hoy, y no agrega ninguna dependencia nueva al proyecto.
+# Cada cuánto se despiertan los recordatorios de WhatsApp a revisar qué citas
+# entran a su ventana de 24h y qué vacunas vencen en la semana. Es un
+# `asyncio.Task` en el propio proceso y no un servicio aparte: alcanza para un
+# solo proceso de API, que es como corre esto hoy, y no agrega ninguna
+# dependencia nueva al proyecto.
 REMINDER_POLL_INTERVAL_SECONDS = 30 * 60
 
 
@@ -99,16 +107,29 @@ async def _send_due_reminders() -> None:
         await session.commit()
 
 
+async def _send_due_vaccine_reminders() -> None:
+    async with SessionFactory() as session:
+        use_case = SendVaccineReminders(
+            SqlAlchemyVaccinationRepository(session),
+            SqlOwnerContactDirectory(session),
+            ConsoleWhatsAppSender(),
+        )
+        await use_case()
+        await session.commit()
+
+
 async def _reminder_loop() -> None:
     while True:
         await asyncio.sleep(REMINDER_POLL_INTERVAL_SECONDS)
-        try:
-            await _send_due_reminders()
-        except Exception:
-            # Un fallo en una vuelta (por ejemplo, la base momentáneamente
-            # inalcanzable) no debe tumbar el proceso: se reintenta en la
-            # siguiente, con las mismas citas todavía sin `reminder_sent_at`.
-            logger.exception("whatsapp.reminders_failed")
+        # Cada recordatorio va por separado: si uno falla, el otro igual sale.
+        for job in (_send_due_reminders, _send_due_vaccine_reminders):
+            try:
+                await job()
+            except Exception:
+                # Un fallo en una vuelta (por ejemplo, la base momentáneamente
+                # inalcanzable) no debe tumbar el proceso: se reintenta en la
+                # siguiente, con lo pendiente todavía sin `reminder_sent_at`.
+                logger.exception("whatsapp.reminders_failed", job=job.__name__)
 
 
 @asynccontextmanager

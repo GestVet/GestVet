@@ -81,6 +81,9 @@ class PetVaccinationRow(Base):
     product_name: Mapped[str] = mapped_column(String(80), default="")
     batch: Mapped[str] = mapped_column(String(40), default="")
     notes: Mapped[str] = mapped_column(String(300), default="")
+    reminder_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )

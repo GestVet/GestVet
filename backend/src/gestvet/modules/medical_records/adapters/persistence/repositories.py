@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from sqlalchemy import Select, func, select
+from datetime import date, datetime
+
+from sqlalchemy import Select, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
 from gestvet.core.pagination import Page
+from gestvet.core.timestamps import as_utc
 from gestvet.modules.medical_records.adapters.persistence.mappers import (
     attachment_entity_to_row,
     attachment_row_to_entity,
@@ -110,6 +114,7 @@ def _vaccination(row: PetVaccinationRow) -> Vaccination:
         product_name=row.product_name,
         batch=row.batch,
         notes=row.notes,
+        reminder_sent_at=as_utc(row.reminder_sent_at) if row.reminder_sent_at else None,
         created_at=row.created_at,
     )
 
@@ -142,3 +147,43 @@ class SqlAlchemyVaccinationRepository:
             .order_by(PetVaccinationRow.applied_on.desc(), PetVaccinationRow.id.desc())
         )
         return [_vaccination(row) for row in rows.scalars().all()]
+
+    async def find_due_for_reminder(self, first_day: date, last_day: date) -> list[Vaccination]:
+        # Solo cuenta la última aplicación de cada vacuna: si ya se puso un
+        # refuerzo, el vencimiento de la dosis anterior dejó de importar.
+        newer = aliased(PetVaccinationRow)
+        replaced = (
+            select(newer.id)
+            .where(
+                newer.pet_id == PetVaccinationRow.pet_id,
+                newer.vaccine == PetVaccinationRow.vaccine,
+                or_(
+                    PetVaccinationRow.vaccine != VaccineCode.OTHER.value,
+                    func.lower(newer.product_name) == func.lower(PetVaccinationRow.product_name),
+                ),
+                or_(
+                    newer.applied_on > PetVaccinationRow.applied_on,
+                    and_(
+                        newer.applied_on == PetVaccinationRow.applied_on,
+                        newer.id > PetVaccinationRow.id,
+                    ),
+                ),
+            )
+            .exists()
+        )
+        rows = await self._session.execute(
+            select(PetVaccinationRow)
+            .where(
+                PetVaccinationRow.next_due_on.between(first_day, last_day),
+                PetVaccinationRow.reminder_sent_at.is_(None),
+                ~replaced,
+            )
+            .order_by(PetVaccinationRow.next_due_on, PetVaccinationRow.id)
+        )
+        return [_vaccination(row) for row in rows.scalars().all()]
+
+    async def mark_reminder_sent(self, vaccination_id: int, sent_at: datetime) -> None:
+        row = await self._session.get(PetVaccinationRow, vaccination_id)
+        if row is not None:
+            row.reminder_sent_at = sent_at
+            await self._session.flush()

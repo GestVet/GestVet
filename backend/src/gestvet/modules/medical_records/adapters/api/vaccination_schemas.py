@@ -41,6 +41,8 @@ class VaccinationResponse(BaseModel):
     product_name: str
     batch: str
     notes: str
+    # Cuándo se le avisó al dueño por WhatsApp que se acerca la próxima dosis.
+    reminder_sent_at: datetime | None
     created_at: datetime
 
     @classmethod
@@ -56,6 +58,7 @@ class VaccinationResponse(BaseModel):
             product_name=vaccination.product_name,
             batch=vaccination.batch,
             notes=vaccination.notes,
+            reminder_sent_at=vaccination.reminder_sent_at,
             created_at=vaccination.created_at,
         )
 

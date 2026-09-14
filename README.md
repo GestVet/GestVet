@@ -26,7 +26,7 @@ Por módulo, lo que el sistema resuelve hoy:
 
 **Panel de indicadores** (`insights`, solo administración) — cuatro señales calculadas con reglas fijas sobre datos que el sistema ya registra, sin ningún modelo de inteligencia artificial de por medio: recordatorios de cuidado vencido (vacuna o control), riesgo de inasistencia (un cliente con historial de citas sin cerrar y una cita próxima), pagos que se alejan del monto típico de su tipo de cita, y veterinarios con reseñas bajas o reclamos recientes.
 
-**Notificaciones por WhatsApp** — confirmación de cita, recordatorio 24 horas antes (un proceso periódico dentro del propio backend, sin infraestructura nueva) y aviso de pago por QR confirmado. El adaptador de hoy, `ConsoleWhatsAppSender`, registra el mensaje en el log del servidor en vez de mandarlo de verdad, así que todo el flujo se puede probar completo sin ninguna cuenta externa. Falta conectar una cuenta real de WhatsApp Business API — ver la sección "WhatsApp Business API — pendiente" más abajo.
+**Notificaciones por WhatsApp** — confirmación de cita, recordatorio 24 horas antes, aviso una semana antes de la próxima dosis de una vacuna (los dos recordatorios son un proceso periódico dentro del propio backend, sin infraestructura nueva) y aviso de pago por QR confirmado. El adaptador de hoy, `ConsoleWhatsAppSender`, registra el mensaje en el log del servidor en vez de mandarlo de verdad, así que todo el flujo se puede probar completo sin ninguna cuenta externa. Falta conectar una cuenta real de WhatsApp Business API — ver la sección "WhatsApp Business API — pendiente" más abajo.
 
 ## Base tecnológica
 
@@ -519,14 +519,14 @@ El veterinario pide desde la historia clínica un resumen de la mascota antes de
 
 ## WhatsApp Business API — pendiente
 
-El código ya está listo del lado de GestVet. `gestvet.core.whatsapp.WhatsAppSender` es el puerto (un `Protocol`, sin saber nada de negocio) y está conectado en tres puntos: confirmar una cita, confirmar un pago por QR, y un recordatorio 24 horas antes que corre en un `asyncio.Task` dentro del propio proceso del backend, sin agregar ninguna dependencia nueva ni un servicio aparte. El adaptador de hoy, `ConsoleWhatsAppSender`, registra cada mensaje en el log en vez de mandarlo, así que todo el flujo se prueba completo en desarrollo.
+El código ya está listo del lado de GestVet. `gestvet.core.whatsapp.WhatsAppSender` es el puerto (un `Protocol`, sin saber nada de negocio) y está conectado en cuatro puntos: confirmar una cita, confirmar un pago por QR, un recordatorio 24 horas antes de la cita y otro una semana antes de la próxima dosis de una vacuna (en horario de atención, una sola vez por dosis y solo por la última aplicación de cada vacuna). Los dos recordatorios corren en un `asyncio.Task` dentro del propio proceso del backend, sin agregar ninguna dependencia nueva ni un servicio aparte. El adaptador de hoy, `ConsoleWhatsAppSender`, registra cada mensaje en el log en vez de mandarlo, así que todo el flujo se prueba completo en desarrollo.
 
 Lo que falta depende de la clínica, no del código:
 
 1. **Elegir el camino**: directo con Meta (Cloud API — gratis salvo el costo por conversación, pero con una verificación de negocio que puede demorar) o vía un intermediario (Twilio, 360dialog, etc. — más rápido de activar, con un costo mensual fijo además del costo por mensaje).
 2. **Verificar el negocio** ante Meta con el RUC y los documentos de la clínica.
-3. **Dar de alta las plantillas de mensaje** (confirmación de cita, recordatorio, pago confirmado) para que Meta las apruebe: un mensaje fuera de plantilla no se puede mandar fuera de una conversación que el cliente ya inició.
-4. **Reemplazar el adaptador**: una clase nueva que satisfaga `WhatsAppSender` llamando a la API real, y una línea a cambiar en `get_whatsapp_sender()` de `appointments/adapters/api/dependencies.py` y de `billing/adapters/api/dependencies.py`. Ningún caso de uso cambia; el puerto es el mismo.
+3. **Dar de alta las plantillas de mensaje** (confirmación de cita, recordatorio de cita, vacuna por vencer, pago confirmado) para que Meta las apruebe: un mensaje fuera de plantilla no se puede mandar fuera de una conversación que el cliente ya inició.
+4. **Reemplazar el adaptador**: una clase nueva que satisfaga `WhatsAppSender` llamando a la API real, y una línea a cambiar en `get_whatsapp_sender()` de `appointments/adapters/api/dependencies.py` y de `billing/adapters/api/dependencies.py`, más las dos funciones de `main.py` que arman los recordatorios periódicos. Ningún caso de uso cambia; el puerto es el mismo.
 
 Hasta que exista esa cuenta, todo mensaje queda solo en el log del servidor, visible para quien opere el despliegue.
 

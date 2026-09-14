@@ -14,6 +14,15 @@ interface VaccinationLike {
   readonly product_name: string
   readonly batch: string
   readonly notes: string
+  /** Cuándo se le avisó al dueño por WhatsApp que se acerca la próxima dosis. */
+  readonly reminder_sent_at?: string | null
+}
+
+const FORMATO_AVISO = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium' })
+
+function textoDelAviso(vacuna: VaccinationLike): string {
+  const enviado = vacuna.reminder_sent_at ?? null
+  return enviado === null ? '' : `Aviso por WhatsApp el ${FORMATO_AVISO.format(new Date(enviado))}`
 }
 
 const COLUMNAS: readonly DataColumn<VaccinationLike>[] = [
@@ -31,8 +40,16 @@ const COLUMNAS: readonly DataColumn<VaccinationLike>[] = [
   {
     id: 'proxima',
     header: 'Próxima dosis',
+    className: 'whitespace-normal',
     cell: (vacuna) =>
-      vacuna.next_due_on === null ? '—' : formatearFechaDeVacuna(vacuna.next_due_on),
+      vacuna.next_due_on === null ? (
+        '—'
+      ) : (
+        <span className="flex flex-col">
+          {formatearFechaDeVacuna(vacuna.next_due_on)}
+          <span className="text-xs text-muted-foreground">{textoDelAviso(vacuna)}</span>
+        </span>
+      ),
   },
   {
     id: 'notas',

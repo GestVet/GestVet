@@ -7,7 +7,7 @@ en la de la clínica, que es la que lee el cliente.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
 from gestvet.core.clinic_time import CLINIC_UTC_OFFSET
@@ -50,6 +50,16 @@ class ConsoleWhatsAppSender:
     async def send_payment_confirmed(self, *, to: str, client_name: str, amount: Decimal) -> None:
         self._log(
             to, "payment_confirmed", f"Hola {client_name}, tu pago de S/ {amount} fue confirmado."
+        )
+
+    async def send_vaccine_due_reminder(
+        self, *, to: str, client_name: str, pet_name: str, vaccine_label: str, due_on: date
+    ) -> None:
+        self._log(
+            to,
+            "vaccine_due_reminder",
+            f"Hola {client_name}, a {pet_name} le toca {vaccine_label} el {due_on:%d/%m}. "
+            "Reserva una cita desde la app para ponérsela a tiempo.",
         )
 
     @staticmethod

@@ -4,7 +4,7 @@ De un solo sentido: el sistema le avisa al cliente, nunca al revés. Ningún
 flujo depende de leer una respuesta, así que no hace falta nada de lenguaje
 natural ni de IA para esto.
 
-Vive en el núcleo porque lo usan varios módulos (citas, pagos) y no habla
+Vive en el núcleo porque lo usan varios módulos (citas, pagos, vacunas) y no habla
 ningún tipo de negocio: recibe un número, un nombre y los datos ya resueltos
 para armar el texto. Cada módulo que lo necesita declara su propia
 dependencia hacia este puerto, igual que hace `accounts` con `EmailSender`.
@@ -23,7 +23,7 @@ decide el caso de uso, no el adaptador.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Protocol
 
@@ -39,4 +39,8 @@ class WhatsAppSender(Protocol):
 
     async def send_payment_confirmed(
         self, *, to: str, client_name: str, amount: Decimal
+    ) -> None: ...
+
+    async def send_vaccine_due_reminder(
+        self, *, to: str, client_name: str, pet_name: str, vaccine_label: str, due_on: date
     ) -> None: ...

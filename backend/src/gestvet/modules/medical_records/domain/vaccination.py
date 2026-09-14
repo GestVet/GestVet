@@ -32,6 +32,9 @@ PRIMARY_SERIES_DAYS = 21
 ADULT_AGE_DAYS = 365
 YEARLY_DAYS = 365
 DEWORMING_DAYS = 90
+# Cuántos días antes de la próxima dosis se le avisa al dueño por WhatsApp: una
+# semana alcanza para reservar una cita sin que el aviso quede en el olvido.
+VACCINE_REMINDER_DAYS = 7
 
 DOG = "Perro"
 CAT = "Gato"
@@ -145,6 +148,8 @@ class Vaccination:
     batch: str = ""
     notes: str = ""
     appointment_id: int | None = None
+    # Cuándo se le avisó al dueño que se acerca la próxima dosis.
+    reminder_sent_at: datetime | None = None
     id: int | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
