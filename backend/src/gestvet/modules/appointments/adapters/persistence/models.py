@@ -48,6 +48,9 @@ class AppointmentRow(Base):
         ForeignKey("users.id", name="fk_appointments_updated_by", ondelete="SET NULL"),
         nullable=True,
     )
+    reminder_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )

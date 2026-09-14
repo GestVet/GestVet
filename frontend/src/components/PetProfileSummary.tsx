@@ -1,6 +1,9 @@
 const SEX_LABELS: Record<'male' | 'female', string> = { male: 'Macho', female: 'Hembra' }
+const FORMATO_FECHA = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium' })
 
 interface PetProfileLike {
+  readonly breed: string
+  readonly birth_date: string
   readonly sex: 'male' | 'female' | null
   readonly color: string
   readonly microchip_number: string
@@ -28,6 +31,8 @@ function esterilizadoLabel(valor: boolean | null): string {
  */
 export default function PetProfileSummary({ mascota }: PetProfileSummaryProps) {
   const filas: readonly [string, string][] = [
+    ['Raza', mascota.breed],
+    ['Fecha de nacimiento', FORMATO_FECHA.format(new Date(mascota.birth_date))],
     ['Sexo', mascota.sex ? SEX_LABELS[mascota.sex] : 'No especificado'],
     ['Color', mascota.color || '—'],
     ['Microchip', mascota.microchip_number || '—'],

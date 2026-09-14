@@ -260,7 +260,7 @@ async def update_pet_owner_profile(
 @router.patch(
     "/{pet_id}/clinical-profile",
     response_model=PetResponse,
-    summary="Actualizar peso, altura, esterilización y alergias de una mascota",
+    summary="Actualizar fecha de nacimiento, peso, altura, esterilización y alergias",
 )
 async def update_pet_clinical_profile(
     pet_id: int,
@@ -274,6 +274,7 @@ async def update_pet_clinical_profile(
             UpdatePetClinicalProfileCommand(
                 pet_id=pet_id,
                 updated_by=veterinarian.user_id,
+                birth_date=payload.birth_date,
                 weight_kg=payload.weight_kg,
                 height_cm=payload.height_cm,
                 is_sterilized=payload.is_sterilized,

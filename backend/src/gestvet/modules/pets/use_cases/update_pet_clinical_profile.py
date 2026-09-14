@@ -8,6 +8,7 @@ cargar un dato clínico es un acto clínico.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
 
 from gestvet.core.activity import ActivityKind, ActivityRecorder
@@ -24,6 +25,7 @@ class UpdatePetClinicalProfileCommand:
     height_cm: Decimal | None
     is_sterilized: bool | None
     allergies: str
+    birth_date: date | None = None
 
 
 class UpdatePetClinicalProfile:
@@ -37,6 +39,7 @@ class UpdatePetClinicalProfile:
             raise PetNotFound(command.pet_id)
 
         pet.update_clinical_profile(
+            birth_date=command.birth_date,
             weight_kg=command.weight_kg,
             height_cm=command.height_cm,
             is_sterilized=command.is_sterilized,

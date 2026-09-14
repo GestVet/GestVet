@@ -2,10 +2,11 @@
 
 Traduce peticiones a comandos y errores de dominio a códigos de estado. Quién
 puede hacer qué con una cita lo decide el caso de uso, no este archivo: acá
-solo se exige estar autenticado con el rol correcto para llegar al endpoint.
+solo se exige estar autenticado con el permiso correcto para llegar al endpoint.
 
 Cada cambio avisa en tiempo real al cliente, al veterinario de la cita y a la
-administración. El aviso sale recién si la transacción se confirma.
+administración. El aviso sale recién si la transacción se confirma. Confirmar
+una cita, además, avisa al cliente por WhatsApp desde el caso de uso.
 """
 
 from __future__ import annotations
@@ -25,6 +26,7 @@ from gestvet.core.realtime_broker import EventPublisherDep
 from gestvet.modules.appointments.adapters.api.dependencies import (
     AppointmentRepositoryDep,
     AppointmentTypeRepositoryDep,
+    ChangeStatusDep,
     PetDirectoryDep,
     ScheduleDirectoryDep,
 )
@@ -293,14 +295,13 @@ async def list_appointments(
 async def _change_status(
     appointment_id: int,
     principal: Principal,
-    appointments: AppointmentRepositoryDep,
-    activity: ActivityRecorderDep,
+    change_status: ChangeAppointmentStatus,
     events: EventPublisher,
     target: AppointmentStatus,
     reason: str = "",
 ) -> AppointmentResponse:
     try:
-        appointment = await ChangeAppointmentStatus(appointments, activity)(
+        appointment = await change_status(
             ChangeStatusCommand(
                 appointment_id=appointment_id,
                 actor_id=principal.user_id,
@@ -326,12 +327,11 @@ async def _change_status(
 async def confirm_appointment(
     appointment_id: int,
     veterinarian: AttendantDep,
-    appointments: AppointmentRepositoryDep,
-    activity: ActivityRecorderDep,
+    change_status: ChangeStatusDep,
     events: EventPublisherDep,
 ) -> AppointmentResponse:
     return await _change_status(
-        appointment_id, veterinarian, appointments, activity, events, AppointmentStatus.CONFIRMED
+        appointment_id, veterinarian, change_status, events, AppointmentStatus.CONFIRMED
     )
 
 
@@ -343,12 +343,11 @@ async def confirm_appointment(
 async def complete_appointment(
     appointment_id: int,
     veterinarian: AttendantDep,
-    appointments: AppointmentRepositoryDep,
-    activity: ActivityRecorderDep,
+    change_status: ChangeStatusDep,
     events: EventPublisherDep,
 ) -> AppointmentResponse:
     return await _change_status(
-        appointment_id, veterinarian, appointments, activity, events, AppointmentStatus.COMPLETED
+        appointment_id, veterinarian, change_status, events, AppointmentStatus.COMPLETED
     )
 
 
@@ -360,12 +359,11 @@ async def complete_appointment(
 async def mark_appointment_no_show(
     appointment_id: int,
     veterinarian: AttendantDep,
-    appointments: AppointmentRepositoryDep,
-    activity: ActivityRecorderDep,
+    change_status: ChangeStatusDep,
     events: EventPublisherDep,
 ) -> AppointmentResponse:
     return await _change_status(
-        appointment_id, veterinarian, appointments, activity, events, AppointmentStatus.NO_SHOW
+        appointment_id, veterinarian, change_status, events, AppointmentStatus.NO_SHOW
     )
 
 
@@ -378,17 +376,15 @@ async def cancel_appointment(
     appointment_id: int,
     payload: CancelAppointmentRequest,
     principal: CancelerDep,
-    appointments: AppointmentRepositoryDep,
-    activity: ActivityRecorderDep,
+    change_status: ChangeStatusDep,
     events: EventPublisherDep,
 ) -> AppointmentResponse:
-    # Cancelar lo pueden hacer las dos partes, así que acá basta con estar
-    # autenticado: el caso de uso comprueba que participe en esa cita.
+    # Cancelar lo pueden hacer las dos partes: el caso de uso comprueba que
+    # quien cancela participe en esa cita.
     return await _change_status(
         appointment_id,
         principal,
-        appointments,
-        activity,
+        change_status,
         events,
         AppointmentStatus.CANCELLED,
         reason=payload.reason,

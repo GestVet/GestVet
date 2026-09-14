@@ -79,6 +79,7 @@ class SqlAlchemyAppointmentRepository:
         row.cancellation_reason = appointment.cancellation_reason
         row.updated_by = appointment.updated_by
         row.description = appointment.description
+        row.reminder_sent_at = appointment.reminder_sent_at
         await self._session.flush()
         return row_to_entity(row)
 
@@ -122,6 +123,25 @@ class SqlAlchemyAppointmentRepository:
         )
         candidatas = [row_to_entity(row) for row in rows.scalars().all()]
         return [cita for cita in candidatas if cita.overlaps(starts_at, ends_at)]
+
+    async def find_due_for_reminder(
+        self, window_start: datetime, window_end: datetime
+    ) -> list[Appointment]:
+        """Citas confirmadas que entran a la ventana de 24h y nunca avisaron.
+
+        `reminder_sent_at IS NULL` es lo que evita mandar el mismo mensaje dos
+        veces si el proceso periódico las vuelve a mirar en la siguiente
+        vuelta, antes de que la ventana termine de pasar.
+        """
+        rows = await self._session.execute(
+            select(AppointmentRow).where(
+                AppointmentRow.status == "confirmed",
+                AppointmentRow.reminder_sent_at.is_(None),
+                AppointmentRow.scheduled_at >= window_start,
+                AppointmentRow.scheduled_at < window_end,
+            )
+        )
+        return [row_to_entity(row) for row in rows.scalars().all()]
 
     async def count_active_for(self, veterinarian_id: int) -> int:
         result = await self._session.execute(

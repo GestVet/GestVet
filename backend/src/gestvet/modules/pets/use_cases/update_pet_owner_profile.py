@@ -1,7 +1,7 @@
 """Caso de uso: actualizar los datos de la mascota que conoce el dueño.
 
-Sexo, color, microchip y temperamento no se miden en consulta: los sabe quien
-convive con la mascota. Los datos clínicos (peso, altura, esterilización,
+Especie, raza, nacimiento, sexo, color, microchip y temperamento no se miden en
+consulta: los sabe quien convive con la mascota. Los datos clínicos (peso, altura, esterilización,
 alergias) los actualiza el veterinario por `UpdatePetClinicalProfile`.
 """
 

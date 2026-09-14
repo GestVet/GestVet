@@ -11,9 +11,11 @@ from dataclasses import dataclass
 
 from gestvet.core.activity import ActivityKind, ActivityRecorder
 from gestvet.core.identity import Role
+from gestvet.core.whatsapp import WhatsAppSender
 from gestvet.modules.appointments.domain.entities import Appointment, AppointmentStatus
 from gestvet.modules.appointments.domain.exceptions import AppointmentNotFound, InvalidAppointment
-from gestvet.modules.appointments.ports.repositories import AppointmentRepository
+from gestvet.modules.appointments.ports.client_directory import ClientDirectory
+from gestvet.modules.appointments.ports.repositories import AppointmentRepository, PetDirectory
 
 # Confirmar, completar y marcar la inasistencia son actos clínicos: los hace
 # quien atiende, nunca el cliente.
@@ -39,9 +41,19 @@ class ChangeStatusCommand:
 
 
 class ChangeAppointmentStatus:
-    def __init__(self, appointments: AppointmentRepository, activity: ActivityRecorder) -> None:
+    def __init__(
+        self,
+        appointments: AppointmentRepository,
+        activity: ActivityRecorder,
+        clients: ClientDirectory,
+        pets: PetDirectory,
+        whatsapp: WhatsAppSender,
+    ) -> None:
         self._appointments = appointments
         self._activity = activity
+        self._clients = clients
+        self._pets = pets
+        self._whatsapp = whatsapp
 
     async def __call__(self, command: ChangeStatusCommand) -> Appointment:
         appointment = await self._appointments.get(command.appointment_id)
@@ -65,7 +77,21 @@ class ChangeAppointmentStatus:
         await self._activity.record(
             command.actor_id, _ASIENTO_POR_ESTADO[command.target], appointment.cancellation_reason
         )
+        if command.target is AppointmentStatus.CONFIRMED:
+            await self._notify_confirmed(guardada)
         return guardada
+
+    async def _notify_confirmed(self, appointment: Appointment) -> None:
+        contact = await self._clients.find_contact(appointment.client_id)
+        if contact is None or not contact.phone:
+            return
+        pet_name = await self._pets.find_name(appointment.pet_id)
+        await self._whatsapp.send_appointment_confirmed(
+            to=contact.phone,
+            client_name=contact.name,
+            pet_name=pet_name or "tu mascota",
+            scheduled_at=appointment.scheduled_at,
+        )
 
     @staticmethod
     def _may_see(appointment: Appointment, command: ChangeStatusCommand) -> bool:

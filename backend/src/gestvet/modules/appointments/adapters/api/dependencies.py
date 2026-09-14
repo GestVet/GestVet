@@ -4,8 +4,12 @@ from typing import Annotated
 
 from fastapi import Depends
 
+from gestvet.core.activity_log import ActivityRecorderDep
 from gestvet.core.auth import SessionDep
+from gestvet.core.whatsapp import WhatsAppSender
+from gestvet.core.whatsapp_console import ConsoleWhatsAppSender
 from gestvet.modules.appointments.adapters.persistence.directories import (
+    SqlClientDirectory,
     SqlPetDirectory,
     SqlScheduleDirectory,
 )
@@ -13,12 +17,14 @@ from gestvet.modules.appointments.adapters.persistence.repositories import (
     SqlAlchemyAppointmentRepository,
     SqlAlchemyAppointmentTypeRepository,
 )
+from gestvet.modules.appointments.ports.client_directory import ClientDirectory
 from gestvet.modules.appointments.ports.repositories import (
     AppointmentRepository,
     AppointmentTypeRepository,
     PetDirectory,
     ScheduleDirectory,
 )
+from gestvet.modules.appointments.use_cases.change_status import ChangeAppointmentStatus
 
 
 def get_appointment_repository(session: SessionDep) -> AppointmentRepository:
@@ -37,9 +43,33 @@ def get_schedule_directory(session: SessionDep) -> ScheduleDirectory:
     return SqlScheduleDirectory(session)
 
 
+def get_client_directory(session: SessionDep) -> ClientDirectory:
+    return SqlClientDirectory(session)
+
+
+def get_whatsapp_sender() -> WhatsAppSender:
+    return ConsoleWhatsAppSender()
+
+
 AppointmentRepositoryDep = Annotated[AppointmentRepository, Depends(get_appointment_repository)]
 AppointmentTypeRepositoryDep = Annotated[
     AppointmentTypeRepository, Depends(get_appointment_type_repository)
 ]
 PetDirectoryDep = Annotated[PetDirectory, Depends(get_pet_directory)]
 ScheduleDirectoryDep = Annotated[ScheduleDirectory, Depends(get_schedule_directory)]
+ClientDirectoryDep = Annotated[ClientDirectory, Depends(get_client_directory)]
+WhatsAppSenderDep = Annotated[WhatsAppSender, Depends(get_whatsapp_sender)]
+
+
+def get_change_status(
+    appointments: AppointmentRepositoryDep,
+    activity: ActivityRecorderDep,
+    clients: ClientDirectoryDep,
+    pets: PetDirectoryDep,
+    whatsapp: WhatsAppSenderDep,
+) -> ChangeAppointmentStatus:
+    """Cambiar el estado de una cita, con todo lo que avisa al confirmarla."""
+    return ChangeAppointmentStatus(appointments, activity, clients, pets, whatsapp)
+
+
+ChangeStatusDep = Annotated[ChangeAppointmentStatus, Depends(get_change_status)]

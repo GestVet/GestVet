@@ -156,12 +156,22 @@ class Pet:
         height_cm: Decimal | None,
         is_sterilized: bool | None,
         allergies: str,
+        birth_date: date | None = None,
     ) -> None:
-        """Datos que se miden o se confirman en consulta."""
+        """Datos que se miden o se confirman en consulta.
+
+        La fecha de nacimiento es opcional: en un alta exprés de emergencia
+        queda con la fecha del día y el veterinario la confirma en la primera
+        consulta real. Sin fecha, se conserva la que tenía.
+        """
+        if birth_date is not None:
+            _require_plausible_birth_date(birth_date)
         if weight_kg is not None:
             _require_plausible_weight(weight_kg)
         if height_cm is not None:
             _require_plausible_height(height_cm)
+        if birth_date is not None:
+            self.birth_date = birth_date
         self.weight_kg = weight_kg
         self.height_cm = height_cm
         self.is_sterilized = is_sterilized

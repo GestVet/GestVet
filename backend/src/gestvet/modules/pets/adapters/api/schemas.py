@@ -84,6 +84,9 @@ class UpdatePetOwnerProfileRequest(BaseModel):
 
 
 class UpdatePetClinicalProfileRequest(BaseModel):
+    # Sin fecha, se conserva la que tenía: la corrige el veterinario si en la
+    # emergencia quedó provisoria.
+    birth_date: date | None = None
     weight_kg: Decimal | None = Field(default=None, gt=0)
     height_cm: Decimal | None = Field(default=None, gt=0)
     is_sterilized: bool | None = None
