@@ -17,29 +17,27 @@
 # Render no garantiza salida IPv6. Cambiar el prefijo de `postgresql://` a
 # `postgresql+asyncpg://` antes de pegarla (ver backend/src/gestvet/core/config.py).
 #
-# Nota sobre el disco: los adjuntos de la historia clínica se guardan en
-# disco local (`LocalDiskAttachmentStorage`), así que el Web Service del
-# backend lleva un `disk` persistente montado en ATTACHMENTS_STORAGE_DIR.
-# Un servicio con disco no admite más de una instancia ni despliegues sin
-# downtime — aceptable para el tamaño actual del proyecto (ver DESPLIEGUE.md,
-# sección 6); migrar a un bucket S3-compatible es el paso siguiente natural.
+# ADVERTENCIA sobre los adjuntos — leer antes de usar en producción real:
+# los adjuntos de la historia clínica se guardan en disco local
+# (`LocalDiskAttachmentStorage`), pero este servicio corre en el plan
+# **Free** de Render, que no admite disco persistente. Cualquier archivo
+# subido (fotos, PDFs, evidencia de un reclamo) se BORRA en el siguiente
+# redeploy o reinicio del contenedor — decisión consciente para mantener
+# todo en plan gratuito (ver DESPLIEGUE.md, sección 6, para las dos
+# alternativas: disco persistente en un plan pago, o un bucket
+# S3-compatible). Migrar antes de guardar datos reales de pacientes.
 
 services:
   - type: web
     name: gestvet-api
     runtime: python
     region: virginia
-    plan: starter
+    plan: free
     rootDir: backend
-    buildCommand: pip install uv && uv sync --frozen --no-dev
-    preDeployCommand: uv run alembic upgrade head
+    buildCommand: pip install uv && uv sync --frozen --no-dev && uv run alembic upgrade head
     startCommand: uv run uvicorn gestvet.main:app --app-dir src --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/v1/health
     autoDeployTrigger: checksPass
-    disk:
-      name: attachments
-      mountPath: /data/attachments
-      sizeGB: 5
     envVars:
       - key: PYTHON_VERSION
         value: "3.13"
