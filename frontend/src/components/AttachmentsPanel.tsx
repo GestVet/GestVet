@@ -1,6 +1,9 @@
+import { useRef } from 'react'
+
 import { useAttachmentDelete, useAttachmentUpload } from '../hooks/useAttachments'
 import FormMessage from './FormMessage'
 import Icon from './Icon'
+import { Button } from './ui/button'
 
 const TIPOS_ACEPTADOS = 'image/jpeg,image/png,image/webp,application/pdf'
 
@@ -24,6 +27,9 @@ interface AttachmentsPanelProps {
  * desde `hooks/useAttachments`: así lo pueden usar tanto la vista del cliente
  * (`canManage=false`, solo lectura) como la del personal, sin que ninguna
  * importe a la otra.
+ *
+ * El selector de archivos se abre con un botón de verdad. Antes era una
+ * etiqueta con aspecto de botón, y con el teclado no se podía alcanzar.
  */
 export default function AttachmentsPanel({
   clinicalEntryId,
@@ -33,59 +39,64 @@ export default function AttachmentsPanel({
 }: AttachmentsPanelProps) {
   const subir = useAttachmentUpload(petId)
   const borrar = useAttachmentDelete(petId)
+  const selector = useRef<HTMLInputElement>(null)
 
   return (
-    <div className="stack">
+    <div className="flex flex-col gap-3">
       {attachments.length === 0 ? (
-        <p className="empty">Todavía no hay adjuntos.</p>
+        <p className="m-0 text-sm text-muted-foreground">Todavía no hay adjuntos.</p>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Archivo</th>
-              {canManage ? <th>Acciones</th> : null}
-            </tr>
-          </thead>
-          <tbody>
-            {attachments.map((adjunto) => (
-              <tr key={adjunto.id}>
-                <td>
-                  <a href={adjunto.url} target="_blank" rel="noreferrer">
-                    {adjunto.filename}
-                  </a>
-                </td>
-                {canManage ? (
-                  <td>
-                    <button
-                      type="button"
-                      className="btn btn-plain"
-                      disabled={borrar.isPending}
-                      onClick={() => {
-                        borrar.mutate(adjunto.id)
-                      }}
-                    >
-                      Quitar
-                    </button>
-                  </td>
-                ) : null}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ul className="m-0 flex list-none flex-col gap-2 p-0">
+          {attachments.map((adjunto) => (
+            <li key={adjunto.id} className="flex flex-wrap items-center justify-between gap-2">
+              <a
+                href={adjunto.url}
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium text-primary underline underline-offset-4"
+              >
+                {adjunto.filename}
+              </a>
+              {canManage ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={borrar.isPending}
+                  onClick={() => {
+                    borrar.mutate(adjunto.id)
+                  }}
+                >
+                  Quitar
+                </Button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
       )}
 
       {subir.isError ? <FormMessage tone="error">{subir.errorMessage}</FormMessage> : null}
       {borrar.isError ? <FormMessage tone="error">{borrar.errorMessage}</FormMessage> : null}
 
       {canManage ? (
-        <label className="btn btn-plain" style={{ width: 'fit-content' }}>
-          <Icon name="agregar" size={16} />
-          <span>{subir.isPending ? 'Subiendo…' : 'Adjuntar archivo'}</span>
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            className="self-start"
+            disabled={subir.isPending}
+            onClick={() => {
+              selector.current?.click()
+            }}
+          >
+            <Icon name="agregar" size={16} />
+            <span>{subir.isPending ? 'Subiendo…' : 'Adjuntar archivo'}</span>
+          </Button>
           <input
+            ref={selector}
             type="file"
             accept={TIPOS_ACEPTADOS}
             hidden
-            disabled={subir.isPending}
             onChange={(evento) => {
               const archivo = evento.target.files?.[0]
               evento.target.value = ''
@@ -94,7 +105,7 @@ export default function AttachmentsPanel({
               }
             }}
           />
-        </label>
+        </>
       ) : null}
     </div>
   )

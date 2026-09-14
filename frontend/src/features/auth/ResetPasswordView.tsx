@@ -1,21 +1,23 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
-import { Link, useNavigate, useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { z } from 'zod'
 
 import { resetPassword } from '../../api/auth'
-import FieldError from '../../components/FieldError'
 import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
+import PasswordField from '../../components/PasswordField'
+import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
-
-const MIN_PASSWORD = 10
+import AuthCard from './AuthCard'
+import { MIN_PASSWORD, passwordRule } from '../../services/fieldRules'
+import MissingResetToken from './MissingResetToken'
 
 const esquema = z
   .object({
-    new_password: z.string().min(MIN_PASSWORD, `Usá al menos ${String(MIN_PASSWORD)} caracteres`),
+    new_password: passwordRule,
     confirmacion: z.string(),
   })
   .refine((valores) => valores.new_password === valores.confirmacion, {
@@ -31,6 +33,7 @@ export default function ResetPasswordView() {
   const navigate = useNavigate()
   const { register, handleSubmit, formState } = useForm<Formulario>({
     resolver: zodResolver(esquema),
+    mode: 'onTouched',
     defaultValues: { new_password: '', confirmacion: '' },
   })
 
@@ -45,55 +48,43 @@ export default function ResetPasswordView() {
   })
 
   if (!token) {
-    return (
-      <section className="card form">
-        <h1>Restablecer contraseña</h1>
-        <FormMessage tone="error">
-          El enlace no trae el código de recuperación. Pedí uno nuevo.
-        </FormMessage>
-        <Link to="/olvide-contrasena">Pedir un enlace nuevo</Link>
-      </section>
-    )
+    return <MissingResetToken />
   }
 
   return (
-    <section className="card form">
-      <h1>Restablecer contraseña</h1>
-
+    <AuthCard title="Restablecer contraseña">
       {restablecer.isSuccess ? (
         <FormMessage tone="ok">
           {restablecer.data.message} Te llevamos al inicio de sesión…
         </FormMessage>
       ) : (
         <form
-          className="form"
+          noValidate
+          className="flex flex-col gap-5"
           onSubmit={onSubmit(
             handleSubmit((valores) => {
               restablecer.mutate(valores)
             }),
           )}
         >
-          <div className="field">
-            <label htmlFor="new_password">Contraseña nueva</label>
-            <input
-              id="new_password"
-              type="password"
-              autoComplete="new-password"
-              {...register('new_password')}
-            />
-            <FieldError message={formState.errors.new_password?.message} />
-          </div>
+          <PasswordField
+            id="new_password"
+            label="Contraseña nueva"
+            placeholder="Mínimo 10 caracteres"
+            autoComplete="new-password"
+            hint={`Al menos ${String(MIN_PASSWORD)} caracteres.`}
+            field={register('new_password')}
+            error={formState.errors.new_password?.message}
+          />
 
-          <div className="field">
-            <label htmlFor="confirmacion">Repetí la contraseña</label>
-            <input
-              id="confirmacion"
-              type="password"
-              autoComplete="new-password"
-              {...register('confirmacion')}
-            />
-            <FieldError message={formState.errors.confirmacion?.message} />
-          </div>
+          <PasswordField
+            id="confirmacion"
+            label="Repite la contraseña"
+            placeholder="Escríbela otra vez"
+            autoComplete="new-password"
+            field={register('confirmacion')}
+            error={formState.errors.confirmacion?.message}
+          />
 
           {restablecer.isError ? (
             <FormMessage tone="error">
@@ -101,12 +92,17 @@ export default function ResetPasswordView() {
             </FormMessage>
           ) : null}
 
-          <button type="submit" className="btn btn-blue" disabled={restablecer.isPending}>
-            <Icon name="confirmar" size={16} />
+          <Button
+            type="submit"
+            size="lg"
+            className="h-11 w-full"
+            disabled={restablecer.isPending}
+          >
+            <Icon name="confirmar" size={18} />
             <span>{restablecer.isPending ? 'Guardando…' : 'Guardar contraseña'}</span>
-          </button>
+          </Button>
         </form>
       )}
-    </section>
+    </AuthCard>
   )
 }

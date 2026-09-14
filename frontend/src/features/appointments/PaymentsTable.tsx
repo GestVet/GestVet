@@ -1,63 +1,52 @@
 import type { PaymentResponse } from '../../api/types'
+import DataTable, { type DataColumn } from '../../components/DataTable'
+import VoidPaymentDialog from './VoidPaymentDialog'
 
 const FORMATO = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
 
+const COLUMNAS: readonly DataColumn<PaymentResponse>[] = [
+  { id: 'fecha', header: 'Fecha', cell: (pago) => FORMATO.format(new Date(pago.paid_at)) },
+  { id: 'monto', header: 'Monto', cell: (pago) => `S/ ${pago.amount}` },
+  { id: 'medio', header: 'Medio', cell: (pago) => pago.method_label },
+  { id: 'referencia', header: 'Referencia', cell: (pago) => pago.reference || '—' },
+  {
+    id: 'estado',
+    header: 'Estado',
+    className: 'whitespace-normal',
+    cell: (pago) =>
+      pago.is_voided ? (
+        <span className="text-muted-foreground">Anulado: {pago.void_reason}</span>
+      ) : (
+        'Vigente'
+      ),
+  },
+]
+
+// Anular un pago es cosa del personal: el cliente ve la tabla sin esa columna.
+const COLUMNAS_PERSONAL: readonly DataColumn<PaymentResponse>[] = [
+  ...COLUMNAS,
+  {
+    id: 'acciones',
+    header: 'Acciones',
+    cell: (pago) => (pago.is_voided ? null : <VoidPaymentDialog pago={pago} />),
+  },
+]
+
 interface PaymentsTableProps {
   readonly items: readonly PaymentResponse[]
+  readonly isLoading: boolean
+  readonly appointmentId: number
   readonly puedeCobrar: boolean
-  readonly isVoiding: boolean
-  readonly onVoid: (id: number) => void
 }
 
-export default function PaymentsTable({
-  items,
-  puedeCobrar,
-  isVoiding,
-  onVoid,
-}: PaymentsTableProps) {
+export default function PaymentsTable({ items, isLoading, puedeCobrar }: PaymentsTableProps) {
   return (
-    <table>
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Monto</th>
-          <th>Medio</th>
-          <th>Referencia</th>
-          <th>Estado</th>
-          {puedeCobrar ? <th>Acciones</th> : null}
-        </tr>
-      </thead>
-      <tbody>
-        {items.map((pago) => (
-          <tr key={pago.id}>
-            <td>{FORMATO.format(new Date(pago.paid_at))}</td>
-            <td>S/ {pago.amount}</td>
-            <td>{pago.method_label}</td>
-            <td>{pago.reference || '—'}</td>
-            <td>
-              {pago.is_voided ? (
-                <span className="muted">Anulado: {pago.void_reason}</span>
-              ) : (
-                'Vigente'
-              )}
-            </td>
-            {puedeCobrar && !pago.is_voided ? (
-              <td>
-                <button
-                  type="button"
-                  className="btn btn-plain"
-                  disabled={isVoiding}
-                  onClick={() => {
-                    onVoid(pago.id)
-                  }}
-                >
-                  Anular
-                </button>
-              </td>
-            ) : null}
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <DataTable
+      columns={puedeCobrar ? COLUMNAS_PERSONAL : COLUMNAS}
+      data={items}
+      isLoading={isLoading}
+      emptyMessage="Todavía no se registró un pago para esta cita."
+      getRowId={(pago) => String(pago.id)}
+    />
   )
 }

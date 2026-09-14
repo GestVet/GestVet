@@ -20,9 +20,7 @@ from gestvet.modules.accounts.domain.exceptions import (
     InvalidDocumentId,
     InvalidEmail,
     RoleNotAssignable,
-    RoleNotBackupEligible,
     RoleNotSelfAssignable,
-    RoleNotSwappable,
 )
 
 _DOCUMENT_ID_PATTERN = re.compile(r"\d{8}")
@@ -34,17 +32,7 @@ SELF_ASSIGNABLE_ROLES: frozenset[Role] = frozenset({Role.CLIENT})
 
 # Roles que la administración puede dar de alta. No incluye ADMIN: una cuenta
 # de administración se siembra, no se crea desde una pantalla.
-STAFF_ASSIGNABLE_ROLES: frozenset[Role] = frozenset(
-    {Role.VETERINARIAN, Role.EMERGENCY_VETERINARIAN}
-)
-
-# La guardia se da y se quita, y eso es todo lo que este cambio permite. El
-# original tenía un endpoint que aceptaba cualquier rol destino, así que servía
-# para convertir a un cliente en administrador.
-ROLE_SWAPS: dict[Role, Role] = {
-    Role.VETERINARIAN: Role.EMERGENCY_VETERINARIAN,
-    Role.EMERGENCY_VETERINARIAN: Role.VETERINARIAN,
-}
+STAFF_ASSIGNABLE_ROLES: frozenset[Role] = frozenset({Role.VETERINARIAN})
 
 
 @dataclass(slots=True)
@@ -61,9 +49,6 @@ class User:
     # una regla del caso de uso de registro, no de la entidad.
     document_id: str = ""
     is_active: bool = True
-    # Solo tiene efecto en un veterinario normal: lo habilita como respaldo de
-    # guardia cuando todos los dedicados ya están cubriendo una emergencia.
-    can_cover_emergencies: bool = False
     id: int | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
@@ -148,15 +133,3 @@ def ensure_role_is_self_assignable(role: Role) -> None:
 def ensure_role_is_staff_assignable(role: Role) -> None:
     if role not in STAFF_ASSIGNABLE_ROLES:
         raise RoleNotAssignable(role.value)
-
-
-def swapped_guard_role(role: Role) -> Role:
-    target = ROLE_SWAPS.get(role)
-    if target is None:
-        raise RoleNotSwappable(role.value)
-    return target
-
-
-def ensure_role_is_backup_eligible(role: Role) -> None:
-    if role is not Role.VETERINARIAN:
-        raise RoleNotBackupEligible(role.value)

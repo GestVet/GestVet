@@ -1,21 +1,20 @@
+import PageHeader from '../../components/PageHeader'
+import { Card, CardContent } from '../../components/ui/card'
 import WalkInEmergencyForm from './WalkInEmergencyForm'
 
 export default function WalkInEmergencyView() {
   return (
-    <div className="stack">
-      <div className="page-header">
-        <div>
-          <h1>Emergencia — cliente nuevo</h1>
-          <p className="muted">
-            Para cuando llega alguien sin cuenta con su mascota. Con nombre y DNI alcanza: el
-            correo y los demás datos se completan después, con calma.
-          </p>
-        </div>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Emergencia — cliente nuevo"
+        description="Para cuando llega alguien sin cuenta con su mascota. Con nombre y DNI alcanza: el correo y los demás datos se completan después, con calma."
+      />
 
-      <section className="card">
-        <WalkInEmergencyForm />
-      </section>
+      <Card className="py-5 shadow-sm">
+        <CardContent className="px-5">
+          <WalkInEmergencyForm />
+        </CardContent>
+      </Card>
     </div>
   )
 }

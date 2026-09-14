@@ -11,20 +11,26 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from gestvet.core.activity_log import ActivityRecorderDep
-from gestvet.core.auth import PrincipalDep, require_roles
-from gestvet.core.identity import STAFF_ROLES
+from gestvet.core.auth import require_permission
+from gestvet.core.identity import Principal
+from gestvet.core.identity_registry import IdentityRegistryUnavailable
+from gestvet.core.permissions import Permission
 from gestvet.modules.accounts.adapters.api.dependencies import (
+    IdentityRegistryDep,
     PasswordHasherDep,
     UserRepositoryDep,
 )
 from gestvet.modules.accounts.adapters.api.schemas import (
     ClientPageResponse,
+    DocumentLookupRequest,
+    DocumentLookupResponse,
     RegisterWalkInClientRequest,
     UpdateClientContactRequest,
     UserResponse,
 )
 from gestvet.modules.accounts.domain.exceptions import (
     DocumentIdRequired,
+    DocumentNotFoundInRegistry,
     EmailAlreadyRegistered,
     InvalidDocumentId,
     InvalidEmail,
@@ -32,6 +38,10 @@ from gestvet.modules.accounts.domain.exceptions import (
 )
 from gestvet.modules.accounts.ports.user_repository import UserQuery
 from gestvet.modules.accounts.use_cases.list_clients import CLIENT_ROLES, ListUsers
+from gestvet.modules.accounts.use_cases.look_up_document import (
+    LookUpDocument,
+    LookUpDocumentCommand,
+)
 from gestvet.modules.accounts.use_cases.manage_accounts import (
     RegisterWalkInClient,
     RegisterWalkInClientCommand,
@@ -42,12 +52,24 @@ from gestvet.modules.accounts.use_cases.manage_accounts import (
 DEFAULT_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 100
 
-# El padrón de clientes es dato personal. Solo lo ve quien atiende la clínica,
-# nunca un cliente autenticado mirando el listado de los demás.
-router = APIRouter(dependencies=[Depends(require_roles(*STAFF_ROLES))])
+# El padrón de clientes es dato personal. Cada endpoint exige un permiso que
+# los roles de sistema solo le dan a quien atiende la clínica.
+router = APIRouter()
+
+WalkInRegistrarDep = Annotated[
+    Principal, Depends(require_permission(Permission.CLIENTS_REGISTER_WALK_IN))
+]
+ContactEditorDep = Annotated[
+    Principal, Depends(require_permission(Permission.CLIENTS_UPDATE_CONTACT))
+]
 
 
-@router.get("", response_model=ClientPageResponse, summary="Listar clientes")
+@router.get(
+    "",
+    response_model=ClientPageResponse,
+    dependencies=[Depends(require_permission(Permission.CLIENTS_READ))],
+    summary="Listar clientes",
+)
 async def list_clients(
     users: UserRepositoryDep,
     search: Annotated[str | None, Query(description="Busca en nombre, correo y teléfono")] = None,
@@ -79,7 +101,7 @@ async def list_clients(
 )
 async def register_walk_in_client(
     payload: RegisterWalkInClientRequest,
-    principal: PrincipalDep,
+    principal: WalkInRegistrarDep,
     users: UserRepositoryDep,
     hasher: PasswordHasherDep,
     activity: ActivityRecorderDep,
@@ -99,6 +121,30 @@ async def register_walk_in_client(
     return UserResponse.from_entity(user)
 
 
+@router.post(
+    "/document-lookup",
+    response_model=DocumentLookupResponse,
+    summary="Completar nombre y apellido desde el DNI (alta exprés)",
+)
+async def look_up_document(
+    payload: DocumentLookupRequest,
+    principal: WalkInRegistrarDep,
+    identity: IdentityRegistryDep,
+    activity: ActivityRecorderDep,
+) -> DocumentLookupResponse:
+    try:
+        person = await LookUpDocument(identity, activity)(
+            LookUpDocumentCommand(actor_id=principal.user_id, document_id=payload.document_id)
+        )
+    except (DocumentIdRequired, InvalidDocumentId) as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
+    except DocumentNotFoundInRegistry as error:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    except IdentityRegistryUnavailable as error:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(error)) from error
+    return DocumentLookupResponse(first_names=person.first_names, last_names=person.last_names)
+
+
 @router.patch(
     "/{client_id}/contact",
     response_model=UserResponse,
@@ -107,7 +153,7 @@ async def register_walk_in_client(
 async def update_client_contact(
     client_id: int,
     payload: UpdateClientContactRequest,
-    principal: PrincipalDep,
+    principal: ContactEditorDep,
     users: UserRepositoryDep,
     activity: ActivityRecorderDep,
 ) -> UserResponse:

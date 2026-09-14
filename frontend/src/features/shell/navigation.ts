@@ -1,49 +1,51 @@
 import type { IconName } from '../../components/icons'
-import type { UserRole } from '../../api/types'
+import type { PermissionCode } from '../../api/types'
 
 export interface NavEntry {
   readonly to: string
   readonly label: string
   readonly icon: IconName
-  readonly roles: readonly UserRole[]
+  /** Permiso que la muestra. Sin permiso, la ve toda cuenta. */
+  readonly permission?: PermissionCode
 }
-
-const TODOS: readonly UserRole[] = [
-  'admin',
-  'client',
-  'veterinarian',
-  'emergency_veterinarian',
-]
-const VETERINARIOS: readonly UserRole[] = ['veterinarian', 'emergency_veterinarian']
-const PERSONAL: readonly UserRole[] = ['admin', 'veterinarian', 'emergency_veterinarian']
 
 /**
  * Menu de la aplicacion, en un solo lugar.
  *
- * Cada entrada declara a que roles les aparece, asi que agregar una pantalla
- * es agregar una linea aca y no tocar el armazon. El icono se nombra, no se
- * dibuja: el trazo vive en el registro de iconos.
+ * Cada entrada declara el permiso que la muestra, asi que agregar una pantalla
+ * es agregar una linea aca y un rol editado cambia el menu sin tocar codigo.
+ * El permiso es el mismo que exige la ruta. El icono se nombra, no se dibuja.
  */
 export const NAV_ENTRIES: readonly NavEntry[] = [
-  { to: '/panel', label: 'Panel', icon: 'inicio', roles: TODOS },
-  { to: '/mascotas', label: 'Mis mascotas', icon: 'mascota', roles: ['client'] },
-  { to: '/reservar', label: 'Reservar cita', icon: 'agenda', roles: ['client'] },
-  { to: '/citas', label: 'Citas', icon: 'cita', roles: TODOS },
-  { to: '/agenda', label: 'Mi agenda', icon: 'agenda', roles: VETERINARIOS },
-  { to: '/clientes', label: 'Clientes', icon: 'cliente', roles: PERSONAL },
+  { to: '/panel', label: 'Panel', icon: 'inicio' },
+  { to: '/mascotas', label: 'Mis mascotas', icon: 'mascota', permission: 'pets.manage_own' },
+  { to: '/reservar', label: 'Reservar cita', icon: 'agenda', permission: 'appointments.book' },
+  { to: '/citas', label: 'Citas', icon: 'cita', permission: 'appointments.read' },
+  { to: '/agenda', label: 'Mis turnos', icon: 'agenda', permission: 'schedule.read_own' },
+  { to: '/clientes', label: 'Clientes', icon: 'cliente', permission: 'clients.read' },
   {
     to: '/emergencia-cliente-nuevo',
     label: 'Emergencia (cliente nuevo)',
     icon: 'emergencia',
-    roles: PERSONAL,
+    permission: 'emergencies.open_walk_in',
   },
-  { to: '/personal', label: 'Personal', icon: 'personal', roles: ['admin'] },
-  { to: '/pagos', label: 'Pagos', icon: 'pago', roles: ['admin'] },
-  { to: '/reclamos', label: 'Reclamos', icon: 'alerta', roles: ['admin'] },
-  { to: '/indicadores', label: 'Indicadores', icon: 'indicadores', roles: ['admin'] },
-  { to: '/movimientos', label: 'Movimientos', icon: 'buscar', roles: ['admin'] },
+  { to: '/personal', label: 'Personal', icon: 'personal', permission: 'staff.read' },
+  { to: '/turnos', label: 'Turnos y guardias', icon: 'horario', permission: 'schedule.manage' },
+  {
+    to: '/especies-y-razas',
+    label: 'Especies y razas',
+    icon: 'raza',
+    permission: 'pets.manage_catalog',
+  },
+  { to: '/roles', label: 'Roles y permisos', icon: 'permisos', permission: 'roles.manage' },
+  { to: '/pagos', label: 'Pagos', icon: 'pago', permission: 'payments.report' },
+  { to: '/reclamos', label: 'Reclamos', icon: 'alerta', permission: 'complaints.read' },
+  { to: '/indicadores', label: 'Indicadores', icon: 'indicadores', permission: 'insights.read' },
+  { to: '/movimientos', label: 'Movimientos', icon: 'buscar', permission: 'activity.read' },
 ]
 
-export function entriesForRole(role: UserRole): readonly NavEntry[] {
-  return NAV_ENTRIES.filter((entry) => entry.roles.includes(role))
+export function entriesFor(permissions: readonly PermissionCode[]): readonly NavEntry[] {
+  return NAV_ENTRIES.filter(
+    (entry) => entry.permission === undefined || permissions.includes(entry.permission),
+  )
 }

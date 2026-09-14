@@ -1,3 +1,4 @@
+import { Separator } from '../../components/ui/separator'
 import PaymentForm from './PaymentForm'
 import QrPaymentPanel from './QrPaymentPanel'
 
@@ -14,15 +15,20 @@ export default function NewPaymentOptions({
   puedeCobrar,
 }: NewPaymentOptionsProps) {
   return (
-    <>
+    <div className="flex flex-col gap-4">
       {appointmentStatus === 'completed' ? (
         <QrPaymentPanel appointmentId={appointmentId} puedeAjustarMonto={puedeCobrar} />
       ) : (
-        <p className="muted">
+        <p className="m-0 text-sm text-muted-foreground">
           El cobro por QR está disponible una vez que la cita se marque como completada.
         </p>
       )}
-      {puedeCobrar ? <PaymentForm appointmentId={appointmentId} /> : null}
-    </>
+      {puedeCobrar ? (
+        <>
+          <Separator />
+          <PaymentForm appointmentId={appointmentId} />
+        </>
+      ) : null}
+    </div>
   )
 }

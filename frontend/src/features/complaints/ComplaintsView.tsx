@@ -1,60 +1,45 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { complaintsQueryKey, fetchComplaints } from '../../api/complaints'
-import TableShell from '../../components/TableShell'
+import EmptyState from '../../components/EmptyState'
+import PageHeader from '../../components/PageHeader'
+import TablePagination from '../../components/TablePagination'
+import { usePagination } from '../../hooks/usePagination'
+import ComplaintCard from './ComplaintCard'
 
-const COLUMNAS = ['Fecha', 'Cliente', 'Veterinario', 'Cita', 'Descripción', 'Evidencia'] as const
+const RECLAMOS_POR_PAGINA = 10
 
-const FORMATO = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
-
+/**
+ * Los reclamos de los clientes, uno por tarjeta.
+ *
+ * Antes era una tabla con números de cliente, veterinario y cita que nadie
+ * podía interpretar sin ir a buscarlos. Cada tarjeta dice quién reclama, sobre
+ * quién, de qué mascota y en qué cita, con lo que pasó y la evidencia a la vista.
+ */
 export default function ComplaintsView() {
   const reclamos = useQuery({ queryKey: complaintsQueryKey, queryFn: fetchComplaints })
   const items = reclamos.data?.items ?? []
+  const pagina = usePagination(items, RECLAMOS_POR_PAGINA)
+  const vacio = !reclamos.isPending && items.length === 0
 
   return (
-    <div className="stack">
-      <div className="page-header">
-        <div>
-          <h1>Reclamos</h1>
-          <p className="muted">
-            Lo que presentan los clientes sobre la atención de una cita puntual.
-          </p>
-        </div>
-      </div>
-
-      <section className="card">
-        <TableShell
-          columns={COLUMNAS}
-          isLoading={reclamos.isPending}
-          isEmpty={items.length === 0}
-          emptyMessage="Todavía no hay reclamos registrados."
-        >
-          {items.map((reclamo) => (
-            <tr key={reclamo.id}>
-              <td>{FORMATO.format(new Date(reclamo.created_at))}</td>
-              <td>#{reclamo.client_id}</td>
-              <td>#{reclamo.veterinarian_id}</td>
-              <td>#{reclamo.appointment_id}</td>
-              <td>{reclamo.description}</td>
-              <td>
-                {reclamo.evidence.length === 0 ? (
-                  <span className="muted">Sin evidencia</span>
-                ) : (
-                  <ul>
-                    {reclamo.evidence.map((archivo) => (
-                      <li key={archivo.id}>
-                        <a href={archivo.url} target="_blank" rel="noreferrer">
-                          {archivo.filename}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </td>
-            </tr>
-          ))}
-        </TableShell>
-      </section>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Reclamos"
+        description="Lo que presentan los clientes sobre la atención de una cita, el más reciente primero."
+      />
+      {reclamos.isPending ? <EmptyState title="Cargando reclamos…" /> : null}
+      {vacio ? <EmptyState title="Todavía no hay reclamos registrados." /> : null}
+      <ul className="m-0 flex list-none flex-col gap-4 p-0">
+        {pagina.visibles.map((reclamo) => (
+          <li key={reclamo.id}>
+            <ComplaintCard reclamo={reclamo} />
+          </li>
+        ))}
+      </ul>
+      {pagina.total > 1 ? (
+        <TablePagination actual={pagina.actual} total={pagina.total} onChange={pagina.irA} />
+      ) : null}
     </div>
   )
 }

@@ -10,8 +10,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
-from gestvet.core.auth import get_principal
+from gestvet.core.auth import require_permission
 from gestvet.core.pagination import MAX_PAGE_SIZE
+from gestvet.core.permissions import Permission
 from gestvet.modules.accounts.adapters.api.dependencies import (
     ReviewsDirectoryDep,
     UserRepositoryDep,
@@ -24,7 +25,7 @@ from gestvet.modules.accounts.ports.reviews_directory import RatingSummary
 from gestvet.modules.accounts.ports.user_repository import UserQuery
 from gestvet.modules.accounts.use_cases.list_clients import BOOKABLE_VETERINARIAN_ROLES, ListUsers
 
-router = APIRouter(dependencies=[Depends(get_principal)])
+router = APIRouter(dependencies=[Depends(require_permission(Permission.VETERINARIANS_READ))])
 
 
 @router.get("", response_model=VeterinarianListResponse, summary="Veterinarios que atienden")

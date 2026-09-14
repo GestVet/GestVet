@@ -14,9 +14,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 
 from gestvet.core.activity_log import ActivityRecorderDep
-from gestvet.core.auth import PrincipalDep, require_roles
-from gestvet.core.identity import Principal, Role
+from gestvet.core.auth import require_permission
+from gestvet.core.identity import Principal
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
+from gestvet.core.permissions import Permission
 from gestvet.modules.complaints.adapters.api.dependencies import (
     AppointmentDirectoryDep,
     ComplaintRepositoryDep,
@@ -44,7 +45,8 @@ from gestvet.modules.complaints.use_cases.upload_evidence import (
 
 router = APIRouter()
 
-ClientDep = Annotated[Principal, Depends(require_roles(Role.CLIENT))]
+ComplainantDep = Annotated[Principal, Depends(require_permission(Permission.COMPLAINTS_FILE))]
+ComplaintsReaderDep = Annotated[Principal, Depends(require_permission(Permission.COMPLAINTS_READ))]
 
 
 @router.post(
@@ -55,7 +57,7 @@ ClientDep = Annotated[Principal, Depends(require_roles(Role.CLIENT))]
 )
 async def file_complaint(
     payload: FileComplaintRequest,
-    client: ClientDep,
+    client: ComplainantDep,
     complaints: ComplaintRepositoryDep,
     appointments: AppointmentDirectoryDep,
     activity: ActivityRecorderDep,
@@ -70,14 +72,16 @@ async def file_complaint(
         )
     except AppointmentNotFound as error:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
-    return ComplaintResponse.from_entity(complaint)
+    contexts = await appointments.contexts_for([complaint.appointment_id])
+    return ComplaintResponse.from_entity(complaint, context=contexts.get(complaint.appointment_id))
 
 
 @router.get("", response_model=ComplaintPageResponse, summary="Listar reclamos")
 async def list_complaints(
-    principal: PrincipalDep,
+    principal: ComplaintsReaderDep,
     complaints: ComplaintRepositoryDep,
     evidence: EvidenceRepositoryDep,
+    appointments: AppointmentDirectoryDep,
     veterinarian_id: Annotated[int | None, Query(ge=1)] = None,
     limit: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = DEFAULT_PAGE_SIZE,
     offset: Annotated[int, Query(ge=0)] = 0,
@@ -87,9 +91,14 @@ async def list_complaints(
         ComplaintQuery(veterinarian_id=veterinarian_id, limit=limit, offset=offset),
     )
     page = await ListComplaints(complaints)(query)
+    contexts = await appointments.contexts_for([item.appointment_id for item in page.items])
     return ComplaintPageResponse(
         items=[
-            ComplaintResponse.from_entity(item, await evidence.list_for_complaint(item.id or 0))
+            ComplaintResponse.from_entity(
+                item,
+                await evidence.list_for_complaint(item.id or 0),
+                contexts.get(item.appointment_id),
+            )
             for item in page.items
         ],
         total=page.total,
@@ -104,7 +113,7 @@ async def list_complaints(
 )
 async def upload_evidence(
     complaint_id: int,
-    client: ClientDep,
+    client: ComplainantDep,
     evidence: EvidenceRepositoryDep,
     storage: EvidenceStorageDep,
     complaints: ComplaintRepositoryDep,

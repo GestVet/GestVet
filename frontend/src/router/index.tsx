@@ -1,5 +1,8 @@
-import { createBrowserRouter } from 'react-router'
+import type { ComponentProps, ComponentType } from 'react'
+import { createBrowserRouter, type RouteObject } from 'react-router'
 
+import RolesView from '../features/access/RolesView'
+import VerifyCardView from '../features/card-verification/VerifyCardView'
 import AppointmentsView from '../features/appointments/AppointmentsView'
 import BookingView from '../features/appointments/BookingView'
 import ForgotPasswordView from '../features/auth/ForgotPasswordView'
@@ -7,7 +10,8 @@ import LoginView from '../features/auth/LoginView'
 import ProfileView from '../features/auth/ProfileView'
 import RegisterView from '../features/auth/RegisterView'
 import ResetPasswordView from '../features/auth/ResetPasswordView'
-import AvailabilityView from '../features/availability/AvailabilityView'
+import MyShiftsView from '../features/availability/MyShiftsView'
+import RosterView from '../features/availability/RosterView'
 import PaymentsReportView from '../features/billing/PaymentsReportView'
 import ComplaintsView from '../features/complaints/ComplaintsView'
 import ActivityView from '../features/directory/ActivityView'
@@ -17,14 +21,28 @@ import WalkInEmergencyView from '../features/emergency-intake/WalkInEmergencyVie
 import HomeView from '../features/home/HomeView'
 import InsightsView from '../features/insights/InsightsView'
 import DashboardView from '../features/panel/DashboardView'
+import PetCatalogView from '../features/pet-catalog/PetCatalogView'
 import PetsView from '../features/pets/PetsView'
 import AppShell from '../features/shell/AppShell'
 import RequireSession from '../features/shell/RequireSession'
 
-const CLIENTE = ['client'] as const
-const VETERINARIOS = ['veterinarian', 'emergency_veterinarian'] as const
-const PERSONAL = ['admin', 'veterinarian', 'emergency_veterinarian'] as const
-const ADMIN = ['admin'] as const
+/**
+ * Una pantalla que exige un permiso.
+ *
+ * Es una comodidad de la interfaz: la autorizacion de verdad la aplica el
+ * servidor en cada peticion, y esta guarda solo evita mostrar una pantalla que
+ * va a responder 403. El permiso es el mismo que muestra la entrada del menu.
+ */
+function conPermiso(
+  path: string,
+  Component: ComponentType,
+  permission: NonNullable<ComponentProps<typeof RequireSession>['permission']>,
+): RouteObject {
+  return {
+    element: <RequireSession permission={permission} />,
+    children: [{ path, Component }],
+  }
+}
 
 const router = createBrowserRouter(
   [
@@ -37,45 +55,29 @@ const router = createBrowserRouter(
         { path: 'registro', Component: RegisterView },
         { path: 'olvide-contrasena', Component: ForgotPasswordView },
         { path: 'restablecer-contrasena', Component: ResetPasswordView },
+        // Pública: la abre quien escanea el QR del carnet de vacunas.
+        { path: 'carnet/:token', Component: VerifyCardView },
         {
-          // Las rutas de abajo exigen sesión. Es una comodidad de la
-          // interfaz: la autorización de verdad la aplica el servidor en cada
-          // petición, y esta guarda solo evita mostrar una pantalla vacía.
           element: <RequireSession />,
           children: [
             { path: 'panel', Component: DashboardView },
             { path: 'perfil', Component: ProfileView },
-            { path: 'citas', Component: AppointmentsView },
           ],
         },
-        {
-          element: <RequireSession roles={CLIENTE} />,
-          children: [
-            { path: 'mascotas', Component: PetsView },
-            { path: 'reservar', Component: BookingView },
-          ],
-        },
-        {
-          element: <RequireSession roles={VETERINARIOS} />,
-          children: [{ path: 'agenda', Component: AvailabilityView }],
-        },
-        {
-          element: <RequireSession roles={PERSONAL} />,
-          children: [
-            { path: 'clientes', Component: ClientsView },
-            { path: 'emergencia-cliente-nuevo', Component: WalkInEmergencyView },
-          ],
-        },
-        {
-          element: <RequireSession roles={ADMIN} />,
-          children: [
-            { path: 'personal', Component: StaffView },
-            { path: 'pagos', Component: PaymentsReportView },
-            { path: 'reclamos', Component: ComplaintsView },
-            { path: 'indicadores', Component: InsightsView },
-            { path: 'movimientos', Component: ActivityView },
-          ],
-        },
+        conPermiso('citas', AppointmentsView, 'appointments.read'),
+        conPermiso('mascotas', PetsView, 'pets.manage_own'),
+        conPermiso('reservar', BookingView, 'appointments.book'),
+        conPermiso('agenda', MyShiftsView, 'schedule.read_own'),
+        conPermiso('clientes', ClientsView, 'clients.read'),
+        conPermiso('emergencia-cliente-nuevo', WalkInEmergencyView, 'emergencies.open_walk_in'),
+        conPermiso('personal', StaffView, 'staff.read'),
+        conPermiso('turnos', RosterView, 'schedule.manage'),
+        conPermiso('roles', RolesView, 'roles.manage'),
+        conPermiso('especies-y-razas', PetCatalogView, 'pets.manage_catalog'),
+        conPermiso('pagos', PaymentsReportView, 'payments.report'),
+        conPermiso('reclamos', ComplaintsView, 'complaints.read'),
+        conPermiso('indicadores', InsightsView, 'insights.read'),
+        conPermiso('movimientos', ActivityView, 'activity.read'),
       ],
     },
   ],

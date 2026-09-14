@@ -4,16 +4,18 @@ import { useEffect, useRef } from 'react'
 import { fetchAppointments } from '../../api/appointments'
 import type { AppointmentStatus } from '../../api/types'
 import { useNotifications } from '../../store/notifications'
-import { useIsVeterinarian } from '../../store/session'
+import { useCan } from '../../store/session'
 
-const POLL_INTERVAL_MS = 20_000
+// Respaldo: el aviso llega al instante por el canal en tiempo real, que
+// invalida esta consulta. El sondeo solo cubre un corte de ese canal.
+const POLL_INTERVAL_MS = 60_000
 const ACTIVOS = new Set<AppointmentStatus>(['pending', 'confirmed'])
 
 /**
  * HU11: avisa al veterinario -de guardia o de respaldo- de una emergencia nueva.
  */
 export function useVeterinarianEmergencyAlerts(): void {
-  const esVeterinario = useIsVeterinarian()
+  const esVeterinario = useCan('appointments.attend')
   const push = useNotifications((state) => state.push)
   const anterior = useRef<Set<number> | null>(null)
 
@@ -39,7 +41,7 @@ export function useVeterinarianEmergencyAlerts(): void {
         tone: previa.size > 0 ? 'warning' : 'info',
         message:
           previa.size > 0
-            ? 'Se te asignó otra emergencia y ya tenés una en curso.'
+            ? 'Se te asignó otra emergencia y ya tienes una en curso.'
             : 'Se te asignó una nueva emergencia.',
       })
     }

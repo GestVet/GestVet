@@ -16,6 +16,7 @@ dependencies = [
     "qrcode[pil]==8.2",
     "reportlab==5.0.1",
     "sqlalchemy==2.0.52",
+    "structlog==26.1.0",
     "uvicorn[standard]==0.52.4",
 ]
 
@@ -144,9 +145,11 @@ forbidden_modules = [
     "reportlab",
     "sqlalchemy",
     "starlette",
+    "structlog",
     "uvicorn",
     "gestvet.core.auth",
     "gestvet.core.database",
+    "gestvet.core.realtime_broker",
     "gestvet.core.security",
     "gestvet.core.tokens",
 ]

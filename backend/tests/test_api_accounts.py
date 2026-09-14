@@ -31,6 +31,7 @@ NEW_CLIENT = {
     "last_name": "Quispe",
     "phone": "987654321",
     "document_id": "87654321",
+    "accepts_identity_check": True,
 }
 
 
@@ -175,7 +176,7 @@ async def test_un_cliente_no_puede_ver_el_padron(
 
 @pytest.mark.parametrize(
     "rol",
-    [Role.ADMIN, Role.VETERINARIAN, Role.EMERGENCY_VETERINARIAN],
+    [Role.ADMIN, Role.VETERINARIAN],
 )
 async def test_el_personal_de_la_clinica_ve_el_padron(
     client: AsyncClient, session: AsyncSession, rol: Role

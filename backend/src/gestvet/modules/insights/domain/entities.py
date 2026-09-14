@@ -68,6 +68,8 @@ class PaymentAnomaly:
     amount: Decimal
     typical_amount: Decimal
     paid_at: datetime
+    client_name: str = ""
+    pet_name: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,6 +117,8 @@ class PaymentRecord:
     is_emergency_type: bool
     amount: Decimal
     paid_at: datetime
+    client_name: str = ""
+    pet_name: str = ""
 
 
 @dataclass(frozen=True, slots=True)

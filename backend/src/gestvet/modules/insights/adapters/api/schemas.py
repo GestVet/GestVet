@@ -74,6 +74,8 @@ class PaymentAnomalyResponse(BaseModel):
     amount: Decimal
     typical_amount: Decimal
     paid_at: datetime
+    client_name: str
+    pet_name: str
 
     @classmethod
     def from_entity(cls, anomaly: PaymentAnomaly) -> PaymentAnomalyResponse:
@@ -85,6 +87,8 @@ class PaymentAnomalyResponse(BaseModel):
             amount=anomaly.amount,
             typical_amount=anomaly.typical_amount.quantize(_CENTS),
             paid_at=anomaly.paid_at,
+            client_name=anomaly.client_name,
+            pet_name=anomaly.pet_name,
         )
 
 

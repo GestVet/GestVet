@@ -1,0 +1,48 @@
+"""Registro de identidad de personas (DNI): el puerto.
+
+Responde una sola pregunta: a quién pertenece un DNI. De lo que devuelva el
+proveedor se usan solo los nombres y los apellidos; la dirección, el ubigeo o
+cualquier otro dato se descarta en el adaptador, porque la clínica no lo
+necesita y guardarlo sería tratar datos personales sin motivo (Ley 29733).
+
+Hoy lo responde un proveedor privado (`dni_factiliza`). El día que haya
+convenio con RENIEC se agrega un adaptador que la satisfaga y ningún caso de
+uso cambia.
+
+Python puro: lo importan los casos de uso.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Protocol
+
+
+class IdentityRegistryUnavailable(Exception):
+    """La consulta no está configurada o el proveedor no respondió."""
+
+
+@dataclass(frozen=True, slots=True)
+class PersonName:
+    first_names: str
+    paternal_surname: str
+    maternal_surname: str
+
+    @property
+    def last_names(self) -> str:
+        return f"{self.paternal_surname} {self.maternal_surname}".strip()
+
+
+class IdentityRegistry(Protocol):
+    async def lookup(self, document_id: str) -> PersonName | None:
+        """Los nombres del DNI, o `None` si el DNI no existe."""
+        ...
+
+
+class DisabledIdentityRegistry:
+    """Sin proveedor configurado: la consulta no está disponible y nada se bloquea por eso."""
+
+    async def lookup(self, document_id: str) -> PersonName | None:
+        raise IdentityRegistryUnavailable(
+            "La consulta de DNI no está configurada en este servidor."
+        )

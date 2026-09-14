@@ -2,27 +2,33 @@
 
 Traduce peticiones a comandos y errores de dominio a códigos de estado. Quién
 puede hacer qué con una cita lo decide el caso de uso, no este archivo: acá
-solo se exige estar autenticado con el rol correcto para llegar al endpoint.
+solo se exige estar autenticado con el permiso correcto para llegar al endpoint.
+
+Cada cambio avisa en tiempo real al cliente, al veterinario de la cita y a la
+administración. El aviso sale recién si la transacción se confirma. Confirmar
+una cita, además, avisa al cliente por WhatsApp desde el caso de uso.
 """
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, date, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from gestvet.core.activity_log import ActivityRecorderDep
-from gestvet.core.auth import PrincipalDep, require_roles
-from gestvet.core.identity import STAFF_ROLES, VETERINARIAN_ROLES, Principal, Role
+from gestvet.core.auth import require_permission
+from gestvet.core.identity import Principal, Role
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
+from gestvet.core.permissions import Permission
+from gestvet.core.realtime import APPOINTMENTS_TOPIC, EventPublisher, RealtimeEvent
+from gestvet.core.realtime_broker import EventPublisherDep
 from gestvet.modules.appointments.adapters.api.dependencies import (
     AppointmentRepositoryDep,
     AppointmentTypeRepositoryDep,
-    ClientDirectoryDep,
+    ChangeStatusDep,
     PetDirectoryDep,
     ScheduleDirectoryDep,
-    WhatsAppSenderDep,
 )
 from gestvet.modules.appointments.adapters.api.schemas import (
     AppointmentPageResponse,
@@ -32,9 +38,10 @@ from gestvet.modules.appointments.adapters.api.schemas import (
     BookAppointmentRequest,
     CancelAppointmentRequest,
     OpenEmergencyRequest,
+    OpenTimesResponse,
     OpenWalkInEmergencyRequest,
 )
-from gestvet.modules.appointments.domain.entities import AppointmentStatus
+from gestvet.modules.appointments.domain.entities import Appointment, AppointmentStatus
 from gestvet.modules.appointments.domain.exceptions import (
     AppointmentNotFound,
     AppointmentTypeNotFound,
@@ -56,6 +63,14 @@ from gestvet.modules.appointments.use_cases.change_status import (
     ChangeStatusCommand,
 )
 from gestvet.modules.appointments.use_cases.list_appointments import ListAppointments, scope_to
+from gestvet.modules.appointments.use_cases.list_open_times import (
+    MAX_DAYS as MAX_OPEN_TIME_DAYS,
+)
+from gestvet.modules.appointments.use_cases.list_open_times import (
+    ListOpenTimes,
+    OpenTimesQuery,
+    clinic_date,
+)
 from gestvet.modules.appointments.use_cases.open_emergency import (
     OpenEmergency,
     OpenEmergencyCommand,
@@ -63,9 +78,16 @@ from gestvet.modules.appointments.use_cases.open_emergency import (
 
 router = APIRouter()
 
-ClientDep = Annotated[Principal, Depends(require_roles(Role.CLIENT))]
-VeterinarianDep = Annotated[Principal, Depends(require_roles(*VETERINARIAN_ROLES))]
-StaffDep = Annotated[Principal, Depends(require_roles(*STAFF_ROLES))]
+# Dos semanas: alcanza para planificar una consulta sin volver la tira de días
+# inmanejable en un celular.
+DEFAULT_OPEN_TIME_DAYS = 14
+
+ReaderDep = Annotated[Principal, Depends(require_permission(Permission.APPOINTMENTS_READ))]
+BookerDep = Annotated[Principal, Depends(require_permission(Permission.APPOINTMENTS_BOOK))]
+EmergencyOpenerDep = Annotated[Principal, Depends(require_permission(Permission.EMERGENCIES_OPEN))]
+WalkInDep = Annotated[Principal, Depends(require_permission(Permission.EMERGENCIES_OPEN_WALK_IN))]
+AttendantDep = Annotated[Principal, Depends(require_permission(Permission.APPOINTMENTS_ATTEND))]
+CancelerDep = Annotated[Principal, Depends(require_permission(Permission.APPOINTMENTS_CANCEL))]
 
 _CONFLICT_ERRORS = (
     OutsideAvailability,
@@ -75,18 +97,63 @@ _CONFLICT_ERRORS = (
 )
 
 
+def _notify_change(events: EventPublisher, appointment: Appointment) -> AppointmentResponse:
+    events.publish(
+        RealtimeEvent(
+            topic=APPOINTMENTS_TOPIC,
+            user_ids=frozenset({appointment.client_id, appointment.veterinarian_id}),
+            roles=frozenset({Role.ADMIN}),
+            reference_id=appointment.id,
+        )
+    )
+    return AppointmentResponse.from_entity(appointment)
+
+
 @router.get(
     "/types",
     response_model=AppointmentTypeListResponse,
     summary="Motivos de consulta reservables",
 )
 async def list_types(
-    principal: PrincipalDep,
+    principal: ReaderDep,
     types: AppointmentTypeRepositoryDep,
 ) -> AppointmentTypeListResponse:
     # La emergencia no aparece: no se reserva, se abre.
     items = [AppointmentTypeResponse.from_entity(item) for item in await types.list_active()]
     return AppointmentTypeListResponse(items=items, total=len(items))
+
+
+@router.get(
+    "/open-times",
+    response_model=OpenTimesResponse,
+    summary="Horas libres para reservar, por día y veterinario",
+)
+async def list_open_times(
+    principal: BookerDep,
+    appointment_type_id: Annotated[int, Query(ge=1, description="Motivo: define la duración")],
+    appointments: AppointmentRepositoryDep,
+    types: AppointmentTypeRepositoryDep,
+    schedule: ScheduleDirectoryDep,
+    from_date: Annotated[
+        date | None, Query(description="Primer día, en la fecha de la clínica. Por defecto, hoy")
+    ] = None,
+    days: Annotated[int, Query(ge=1, le=MAX_OPEN_TIME_DAYS)] = DEFAULT_OPEN_TIME_DAYS,
+) -> OpenTimesResponse:
+    now = datetime.now(UTC)
+    try:
+        found = await ListOpenTimes(appointments, types, schedule)(
+            OpenTimesQuery(
+                appointment_type_id=appointment_type_id,
+                first_day=from_date or clinic_date(now),
+                days=days,
+                now=now,
+            )
+        )
+    except AppointmentTypeNotFound as error:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    except InvalidAppointment as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
+    return OpenTimesResponse.from_days(found)
 
 
 @router.post(
@@ -97,12 +164,13 @@ async def list_types(
 )
 async def book_appointment(
     payload: BookAppointmentRequest,
-    client: ClientDep,
+    client: BookerDep,
     appointments: AppointmentRepositoryDep,
     types: AppointmentTypeRepositoryDep,
     pets: PetDirectoryDep,
     schedule: ScheduleDirectoryDep,
     activity: ActivityRecorderDep,
+    events: EventPublisherDep,
 ) -> AppointmentResponse:
     use_case = BookAppointment(appointments, types, pets, schedule, activity)
     try:
@@ -122,7 +190,7 @@ async def book_appointment(
         raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
     except InvalidAppointment as error:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
-    return AppointmentResponse.from_entity(appointment)
+    return _notify_change(events, appointment)
 
 
 @router.post(
@@ -133,12 +201,13 @@ async def book_appointment(
 )
 async def open_emergency(
     payload: OpenEmergencyRequest,
-    client: ClientDep,
+    client: EmergencyOpenerDep,
     appointments: AppointmentRepositoryDep,
     types: AppointmentTypeRepositoryDep,
     pets: PetDirectoryDep,
     schedule: ScheduleDirectoryDep,
     activity: ActivityRecorderDep,
+    events: EventPublisherDep,
 ) -> AppointmentResponse:
     use_case = OpenEmergency(appointments, types, pets, schedule, activity)
     try:
@@ -153,7 +222,7 @@ async def open_emergency(
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
     except NoEmergencyVeterinarian as error:
         raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
-    return AppointmentResponse.from_entity(appointment)
+    return _notify_change(events, appointment)
 
 
 @router.post(
@@ -164,12 +233,13 @@ async def open_emergency(
 )
 async def open_walk_in_emergency(
     payload: OpenWalkInEmergencyRequest,
-    staff: StaffDep,
+    staff: WalkInDep,
     appointments: AppointmentRepositoryDep,
     types: AppointmentTypeRepositoryDep,
     pets: PetDirectoryDep,
     schedule: ScheduleDirectoryDep,
     activity: ActivityRecorderDep,
+    events: EventPublisherDep,
 ) -> AppointmentResponse:
     use_case = OpenEmergency(appointments, types, pets, schedule, activity)
     try:
@@ -184,12 +254,12 @@ async def open_walk_in_emergency(
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
     except NoEmergencyVeterinarian as error:
         raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
-    return AppointmentResponse.from_entity(appointment)
+    return _notify_change(events, appointment)
 
 
 @router.get("", response_model=AppointmentPageResponse, summary="Listar citas")
 async def list_appointments(
-    principal: PrincipalDep,
+    principal: ReaderDep,
     appointments: AppointmentRepositoryDep,
     status_filter: Annotated[
         list[AppointmentStatus] | None, Query(alias="status", description="Filtra por estado")
@@ -225,18 +295,13 @@ async def list_appointments(
 async def _change_status(
     appointment_id: int,
     principal: Principal,
-    appointments: AppointmentRepositoryDep,
-    activity: ActivityRecorderDep,
-    clients: ClientDirectoryDep,
-    pets: PetDirectoryDep,
-    whatsapp: WhatsAppSenderDep,
+    change_status: ChangeAppointmentStatus,
+    events: EventPublisher,
     target: AppointmentStatus,
     reason: str = "",
 ) -> AppointmentResponse:
     try:
-        appointment = await ChangeAppointmentStatus(
-            appointments, activity, clients, pets, whatsapp
-        )(
+        appointment = await change_status(
             ChangeStatusCommand(
                 appointment_id=appointment_id,
                 actor_id=principal.user_id,
@@ -251,7 +316,7 @@ async def _change_status(
         raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
     except InvalidAppointment as error:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
-    return AppointmentResponse.from_entity(appointment)
+    return _notify_change(events, appointment)
 
 
 @router.post(
@@ -261,22 +326,12 @@ async def _change_status(
 )
 async def confirm_appointment(
     appointment_id: int,
-    veterinarian: VeterinarianDep,
-    appointments: AppointmentRepositoryDep,
-    activity: ActivityRecorderDep,
-    clients: ClientDirectoryDep,
-    pets: PetDirectoryDep,
-    whatsapp: WhatsAppSenderDep,
+    veterinarian: AttendantDep,
+    change_status: ChangeStatusDep,
+    events: EventPublisherDep,
 ) -> AppointmentResponse:
     return await _change_status(
-        appointment_id,
-        veterinarian,
-        appointments,
-        activity,
-        clients,
-        pets,
-        whatsapp,
-        AppointmentStatus.CONFIRMED,
+        appointment_id, veterinarian, change_status, events, AppointmentStatus.CONFIRMED
     )
 
 
@@ -287,22 +342,12 @@ async def confirm_appointment(
 )
 async def complete_appointment(
     appointment_id: int,
-    veterinarian: VeterinarianDep,
-    appointments: AppointmentRepositoryDep,
-    activity: ActivityRecorderDep,
-    clients: ClientDirectoryDep,
-    pets: PetDirectoryDep,
-    whatsapp: WhatsAppSenderDep,
+    veterinarian: AttendantDep,
+    change_status: ChangeStatusDep,
+    events: EventPublisherDep,
 ) -> AppointmentResponse:
     return await _change_status(
-        appointment_id,
-        veterinarian,
-        appointments,
-        activity,
-        clients,
-        pets,
-        whatsapp,
-        AppointmentStatus.COMPLETED,
+        appointment_id, veterinarian, change_status, events, AppointmentStatus.COMPLETED
     )
 
 
@@ -313,22 +358,12 @@ async def complete_appointment(
 )
 async def mark_appointment_no_show(
     appointment_id: int,
-    veterinarian: VeterinarianDep,
-    appointments: AppointmentRepositoryDep,
-    activity: ActivityRecorderDep,
-    clients: ClientDirectoryDep,
-    pets: PetDirectoryDep,
-    whatsapp: WhatsAppSenderDep,
+    veterinarian: AttendantDep,
+    change_status: ChangeStatusDep,
+    events: EventPublisherDep,
 ) -> AppointmentResponse:
     return await _change_status(
-        appointment_id,
-        veterinarian,
-        appointments,
-        activity,
-        clients,
-        pets,
-        whatsapp,
-        AppointmentStatus.NO_SHOW,
+        appointment_id, veterinarian, change_status, events, AppointmentStatus.NO_SHOW
     )
 
 
@@ -340,23 +375,17 @@ async def mark_appointment_no_show(
 async def cancel_appointment(
     appointment_id: int,
     payload: CancelAppointmentRequest,
-    principal: PrincipalDep,
-    appointments: AppointmentRepositoryDep,
-    activity: ActivityRecorderDep,
-    clients: ClientDirectoryDep,
-    pets: PetDirectoryDep,
-    whatsapp: WhatsAppSenderDep,
+    principal: CancelerDep,
+    change_status: ChangeStatusDep,
+    events: EventPublisherDep,
 ) -> AppointmentResponse:
-    # Cancelar lo pueden hacer las dos partes, así que acá basta con estar
-    # autenticado: el caso de uso comprueba que participe en esa cita.
+    # Cancelar lo pueden hacer las dos partes: el caso de uso comprueba que
+    # quien cancela participe en esa cita.
     return await _change_status(
         appointment_id,
         principal,
-        appointments,
-        activity,
-        clients,
-        pets,
-        whatsapp,
+        change_status,
+        events,
         AppointmentStatus.CANCELLED,
         reason=payload.reason,
     )

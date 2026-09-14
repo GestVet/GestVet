@@ -1,4 +1,5 @@
 import type { MethodTotalResponse } from '../../api/types'
+import EmptyState from '../../components/EmptyState'
 
 interface PaymentReportSummaryProps {
   readonly isLoading: boolean
@@ -12,26 +13,27 @@ export default function PaymentReportSummary({
   grandTotal,
 }: PaymentReportSummaryProps) {
   if (isLoading) {
-    return <p className="empty">Cargando…</p>
+    return <EmptyState title="Cargando…" />
   }
   if (items.length === 0) {
-    return <p className="empty">No hay pagos en el rango elegido.</p>
+    return <EmptyState title="No hay pagos en el rango elegido." />
   }
 
   return (
-    <div className="card-grid">
+    <dl className="m-0 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {items.map((item) => (
-        <div className="tile" key={item.method}>
-          <h3>{item.method_label}</h3>
-          <p>
-            S/ {item.total} · {item.count} {item.count === 1 ? 'pago' : 'pagos'}
-          </p>
+        <div key={item.method} className="flex flex-col gap-1 rounded-xl bg-muted p-4">
+          <dt className="text-sm text-muted-foreground">{item.method_label}</dt>
+          <dd className="m-0 font-heading text-xl font-semibold">S/ {item.total}</dd>
+          <dd className="m-0 text-sm text-muted-foreground">
+            {item.count} {item.count === 1 ? 'pago' : 'pagos'}
+          </dd>
         </div>
       ))}
-      <div className="tile">
-        <h3>Total</h3>
-        <p>S/ {grandTotal}</p>
+      <div className="flex flex-col gap-1 rounded-xl bg-primary p-4 text-primary-foreground">
+        <dt className="text-sm">Total</dt>
+        <dd className="m-0 font-heading text-xl font-semibold">S/ {grandTotal}</dd>
       </div>
-    </div>
+    </dl>
   )
 }

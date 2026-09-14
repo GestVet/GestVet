@@ -12,6 +12,7 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from gestvet.core.clinic_time import clinic_date, clinic_midnight
 from gestvet.core.identity import Role
 from gestvet.modules.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
@@ -76,6 +77,7 @@ async def test_el_autorregistro_deja_asiento(client: AsyncClient, session: Async
             "first_name": "Nueva",
             "last_name": "Cuenta",
             "document_id": "87654321",
+            "accepts_identity_check": True,
         },
     )
 
@@ -107,28 +109,31 @@ async def test_registrar_una_mascota_deja_asiento_con_su_nombre(
     assert asiento["detail"] == "Rocco"
 
 
-async def test_publicar_y_retirar_un_tramo_dejan_asiento(
+async def test_asignar_y_quitar_un_turno_dejan_asiento(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     jefa = await _cuenta(session, Role.ADMIN)
     vet = await _cuenta(session, Role.VETERINARIAN, "vet@example.com")
-    cabeceras = authorization_for(vet)
+    cabeceras = authorization_for(jefa)
+    dia = clinic_date(datetime.now(UTC)) + timedelta(days=2)
+    inicio = clinic_midnight(dia) + timedelta(hours=9)
 
     creado = await client.post(
-        "/api/v1/availability",
+        "/api/v1/availability/shifts",
         json={
-            "starts_at": JORNADA.isoformat(),
-            "ends_at": (JORNADA + timedelta(hours=8)).isoformat(),
+            "veterinarian_id": vet.id,
+            "starts_at": inicio.isoformat(),
+            "ends_at": (inicio + timedelta(hours=8)).isoformat(),
         },
         headers=cabeceras,
     )
-    await client.delete(f"/api/v1/availability/{creado.json()['id']}", headers=cabeceras)
+    await client.delete(f"/api/v1/availability/shifts/{creado.json()['id']}", headers=cabeceras)
 
     cuerpo = await _asientos(client, jefa)
 
-    assert [item["kind"] for item in cuerpo["items"]] == ["slot_withdrawn", "slot_published"]
-    # El asiento de la baja conserva de que tramo se trataba.
-    assert "14/09/2026 09:00" in cuerpo["items"][0]["detail"]
+    assert [item["kind"] for item in cuerpo["items"]] == ["shift_removed", "shift_assigned"]
+    # El asiento de la baja conserva de qué turno se trataba, en hora de la clínica.
+    assert f"{dia:%d/%m/%Y} 09:00" in cuerpo["items"][0]["detail"]
 
 
 async def test_el_ciclo_de_una_cita_deja_sus_asientos(
@@ -216,11 +221,8 @@ async def test_el_filtro_por_rol_acota_la_bitacora(
         headers=authorization_for(ana),
     )
     await client.post(
-        "/api/v1/availability",
-        json={
-            "starts_at": JORNADA.isoformat(),
-            "ends_at": (JORNADA + timedelta(hours=8)).isoformat(),
-        },
+        "/api/v1/availability/change-requests",
+        json={"message": "Necesito cambiar el turno del lunes"},
         headers=authorization_for(vet),
     )
 
@@ -228,7 +230,7 @@ async def test_el_filtro_por_rol_acota_la_bitacora(
     de_veterinarios = await _asientos(client, jefa, role=Role.VETERINARIAN.value)
 
     assert [item["kind"] for item in de_clientes["items"]] == ["profile_updated"]
-    assert [item["kind"] for item in de_veterinarios["items"]] == ["slot_published"]
+    assert [item["kind"] for item in de_veterinarios["items"]] == ["shift_change_requested"]
 
 
 async def test_el_filtro_por_accion_acota_la_bitacora(

@@ -10,11 +10,11 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from gestvet.core.activity import ActivityKind, ActivityRecorder
+from gestvet.core.clinic_time import clinic_day_window
 from gestvet.modules.appointments.domain.entities import (
     ACTIVE_STATUSES,
     Appointment,
     AppointmentType,
-    clinic_day_window,
 )
 from gestvet.modules.appointments.domain.exceptions import (
     AppointmentTypeNotFound,
@@ -43,6 +43,24 @@ class BookAppointmentCommand:
     description: str = ""
 
 
+async def require_bookable_type(types: AppointmentTypeRepository, type_id: int) -> AppointmentType:
+    """El motivo existe, está activo y no es una emergencia.
+
+    La comparten la reserva y el cálculo de horas libres: si difirieran, se
+    ofrecerían horas para un motivo que después no se deja reservar.
+    """
+    appointment_type = await types.get(type_id)
+    if appointment_type is None or not appointment_type.is_active:
+        raise AppointmentTypeNotFound(type_id)
+    if appointment_type.is_emergency:
+        # Una emergencia no se agenda: se abre en el momento y el sistema
+        # elige al veterinario de guardia.
+        raise InvalidAppointment(
+            "Una emergencia no se reserva con antelación. Usa el alta de emergencia."
+        )
+    return appointment_type
+
+
 class BookAppointment:
     def __init__(
         self,
@@ -66,8 +84,8 @@ class BookAppointment:
         if not await self._pets.is_owned_by(command.pet_id, command.client_id):
             raise PetNotOwned(command.pet_id)
 
-        # El de guardia solo recibe emergencias. El original filtraba esto en
-        # el listado; acá también se exige del lado servidor.
+        # Solo un veterinario activo recibe citas. Que tenga turno de atención
+        # a esa hora lo exige `_require_free_slot`.
         if not await self._schedule.is_bookable_for_normal_appointments(command.veterinarian_id):
             raise VeterinarianUnavailable(
                 "El veterinario elegido no está disponible para citas normales."
@@ -92,20 +110,11 @@ class BookAppointment:
         return reservada
 
     async def _require_bookable_type(self, type_id: int) -> AppointmentType:
-        appointment_type = await self._types.get(type_id)
-        if appointment_type is None or not appointment_type.is_active:
-            raise AppointmentTypeNotFound(type_id)
-        if appointment_type.is_emergency:
-            # Una emergencia no se agenda: se abre en el momento y el sistema
-            # elige al veterinario de guardia.
-            raise InvalidAppointment(
-                "Una emergencia no se reserva con antelación. Usá el alta de emergencia."
-            )
-        return appointment_type
+        return await require_bookable_type(self._types, type_id)
 
     async def _require_free_slot(self, appointment: Appointment) -> None:
-        # La cita entera, margen incluido, tiene que caber en un tramo
-        # publicado por el veterinario.
+        # La cita entera, margen incluido, tiene que caber en un turno de
+        # atención del veterinario. Una guardia no cuenta.
         if not await self._schedule.covers(
             appointment.veterinarian_id, appointment.scheduled_at, appointment.ends_at
         ):
@@ -120,11 +129,7 @@ class BookAppointment:
             raise OverlappingAppointment()
 
     async def _require_not_covering_emergency(self, appointment: Appointment) -> None:
-        """Un respaldo con una emergencia activa no recibe citas normales ese día.
-
-        Solo se activa para un veterinario normal que además está cubriendo:
-        el de guardia dedicado ya está excluido del selector por su rol.
-        """
+        """Quien cubre una emergencia activa no recibe citas normales ese día."""
         day_start, day_end = clinic_day_window(appointment.scheduled_at)
         cubriendo = await self._appointments.search(
             AppointmentQuery(

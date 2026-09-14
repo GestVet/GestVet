@@ -95,5 +95,5 @@ def _require_plausible_weight(weight_kg: Decimal) -> None:
         raise InvalidClinicalEntry("El peso debe ser positivo.")
     if weight_kg > MAX_PLAUSIBLE_WEIGHT_KG:
         raise InvalidClinicalEntry(
-            f"El peso supera los {MAX_PLAUSIBLE_WEIGHT_KG} kg. Revisá el dato."
+            f"El peso supera los {MAX_PLAUSIBLE_WEIGHT_KG} kg. Revisa el dato."
         )

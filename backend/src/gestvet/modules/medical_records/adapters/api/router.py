@@ -13,9 +13,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile, status
 
 from gestvet.core.activity_log import ActivityRecorderDep
-from gestvet.core.auth import PrincipalDep, require_roles
-from gestvet.core.identity import STAFF_ROLES, VETERINARIAN_ROLES, Principal
+from gestvet.core.auth import require_permission
+from gestvet.core.identity import STAFF_ROLES, Principal
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
+from gestvet.core.permissions import Permission
 from gestvet.modules.medical_records.adapters.api.dependencies import (
     AttachmentRepositoryDep,
     AttachmentStorageDep,
@@ -57,7 +58,12 @@ from gestvet.modules.medical_records.use_cases.upload_attachment import (
 
 router = APIRouter()
 
-VeterinarianDep = Annotated[Principal, Depends(require_roles(*VETERINARIAN_ROLES))]
+ClinicalWriterDep = Annotated[
+    Principal, Depends(require_permission(Permission.CLINICAL_RECORDS_WRITE))
+]
+ClinicalReaderDep = Annotated[
+    Principal, Depends(require_permission(Permission.CLINICAL_RECORDS_READ))
+]
 
 
 @router.post(
@@ -68,7 +74,7 @@ VeterinarianDep = Annotated[Principal, Depends(require_roles(*VETERINARIAN_ROLES
 )
 async def add_clinical_entry(
     payload: AddClinicalEntryRequest,
-    veterinarian: VeterinarianDep,
+    veterinarian: ClinicalWriterDep,
     entries: ClinicalEntryRepositoryDep,
     pets: PetDirectoryDep,
     activity: ActivityRecorderDep,
@@ -100,7 +106,7 @@ async def add_clinical_entry(
     summary="Historia clínica de una mascota",
 )
 async def list_clinical_entries(
-    principal: PrincipalDep,
+    principal: ClinicalReaderDep,
     entries: ClinicalEntryRepositoryDep,
     pets: PetDirectoryDep,
     attachments: AttachmentRepositoryDep,
@@ -131,7 +137,7 @@ async def list_clinical_entries(
     summary="Descargar en PDF toda la historia clínica de una mascota",
 )
 async def download_clinical_history_report(
-    principal: PrincipalDep,
+    principal: ClinicalReaderDep,
     entries: ClinicalEntryRepositoryDep,
     attachments: AttachmentRepositoryDep,
     pets: PetDirectoryDep,
@@ -160,7 +166,7 @@ async def download_clinical_history_report(
 )
 async def upload_attachment(
     entry_id: int,
-    veterinarian: VeterinarianDep,
+    veterinarian: ClinicalWriterDep,
     entries: ClinicalEntryRepositoryDep,
     attachments: AttachmentRepositoryDep,
     storage: AttachmentStorageDep,
@@ -192,7 +198,7 @@ async def upload_attachment(
 )
 async def delete_attachment(
     attachment_id: int,
-    veterinarian: VeterinarianDep,
+    veterinarian: ClinicalWriterDep,
     attachments: AttachmentRepositoryDep,
     storage: AttachmentStorageDep,
     activity: ActivityRecorderDep,

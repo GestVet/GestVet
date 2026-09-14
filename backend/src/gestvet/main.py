@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -20,7 +19,12 @@ from pydantic import BaseModel
 
 from gestvet.core.config import get_settings
 from gestvet.core.database import SessionFactory, engine
-from gestvet.core.whatsapp import ConsoleWhatsAppSender
+from gestvet.core.events_router import router as events_router
+from gestvet.core.logs import configure_logging, get_logger
+from gestvet.core.realtime_broker import get_broker
+from gestvet.core.request_logging import REQUEST_ID_HEADER, RequestLoggingMiddleware
+from gestvet.core.whatsapp_console import ConsoleWhatsAppSender
+from gestvet.modules.access.adapters.api.router import router as access_router
 from gestvet.modules.accounts.adapters.api.admin_router import router as admin_router
 from gestvet.modules.accounts.adapters.api.auth_router import router as auth_router
 from gestvet.modules.accounts.adapters.api.router import router as clients_router
@@ -45,19 +49,37 @@ from gestvet.modules.hospitalizations.adapters.api.router import (
     router as hospitalizations_router,
 )
 from gestvet.modules.insights.adapters.api.router import router as insights_router
+from gestvet.modules.medical_records.adapters.api.assistant_router import (
+    router as clinical_assistant_router,
+)
+from gestvet.modules.medical_records.adapters.api.public_card_router import (
+    router as public_card_router,
+)
 from gestvet.modules.medical_records.adapters.api.router import router as medical_records_router
+from gestvet.modules.medical_records.adapters.api.vaccinations_router import (
+    router as vaccinations_router,
+)
+from gestvet.modules.medical_records.adapters.persistence.directories import (
+    SqlOwnerContactDirectory,
+)
+from gestvet.modules.medical_records.adapters.persistence.repositories import (
+    SqlAlchemyVaccinationRepository,
+)
+from gestvet.modules.medical_records.use_cases.send_vaccine_reminders import SendVaccineReminders
+from gestvet.modules.pets.adapters.api.catalog_router import router as pet_catalog_router
 from gestvet.modules.pets.adapters.api.router import router as pets_router
 from gestvet.modules.reviews.adapters.api.router import router as reviews_router
 
 API_PREFIX = "/api/v1"
 
 settings = get_settings()
-logger = logging.getLogger(__name__)
+logger = get_logger("gestvet.app")
 
-# Cada cuánto se despierta el recordatorio de WhatsApp a revisar qué citas
-# entran a su ventana de 24h. Es un `asyncio.Task` en el propio proceso y no
-# un servicio aparte: alcanza para un solo proceso de API, que es como corre
-# esto hoy, y no agrega ninguna dependencia nueva al proyecto.
+# Cada cuánto se despiertan los recordatorios de WhatsApp a revisar qué citas
+# entran a su ventana de 24h y qué vacunas vencen en la semana. Es un
+# `asyncio.Task` en el propio proceso y no un servicio aparte: alcanza para un
+# solo proceso de API, que es como corre esto hoy, y no agrega ninguna
+# dependencia nueva al proyecto.
 REMINDER_POLL_INTERVAL_SECONDS = 30 * 60
 
 
@@ -85,16 +107,29 @@ async def _send_due_reminders() -> None:
         await session.commit()
 
 
+async def _send_due_vaccine_reminders() -> None:
+    async with SessionFactory() as session:
+        use_case = SendVaccineReminders(
+            SqlAlchemyVaccinationRepository(session),
+            SqlOwnerContactDirectory(session),
+            ConsoleWhatsAppSender(),
+        )
+        await use_case()
+        await session.commit()
+
+
 async def _reminder_loop() -> None:
     while True:
         await asyncio.sleep(REMINDER_POLL_INTERVAL_SECONDS)
-        try:
-            await _send_due_reminders()
-        except Exception:
-            # Un fallo en una vuelta (por ejemplo, la base momentáneamente
-            # inalcanzable) no debe tumbar el proceso: se reintenta en la
-            # siguiente, con las mismas citas todavía sin `reminder_sent_at`.
-            logger.exception("Falló el envío de recordatorios de WhatsApp.")
+        # Cada recordatorio va por separado: si uno falla, el otro igual sale.
+        for job in (_send_due_reminders, _send_due_vaccine_reminders):
+            try:
+                await job()
+            except Exception:
+                # Un fallo en una vuelta (por ejemplo, la base momentáneamente
+                # inalcanzable) no debe tumbar el proceso: se reintenta en la
+                # siguiente, con lo pendiente todavía sin `reminder_sent_at`.
+                logger.exception("whatsapp.reminders_failed", job=job.__name__)
 
 
 @asynccontextmanager
@@ -102,15 +137,24 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     # El esquema lo crean las migraciones de Alembic, también en desarrollo.
     # Crearlo al arrancar dejaba que la base local se apartara del historial de
     # migraciones sin que nadie se enterara hasta el despliegue.
+    broker = get_broker()
+    await broker.start()
     reminder_task = asyncio.create_task(_reminder_loop())
+    logger.info("app.started", version=settings.app_version, debug=settings.debug)
     yield
     reminder_task.cancel()
     with contextlib.suppress(asyncio.CancelledError):
         await reminder_task
+    await broker.stop()
     await engine.dispose()
+    logger.info("app.stopped")
 
 
 def create_app() -> FastAPI:
+    # Se configura acá y no al importar el módulo: uvicorn instala sus propios
+    # handlers antes de cargar la aplicación, y esta llamada los reemplaza.
+    configure_logging(level=settings.log_level, json=settings.log_json)
+
     app = FastAPI(
         title="GestVet API",
         version=settings.app_version,
@@ -129,7 +173,13 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        # Sin exponerla, el navegador no deja leer la cabecera desde otro
+        # origen y el frontend no podría anotar el identificador de un error.
+        expose_headers=[REQUEST_ID_HEADER],
     )
+    # Se agrega al final para quedar por fuera de CORS: así también se
+    # registran las respuestas que CORS corta antes de llegar a un router.
+    app.add_middleware(RequestLoggingMiddleware)
 
     # El directorio puede no existir todavía en un clon nuevo: recién se crea
     # cuando se guarda el primer adjunto. `StaticFiles` exige que exista al
@@ -149,18 +199,39 @@ def create_app() -> FastAPI:
             version=settings.app_version,
         )
 
+    app.include_router(events_router, prefix=f"{API_PREFIX}/events", tags=["system"])
+    app.include_router(access_router, prefix=f"{API_PREFIX}/access", tags=["access"])
     app.include_router(auth_router, prefix=f"{API_PREFIX}/auth", tags=["auth"])
     app.include_router(clients_router, prefix=f"{API_PREFIX}/clients", tags=["clients"])
     app.include_router(admin_router, prefix=API_PREFIX, tags=["admin"])
     app.include_router(
         veterinarians_router, prefix=f"{API_PREFIX}/veterinarians", tags=["veterinarians"]
     )
+    # Antes que el de mascotas: "/pets/catalog" no es una mascota.
+    app.include_router(pet_catalog_router, prefix=f"{API_PREFIX}/pets/catalog", tags=["pets"])
     app.include_router(pets_router, prefix=f"{API_PREFIX}/pets", tags=["pets"])
     app.include_router(
         availability_router, prefix=f"{API_PREFIX}/availability", tags=["availability"]
     )
     app.include_router(
         appointments_router, prefix=f"{API_PREFIX}/appointments", tags=["appointments"]
+    )
+    # Antes que la historia clínica: "/medical-records/vaccinations" no es una entrada.
+    # Sin sesión: la abre quien escanea el QR del carnet.
+    app.include_router(
+        public_card_router,
+        prefix=f"{API_PREFIX}/public/vaccination-cards",
+        tags=["public"],
+    )
+    app.include_router(
+        clinical_assistant_router,
+        prefix=f"{API_PREFIX}/medical-records/assistant",
+        tags=["medical-records"],
+    )
+    app.include_router(
+        vaccinations_router,
+        prefix=f"{API_PREFIX}/medical-records/vaccinations",
+        tags=["medical-records"],
     )
     app.include_router(
         medical_records_router, prefix=f"{API_PREFIX}/medical-records", tags=["medical-records"]

@@ -27,7 +27,7 @@ class NotEligibleToReview(ReviewsError):
 
     def __init__(self, veterinarian_id: int) -> None:
         super().__init__(
-            f"Solo podés reseñar al veterinario {veterinarian_id} si tuviste una cita "
+            f"Solo puedes reseñar al veterinario {veterinarian_id} si tuviste una cita "
             "completada con él."
         )
         self.veterinarian_id = veterinarian_id

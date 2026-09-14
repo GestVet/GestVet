@@ -12,6 +12,7 @@ Se lee, nunca se escribe.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Protocol
 
 
@@ -21,5 +22,20 @@ class AppointmentDetails:
     veterinarian_id: int
 
 
+@dataclass(frozen=True, slots=True)
+class ComplaintContext:
+    """Lo que hace legible un reclamo: quién, sobre quién, de qué mascota y qué cita."""
+
+    client_name: str
+    veterinarian_name: str
+    pet_name: str
+    appointment_type: str
+    scheduled_at: datetime
+
+
 class AppointmentDirectory(Protocol):
     async def find_details(self, appointment_id: int) -> AppointmentDetails | None: ...
+
+    async def contexts_for(self, appointment_ids: list[int]) -> dict[int, ComplaintContext]:
+        """El contexto de varias citas en una sola lectura, por identificador de cita."""
+        ...

@@ -7,7 +7,7 @@ un mensaje real salga: eso lo decide el adaptador, que hoy es
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 import pytest
@@ -78,6 +78,7 @@ class RecordingWhatsAppSender:
         self.confirmed: list[tuple[str, str, str, datetime]] = []
         self.reminders: list[tuple[str, str, str, datetime]] = []
         self.payments: list[tuple[str, str, Decimal]] = []
+        self.vaccines: list[tuple[str, str, str, str, date]] = []
 
     async def send_appointment_confirmed(
         self, *, to: str, client_name: str, pet_name: str, scheduled_at: datetime
@@ -91,6 +92,11 @@ class RecordingWhatsAppSender:
 
     async def send_payment_confirmed(self, *, to: str, client_name: str, amount: Decimal) -> None:
         self.payments.append((to, client_name, amount))
+
+    async def send_vaccine_due_reminder(
+        self, *, to: str, client_name: str, pet_name: str, vaccine_label: str, due_on: date
+    ) -> None:
+        self.vaccines.append((to, client_name, pet_name, vaccine_label, due_on))
 
 
 def _appointment(**overrides: object) -> Appointment:

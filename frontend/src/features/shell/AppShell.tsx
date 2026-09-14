@@ -1,83 +1,96 @@
-import { Link, NavLink, Outlet, useNavigate } from 'react-router'
+import { Outlet } from 'react-router'
 
-import Icon from '../../components/Icon'
 import { useSession } from '../../store/session'
-import { entriesForRole } from './navigation'
+import AppFooter from './AppFooter'
+import Brand from './Brand'
+import GuestHeader from './GuestHeader'
+import MobileMenu from './MobileMenu'
+import { entriesFor } from './navigation'
+import NavList from './NavList'
+import SessionActions from './SessionActions'
 import ToastStack from './ToastStack'
 import { useClientAppointmentAlerts } from './useClientAppointmentAlerts'
+import { useRealtimeUpdates } from './useRealtimeUpdates'
 import { useVeterinarianEmergencyAlerts } from './useVeterinarianEmergencyAlerts'
 
-const ANIO = new Date().getFullYear()
-
-function claseDeEnlace({ isActive }: { isActive: boolean }): string {
-  return isActive ? 'is-active' : ''
-}
-
+/**
+ * El armazon de todas las pantallas.
+ *
+ * Con sesion, el menu va en una barra lateral en pantallas anchas y detras de
+ * un boton en las angostas: un administrador tiene nueve entradas y en una
+ * barra superior no entraban ni en escritorio. Sin sesion basta la marca y
+ * los dos accesos. El desbordamiento horizontal se recorta porque el heroe
+ * de la landing se estira al ancho de la ventana.
+ */
 export default function AppShell() {
   const user = useSession((state) => state.user)
-  const signOut = useSession((state) => state.signOut)
-  const navigate = useNavigate()
+  useRealtimeUpdates()
   useClientAppointmentAlerts()
   useVeterinarianEmergencyAlerts()
 
-  const entradas = user === null ? [] : entriesForRole(user.role)
-
-  const cerrarSesion = () => {
-    signOut()
-    void navigate('/')
-  }
-
-  return (
-    <div className="app-shell">
-      <header className="topbar">
-        <Link className="brand" to={user === null ? '/' : '/panel'}>
-          <Icon name="huella" size={28} />
-          <span>GestVet</span>
-        </Link>
-
-        <nav className="nav-links" aria-label="Navegación principal">
-          {entradas.map((entrada) => (
-            <NavLink key={entrada.to} to={entrada.to} className={claseDeEnlace}>
-              <Icon name={entrada.icon} size={16} />
-              <span>{entrada.label}</span>
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="session-box">
-          {user === null ? (
-            <>
-              <Link className="btn btn-blue" to="/acceso">
-                Iniciar sesión
-              </Link>
-              <Link className="btn btn-green" to="/registro">
-                Registrarse
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link className="nav-links" to="/perfil">
-                <Icon name="perfil" size={16} />
-                <span className="session-name">{user.first_name}</span>
-              </Link>
-              <button type="button" className="btn btn-plain" onClick={cerrarSesion}>
-                <Icon name="salir" size={16} />
-                <span>Cerrar sesión</span>
-              </button>
-            </>
-          )}
-        </div>
-      </header>
-
+  const invitados = user === null
+  const content = (
+    <>
       <ToastStack />
-
-      <main className="page-container">
+      <main
+        id="contenido"
+        tabIndex={-1}
+        className={
+          invitados
+            ? 'flex w-full flex-1 flex-col px-4 py-6 outline-none sm:px-6'
+            : 'mx-auto w-full max-w-[1100px] flex-1 px-4 py-6 outline-none sm:px-6'
+        }
+      >
         <Outlet />
       </main>
+      <AppFooter invitados={invitados} />
+    </>
+  )
 
-      <footer className="footer">
-        © {ANIO} GestVet · Av. Prof. César Vallejo 95, Víctor Larco Herrera, Trujillo
-      </footer>
+  const skipLink = (
+    <a
+      href="#contenido"
+      className="sr-only rounded-lg bg-primary px-3 py-2 text-primary-foreground focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50"
+    >
+      Saltar al contenido
+    </a>
+  )
+
+  if (user === null) {
+    return (
+      <div className="landing flex min-h-screen flex-col overflow-x-clip bg-background font-sans text-foreground">
+        {skipLink}
+        <GuestHeader />
+        {content}
+      </div>
+    )
+  }
+
+  const entries = entriesFor(user.permissions)
+
+  return (
+    <div className="min-h-screen lg:grid lg:grid-cols-[15rem_1fr]">
+      {skipLink}
+      {/* La columna pinta el fondo de punta a punta; adentro, el menú queda fijo al desplazarse. */}
+      <div className="hidden border-r bg-card lg:block">
+      <aside className="sticky top-0 flex h-screen flex-col gap-6 p-4">
+        <div className="px-1 pt-1">
+          <Brand to="/panel" />
+        </div>
+        <nav aria-label="Navegación principal" className="flex-1 overflow-y-auto">
+          <NavList entries={entries} />
+        </nav>
+        <SessionActions firstName={user.first_name} />
+      </aside>
+      </div>
+
+      <div className="flex min-h-screen min-w-0 flex-col">
+        <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b bg-card px-4 py-1.5 lg:hidden">
+          <Brand to="/panel" />
+          <MobileMenu entries={entries} firstName={user.first_name} />
+        </header>
+        {content}
+      </div>
     </div>
   )
 }

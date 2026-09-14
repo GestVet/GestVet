@@ -2,14 +2,14 @@ import { useQuery } from '@tanstack/react-query'
 
 import { fetchHospitalizations, hospitalizationsQueryKey } from '../../api/hospitalizations'
 import HospitalizationList from '../../components/HospitalizationList'
-import { useIsVeterinarian } from '../../store/session'
+import { useCan } from '../../store/session'
 
 interface ClientPetHospitalizationsProps {
   readonly petId: number
 }
 
 export default function ClientPetHospitalizations({ petId }: ClientPetHospitalizationsProps) {
-  const puedeGestionar = useIsVeterinarian()
+  const puedeGestionar = useCan('hospitalizations.manage')
   const internaciones = useQuery({
     queryKey: hospitalizationsQueryKey(petId),
     queryFn: () => fetchHospitalizations(petId),

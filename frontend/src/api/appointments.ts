@@ -6,6 +6,7 @@ import type {
   AppointmentTypeListResponse,
   BookAppointmentRequest,
   OpenEmergencyRequest,
+  OpenTimesResponse,
   OpenWalkInEmergencyRequest,
 } from './types'
 
@@ -32,6 +33,23 @@ export async function fetchAppointments(
 
 export async function fetchAppointmentTypes(): Promise<AppointmentTypeListResponse> {
   const { data } = await api.get<AppointmentTypeListResponse>('/appointments/types')
+  return data
+}
+
+// Cuelga de la clave de citas a proposito: cualquier cambio en una cita, propio
+// o avisado en tiempo real, vuelve a calcular las horas libres.
+export function openTimesQueryKey(appointmentTypeId: number, fromDate: string, days: number) {
+  return [...appointmentsQueryKey, 'open-times', appointmentTypeId, fromDate, days] as const
+}
+
+export async function fetchOpenTimes(
+  appointmentTypeId: number,
+  fromDate: string,
+  days: number,
+): Promise<OpenTimesResponse> {
+  const { data } = await api.get<OpenTimesResponse>('/appointments/open-times', {
+    params: { appointment_type_id: appointmentTypeId, from_date: fromDate, days },
+  })
   return data
 }
 

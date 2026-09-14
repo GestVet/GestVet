@@ -1,6 +1,7 @@
 import { api } from '../services/api'
 import type {
   AccessTokenResponse,
+  CurrentUserResponse,
   ForgotPasswordRequest,
   LoginRequest,
   MessageResponse,
@@ -34,8 +35,8 @@ export async function registerClient(payload: RegisterClientRequest): Promise<Us
   return data
 }
 
-export async function fetchCurrentUser(): Promise<UserResponse> {
-  const { data } = await api.get<UserResponse>('/auth/me')
+export async function fetchCurrentUser(): Promise<CurrentUserResponse> {
+  const { data } = await api.get<CurrentUserResponse>('/auth/me')
   return data
 }
 

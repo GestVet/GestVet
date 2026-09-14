@@ -5,7 +5,7 @@ Ningún cuerpo acepta `client_id`: el servidor lo toma de la credencial.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
 from pydantic import AwareDatetime, BaseModel, Field
@@ -17,6 +17,7 @@ from gestvet.modules.appointments.domain.entities import (
     AppointmentStatus,
     AppointmentType,
 )
+from gestvet.modules.appointments.use_cases.list_open_times import DayOpenTimes
 
 
 class BookAppointmentRequest(BaseModel):
@@ -112,3 +113,38 @@ class AppointmentResponse(BaseModel):
 class AppointmentPageResponse(BaseModel):
     items: list[AppointmentResponse]
     total: int
+
+
+class VeterinarianOpenTimesResponse(BaseModel):
+    veterinarian_id: int
+    times: list[datetime]
+
+
+class DayOpenTimesResponse(BaseModel):
+    """Un día con horas libres. `day` es la fecha en el calendario de la clínica."""
+
+    day: date
+    veterinarians: list[VeterinarianOpenTimesResponse]
+
+
+class OpenTimesResponse(BaseModel):
+    """Solo trae los días que tienen al menos una hora libre."""
+
+    days: list[DayOpenTimesResponse]
+
+    @classmethod
+    def from_days(cls, days: list[DayOpenTimes]) -> OpenTimesResponse:
+        return cls(
+            days=[
+                DayOpenTimesResponse(
+                    day=item.day,
+                    veterinarians=[
+                        VeterinarianOpenTimesResponse(
+                            veterinarian_id=vet.veterinarian_id, times=list(vet.times)
+                        )
+                        for vet in item.veterinarians
+                    ],
+                )
+                for item in days
+            ]
+        )

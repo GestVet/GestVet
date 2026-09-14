@@ -5,13 +5,16 @@ import { z } from 'zod'
 
 import { clientsQueryKey, updateClientContact } from '../../api/directory'
 import FormMessage from '../../components/FormMessage'
+import PhoneField from '../../components/PhoneField'
 import TextField from '../../components/TextField'
+import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
+import { correoRule, telefonoRule } from '../../services/fieldRules'
 
 const esquema = z.object({
-  email: z.email('Ingresá un correo válido'),
-  phone: z.string().max(32).optional(),
+  email: correoRule,
+  phone: telefonoRule,
 })
 
 type Formulario = z.infer<typeof esquema>
@@ -24,7 +27,7 @@ interface CompleteContactFormProps {
 /** Completa el correo real de un cliente dado de alta por emergencia. */
 export default function CompleteContactForm({ clientId, phone }: CompleteContactFormProps) {
   const queryClient = useQueryClient()
-  const { register, handleSubmit, formState } = useForm<Formulario>({
+  const { register, handleSubmit, formState, control } = useForm<Formulario>({
     resolver: zodResolver(esquema),
     defaultValues: { email: '', phone },
   })
@@ -33,7 +36,7 @@ export default function CompleteContactForm({ clientId, phone }: CompleteContact
     mutationFn: (valores: Formulario) =>
       updateClientContact(clientId, {
         email: valores.email,
-        phone: valores.phone ?? '',
+        phone: valores.phone,
         document_id: '',
       }),
     onSuccess: async () => {
@@ -47,26 +50,31 @@ export default function CompleteContactForm({ clientId, phone }: CompleteContact
 
   return (
     <form
-      className="form"
+      noValidate
+      className="flex flex-col gap-5"
       onSubmit={onSubmit(
         handleSubmit((valores) => {
           completar.mutate(valores)
         }),
       )}
     >
-      <TextField
-        id={`contacto-correo-${String(clientId)}`}
-        label="Correo real del cliente"
-        type="email"
-        field={register('email')}
-        error={formState.errors.email?.message}
-      />
-      <TextField
-        id={`contacto-telefono-${String(clientId)}`}
-        label="Teléfono"
-        inputMode="tel"
-        field={register('phone')}
-      />
+      <div className="grid gap-5 sm:grid-cols-2">
+        <TextField
+          id={`contacto-correo-${String(clientId)}`}
+          label="Correo real del cliente"
+          placeholder="nombre@correo.com"
+          type="email"
+          field={register('email')}
+          error={formState.errors.email?.message}
+        />
+        <PhoneField
+          id={`contacto-telefono-${String(clientId)}`}
+          label="Teléfono"
+          control={control}
+          name="phone"
+          error={formState.errors.phone?.message}
+        />
+      </div>
 
       {completar.isError ? (
         <FormMessage tone="error">
@@ -74,9 +82,9 @@ export default function CompleteContactForm({ clientId, phone }: CompleteContact
         </FormMessage>
       ) : null}
 
-      <button type="submit" className="btn btn-blue" disabled={completar.isPending}>
-        <span>{completar.isPending ? 'Guardando…' : 'Guardar contacto'}</span>
-      </button>
+      <Button type="submit" className="self-start" disabled={completar.isPending}>
+        {completar.isPending ? 'Guardando…' : 'Guardar contacto'}
+      </Button>
     </form>
   )
 }

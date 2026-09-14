@@ -7,13 +7,13 @@ from decimal import Decimal
 
 import pytest
 
+from gestvet.core.clinic_time import clinic_day_window
 from gestvet.modules.appointments.domain.entities import (
     NO_SHOW_GRACE,
     TURNAROUND,
     Appointment,
     AppointmentStatus,
     AppointmentType,
-    clinic_day_window,
 )
 from gestvet.modules.appointments.domain.exceptions import IllegalStatusChange, InvalidAppointment
 

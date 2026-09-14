@@ -82,23 +82,6 @@ async def test_un_cliente_no_puede_agregar_una_entrada(
     assert response.status_code == 403
 
 
-async def test_un_veterinario_de_guardia_tambien_agrega_entradas(
-    client: AsyncClient, session: AsyncSession
-) -> None:
-    escenario = await montar(session)
-    users = SqlAlchemyUserRepository(session)
-    guardia = await users.add(build_user("guardia@example.com", role=Role.EMERGENCY_VETERINARIAN))
-    await session.commit()
-
-    response = await client.post(
-        URL,
-        json={**ENTRADA, "pet_id": escenario.mascota.id},
-        headers=authorization_for(guardia),
-    )
-
-    assert response.status_code == 201
-
-
 async def test_no_se_puede_agregar_una_entrada_a_una_mascota_inexistente(
     client: AsyncClient, session: AsyncSession
 ) -> None:
@@ -152,7 +135,7 @@ async def test_el_dueno_ve_la_historia_de_su_mascota(
 async def test_un_cliente_no_ve_la_historia_de_una_mascota_ajena(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    """No se responde 403: decir 'no podés' confirmaría que el id es de alguien."""
+    """No se responde 403: decir 'no puedes' confirmaría que el id es de alguien."""
     escenario = await montar(session)
     users = SqlAlchemyUserRepository(session)
     otro = await users.add(build_user("beto@example.com"))

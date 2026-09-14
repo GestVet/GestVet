@@ -249,3 +249,23 @@ async def test_el_reporte_agrupa_por_metodo_y_excluye_anulados(
     assert montos["cash"] == Decimal("100.00")
     assert "yape" not in montos
     assert Decimal(body["grand_total"]) == Decimal("100.00")
+
+
+async def test_el_listado_dice_de_quien_es_el_pago_y_que_se_atendio(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+    await client.post(
+        URL,
+        json={**PAGO, "appointment_id": escenario.cita_id},
+        headers=authorization_for(escenario.veterinario),
+    )
+
+    response = await client.get(URL, headers=authorization_for(escenario.veterinario))
+
+    assert response.status_code == 200
+    pago = response.json()["items"][0]
+    assert pago["client_name"] == "Ana Quispe"
+    assert pago["pet_name"] == "Rocco"
+    assert pago["appointment_type"] == "Consulta general"
+    assert pago["appointment_at"].startswith("2026-09-14T10:00")

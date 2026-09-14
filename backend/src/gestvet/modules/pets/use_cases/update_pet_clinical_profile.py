@@ -21,11 +21,11 @@ from gestvet.modules.pets.ports.pet_repository import PetRepository
 class UpdatePetClinicalProfileCommand:
     pet_id: int
     updated_by: int
-    birth_date: date
     weight_kg: Decimal | None
     height_cm: Decimal | None
     is_sterilized: bool | None
     allergies: str
+    birth_date: date | None = None
 
 
 class UpdatePetClinicalProfile:

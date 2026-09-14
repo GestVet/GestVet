@@ -168,7 +168,9 @@ async def test_detecta_un_pago_fuera_de_lo_tipico(
 
     assert respuesta.status_code == 200
     items = respuesta.json()["items"]
-    assert any(item["amount"] == "300.00" for item in items)
+    atipico = next(item for item in items if item["amount"] == "300.00")
+    assert atipico["client_name"] == f"{base.cliente.first_name} {base.cliente.last_name}"
+    assert atipico["pet_name"] == "Rocco"
 
 
 async def test_alerta_un_veterinario_con_reclamos_recientes(

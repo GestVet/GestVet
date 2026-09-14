@@ -9,14 +9,17 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field
 
+from gestvet.core.permissions import Permission
 from gestvet.modules.accounts.domain.entities import Role, User
 
 MIN_PASSWORD_LENGTH = 10
 MAX_PASSWORD_LENGTH = 128
 DOCUMENT_ID_PATTERN = r"^\d{8}$"
+_KNOWN = frozenset(permission.value for permission in Permission)
 
 
 class RegisterClientRequest(BaseModel):
@@ -26,6 +29,8 @@ class RegisterClientRequest(BaseModel):
     last_name: str = Field(min_length=1, max_length=120)
     document_id: str = Field(pattern=DOCUMENT_ID_PATTERN)
     phone: str = Field(default="", max_length=32)
+    # La persona autorizó verificar su DNI; el formulario no deja enviarlo sin marcarlo.
+    accepts_identity_check: Literal[True]
 
 
 class RegisterStaffRequest(BaseModel):
@@ -67,10 +72,6 @@ class ChangeUserStatusRequest(BaseModel):
     is_active: bool
 
 
-class ToggleEmergencyCoverageRequest(BaseModel):
-    can_cover_emergencies: bool
-
-
 class LoginRequest(BaseModel):
     email: EmailStr
     # Sin longitud mínima: validar aquí diría cuánto mide una contraseña válida
@@ -100,7 +101,6 @@ class UserResponse(BaseModel):
     document_id: str
     role: Role
     is_active: bool
-    can_cover_emergencies: bool
     created_at: datetime
 
     @classmethod
@@ -114,8 +114,32 @@ class UserResponse(BaseModel):
             document_id=user.document_id,
             role=user.role,
             is_active=user.is_active,
-            can_cover_emergencies=user.can_cover_emergencies,
             created_at=user.created_at,
+        )
+
+
+class CurrentUserResponse(UserResponse):
+    """La cuenta propia, con lo que su rol le deja hacer.
+
+    La interfaz oculta lo que no está permitido con esta lista; la API igual
+    lo rechaza, así que ocultar es comodidad y no seguridad.
+    """
+
+    access_role_id: int | None
+    access_role_name: str
+    permissions: list[Permission]
+
+    @classmethod
+    def with_access(
+        cls, user: User, role_id: int | None, role_name: str, permissions: frozenset[str]
+    ) -> CurrentUserResponse:
+        base = UserResponse.from_entity(user)
+        return cls(
+            **base.model_dump(),
+            access_role_id=role_id,
+            access_role_name=role_name,
+            # Un código que ya no está en el catálogo no le sirve a la interfaz.
+            permissions=sorted(Permission(code) for code in permissions if code in _KNOWN),
         )
 
 
@@ -123,7 +147,7 @@ class AccessTokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     expires_in: int
-    user: UserResponse
+    user: CurrentUserResponse
 
 
 class VeterinarianResponse(BaseModel):
@@ -179,3 +203,16 @@ class ActivityPageResponse(BaseModel):
 class ClientPageResponse(BaseModel):
     items: list[UserResponse]
     total: int
+
+
+class DocumentLookupRequest(BaseModel):
+    document_id: str = Field(pattern=DOCUMENT_ID_PATTERN)
+    # El cliente autorizó la consulta de su DNI.
+    consent: Literal[True]
+
+
+class DocumentLookupResponse(BaseModel):
+    """Solo nombres y apellidos: nada más del DNI sale del servidor."""
+
+    first_names: str
+    last_names: str

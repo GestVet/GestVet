@@ -1,0 +1,39 @@
+"""Puerto de persistencia del catálogo de especies y razas."""
+
+from __future__ import annotations
+
+from typing import Protocol
+
+from gestvet.modules.pets.domain.catalog import Breed, Species
+
+
+class PetCatalogRepository(Protocol):
+    async def list_species(self, *, include_inactive: bool) -> list[Species]:
+        """Las especies con sus razas, ya ordenadas. Sin inactivas, solo lo que se ofrece."""
+        ...
+
+    async def offered_breeds(self, species: str) -> frozenset[str] | None:
+        """Las razas activas de una especie activa, o `None` si la especie no se ofrece."""
+        ...
+
+    async def get_species(self, species_id: int) -> Species | None: ...
+
+    async def get_breed(self, breed_id: int) -> Breed | None: ...
+
+    async def find_species_id(self, key: str) -> int | None: ...
+
+    async def find_breed_id(self, species_id: int, key: str) -> int | None: ...
+
+    async def add_species(self, species: Species) -> Species: ...
+
+    async def add_breed(self, breed: Breed) -> Breed: ...
+
+    async def save_species(self, species: Species) -> Species: ...
+
+    async def save_breed(self, breed: Breed) -> Breed: ...
+
+    async def rename_species_in_pets(self, old: str, new: str) -> None:
+        """Las mascotas guardan el nombre: al corregirlo, se corrige también en sus fichas."""
+        ...
+
+    async def rename_breed_in_pets(self, species: str, old: str, new: str) -> None: ...

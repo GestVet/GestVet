@@ -1,8 +1,8 @@
 """Adaptador de entrada HTTP para la administración de cuentas.
 
-Alta de veterinarios, listado del personal, activación y turno de guardia.
-Todo el router exige rol de administración: la comprobación va una sola vez en
-su declaración, en lugar de repetirse en cada endpoint.
+Alta de veterinarios, listado del personal y activación.
+Cada endpoint exige su permiso; los roles de sistema se los dan a la
+administración.
 """
 
 from __future__ import annotations
@@ -13,11 +13,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from gestvet.core.activity import ActivityKind
 from gestvet.core.activity_log import ActivityReaderDep, ActivityRecorderDep
-from gestvet.core.auth import PrincipalDep, require_roles
-from gestvet.core.identity import Role
+from gestvet.core.auth import require_permission
+from gestvet.core.identity import Principal, Role
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
+from gestvet.core.permissions import Permission
 from gestvet.modules.accounts.adapters.api.dependencies import (
-    AppointmentDirectoryDep,
     PasswordHasherDep,
     UserRepositoryDep,
 )
@@ -27,7 +27,6 @@ from gestvet.modules.accounts.adapters.api.schemas import (
     ChangeUserStatusRequest,
     ClientPageResponse,
     RegisterStaffRequest,
-    ToggleEmergencyCoverageRequest,
     UserResponse,
 )
 from gestvet.modules.accounts.domain.exceptions import (
@@ -35,10 +34,7 @@ from gestvet.modules.accounts.domain.exceptions import (
     EmailAlreadyRegistered,
     InvalidEmail,
     RoleNotAssignable,
-    RoleNotBackupEligible,
-    RoleNotSwappable,
     UserNotFound,
-    VeterinarianHasUpcomingAppointments,
 )
 from gestvet.modules.accounts.ports.user_repository import UserQuery
 from gestvet.modules.accounts.use_cases.list_clients import STAFF_LISTING_ROLES, ListUsers
@@ -47,14 +43,13 @@ from gestvet.modules.accounts.use_cases.manage_accounts import (
     ChangeUserStatusCommand,
     RegisterStaff,
     RegisterStaffCommand,
-    ToggleEmergencyCoverage,
-    ToggleEmergencyCoverageCommand,
-    ToggleGuardDuty,
-    ToggleGuardDutyCommand,
 )
 from gestvet.modules.accounts.use_cases.read_activity import ReadActivity, ReadActivityQuery
 
-router = APIRouter(dependencies=[Depends(require_roles(Role.ADMIN))])
+router = APIRouter()
+
+StaffManagerDep = Annotated[Principal, Depends(require_permission(Permission.STAFF_MANAGE))]
+StatusManagerDep = Annotated[Principal, Depends(require_permission(Permission.USERS_CHANGE_STATUS))]
 
 
 @router.post(
@@ -65,7 +60,7 @@ router = APIRouter(dependencies=[Depends(require_roles(Role.ADMIN))])
 )
 async def register_staff(
     payload: RegisterStaffRequest,
-    principal: PrincipalDep,
+    principal: StaffManagerDep,
     users: UserRepositoryDep,
     hasher: PasswordHasherDep,
     activity: ActivityRecorderDep,
@@ -89,7 +84,12 @@ async def register_staff(
     return UserResponse.from_entity(user)
 
 
-@router.get("/staff", response_model=ClientPageResponse, summary="Listar el personal")
+@router.get(
+    "/staff",
+    response_model=ClientPageResponse,
+    dependencies=[Depends(require_permission(Permission.STAFF_READ))],
+    summary="Listar el personal",
+)
 async def list_staff(
     users: UserRepositoryDep,
     search: Annotated[str | None, Query(description="Busca en nombre, correo y teléfono")] = None,
@@ -121,7 +121,7 @@ async def list_staff(
 async def change_user_status(
     user_id: int,
     payload: ChangeUserStatusRequest,
-    principal: PrincipalDep,
+    principal: StatusManagerDep,
     users: UserRepositoryDep,
     activity: ActivityRecorderDep,
 ) -> UserResponse:
@@ -140,59 +140,10 @@ async def change_user_status(
     return UserResponse.from_entity(user)
 
 
-@router.post(
-    "/staff/{user_id}/guard-duty",
-    response_model=UserResponse,
-    summary="Poner o sacar del turno de guardia",
-)
-async def toggle_guard_duty(
-    user_id: int,
-    principal: PrincipalDep,
-    users: UserRepositoryDep,
-    activity: ActivityRecorderDep,
-    appointments: AppointmentDirectoryDep,
-) -> UserResponse:
-    try:
-        user = await ToggleGuardDuty(users, activity, appointments)(
-            ToggleGuardDutyCommand(user_id=user_id, actor_id=principal.user_id)
-        )
-    except UserNotFound as error:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
-    except (RoleNotSwappable, VeterinarianHasUpcomingAppointments) as error:
-        raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
-    return UserResponse.from_entity(user)
-
-
-@router.post(
-    "/staff/{user_id}/emergency-coverage",
-    response_model=UserResponse,
-    summary="Habilitar o quitar el respaldo de emergencias",
-)
-async def toggle_emergency_coverage(
-    user_id: int,
-    payload: ToggleEmergencyCoverageRequest,
-    principal: PrincipalDep,
-    users: UserRepositoryDep,
-    activity: ActivityRecorderDep,
-) -> UserResponse:
-    try:
-        user = await ToggleEmergencyCoverage(users, activity)(
-            ToggleEmergencyCoverageCommand(
-                user_id=user_id,
-                actor_id=principal.user_id,
-                can_cover_emergencies=payload.can_cover_emergencies,
-            )
-        )
-    except UserNotFound as error:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
-    except RoleNotBackupEligible as error:
-        raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
-    return UserResponse.from_entity(user)
-
-
 @router.get(
     "/activity",
     response_model=ActivityPageResponse,
+    dependencies=[Depends(require_permission(Permission.ACTIVITY_READ))],
     summary="Movimientos de las cuentas",
 )
 async def read_activity(

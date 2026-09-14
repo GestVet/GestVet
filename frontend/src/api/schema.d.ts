@@ -4,6 +4,93 @@
  */
 
 export interface paths {
+    "/api/v1/access/assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cuentas con un rol asignado */
+        get: operations["list_assignments_api_v1_access_assignments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/access/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catálogo */
+        get: operations["list_permissions_api_v1_access_permissions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/access/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Roles y sus permisos */
+        get: operations["list_roles_api_v1_access_roles_get"];
+        put?: never;
+        /** Crear un rol */
+        post: operations["create_role_api_v1_access_roles_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/access/roles/{role_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Borrar un rol sin uso */
+        delete: operations["delete_role_api_v1_access_roles__role_id__delete"];
+        options?: never;
+        head?: never;
+        /** Editar un rol */
+        patch: operations["update_role_api_v1_access_roles__role_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/access/users/{user_id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Asignar un rol a una cuenta */
+        put: operations["assign_role_api_v1_access_users__user_id__role_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/activity": {
         parameters: {
             query?: never;
@@ -67,6 +154,23 @@ export interface paths {
         put?: never;
         /** Abrir una emergencia para un cliente dado de alta en el mostrador */
         post: operations["open_walk_in_emergency_api_v1_appointments_emergency_walk_in_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/appointments/open-times": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Horas libres para reservar, por día y veterinario */
+        get: operations["list_open_times_api_v1_appointments_open_times_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -251,11 +355,62 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Agenda de un veterinario */
+        /** Turnos de un veterinario */
         get: operations["list_slots_of_veterinarian_api_v1_availability_get"];
         put?: never;
-        /** Publicar un tramo de disponibilidad propio */
-        post: operations["publish_slot_api_v1_availability_post"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/availability/change-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pedidos de cambio del equipo */
+        get: operations["list_change_requests_api_v1_availability_change_requests_get"];
+        put?: never;
+        /** Pedir un cambio de turno */
+        post: operations["request_change_api_v1_availability_change_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/availability/change-requests/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mis pedidos de cambio */
+        get: operations["list_my_change_requests_api_v1_availability_change_requests_mine_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/availability/change-requests/{request_id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Responder un pedido de cambio */
+        post: operations["resolve_change_request_api_v1_availability_change_requests__request_id__resolve_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -269,7 +424,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Mi agenda publicada */
+        /** Mis turnos y guardias */
         get: operations["list_my_slots_api_v1_availability_mine_get"];
         put?: never;
         post?: never;
@@ -279,7 +434,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/availability/{slot_id}": {
+    "/api/v1/availability/roster": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Turnos de todo el equipo */
+        get: operations["list_roster_api_v1_availability_roster_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/availability/shifts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Asignar un turno o una guardia */
+        post: operations["assign_shift_api_v1_availability_shifts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/availability/shifts/{slot_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -289,8 +478,25 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Retirar un tramo propio */
-        delete: operations["withdraw_slot_api_v1_availability__slot_id__delete"];
+        /** Quitar un turno */
+        delete: operations["remove_shift_api_v1_availability_shifts__slot_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/availability/weekly-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Aplicar un horario semanal */
+        post: operations["apply_weekly_plan_api_v1_availability_weekly_plan_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -307,6 +513,23 @@ export interface paths {
         get: operations["list_clients_api_v1_clients_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clients/document-lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Completar nombre y apellido desde el DNI (alta exprés) */
+        post: operations["look_up_document_api_v1_clients_document_lookup_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -376,6 +599,23 @@ export interface paths {
         put?: never;
         /** Adjuntar evidencia a un reclamo propio */
         post: operations["upload_evidence_api_v1_complaints__complaint_id__evidence_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Avisos en tiempo real */
+        get: operations["stream_events_api_v1_events_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -537,6 +777,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/medical-records/assistant/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resumir con IA la historia clínica de una mascota */
+        post: operations["summarize_clinical_history_api_v1_medical_records_assistant_summary_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/medical-records/attachments/{attachment_id}": {
         parameters: {
             query?: never;
@@ -563,6 +820,58 @@ export interface paths {
         };
         /** Descargar en PDF toda la historia clínica de una mascota */
         get: operations["download_clinical_history_report_api_v1_medical_records_report_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/medical-records/vaccinations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Carnet de vacunas de una mascota */
+        get: operations["read_vaccination_card_api_v1_medical_records_vaccinations_get"];
+        put?: never;
+        /** Registrar una vacuna */
+        post: operations["record_vaccination_api_v1_medical_records_vaccinations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/medical-records/vaccinations/card.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Descargar el carnet de vacunas en PDF, con QR de verificación */
+        get: operations["download_vaccination_card_api_v1_medical_records_vaccinations_card_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/medical-records/vaccinations/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Vacunas que se le pueden registrar a una mascota */
+        get: operations["list_vaccine_options_api_v1_medical_records_vaccinations_options_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -709,6 +1018,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pets/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Especies y razas que se ofrecen */
+        get: operations["read_pet_catalog_api_v1_pets_catalog_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pets/catalog/breeds/{breed_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Corregir, activar o desactivar una raza */
+        patch: operations["update_breed_api_v1_pets_catalog_breeds__breed_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/pets/catalog/manage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** El catálogo completo, con lo desactivado */
+        get: operations["read_managed_catalog_api_v1_pets_catalog_manage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pets/catalog/species": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Agregar una especie */
+        post: operations["add_species_api_v1_pets_catalog_species_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pets/catalog/species/{species_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Corregir, activar o desactivar una especie */
+        patch: operations["update_species_api_v1_pets_catalog_species__species_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/pets/catalog/species/{species_id}/breeds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Agregar una raza a una especie */
+        post: operations["add_breed_api_v1_pets_catalog_species__species_id__breeds_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pets/for-owner": {
         parameters: {
             query?: never;
@@ -790,7 +1201,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Actualizar raza, sexo, color, microchip y temperamento de una mascota propia */
+        /** Actualizar la ficha de una mascota propia */
         patch: operations["update_pet_owner_profile_api_v1_pets__pet_id__owner_profile_patch"];
         trace?: never;
     };
@@ -809,6 +1220,23 @@ export interface paths {
         head?: never;
         /** Dar de baja o reactivar una mascota propia */
         patch: operations["change_pet_status_api_v1_pets__pet_id__status_patch"];
+        trace?: never;
+    };
+    "/api/v1/public/vaccination-cards/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Verificar un carnet de vacunas desde su código QR */
+        get: operations["verify_vaccination_card_api_v1_public_vaccination_cards__token__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/reviews": {
@@ -841,40 +1269,6 @@ export interface paths {
         put?: never;
         /** Dar de alta un veterinario */
         post: operations["register_staff_api_v1_staff_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/staff/{user_id}/emergency-coverage": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Habilitar o quitar el respaldo de emergencias */
-        post: operations["toggle_emergency_coverage_api_v1_staff__user_id__emergency_coverage_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/staff/{user_id}/guard-duty": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Poner o sacar del turno de guardia */
-        post: operations["toggle_guard_duty_api_v1_staff__user_id__guard_duty_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -919,6 +1313,27 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccessRoleListResponse */
+        AccessRoleListResponse: {
+            /** Items */
+            items: components["schemas"]["AccessRoleResponse"][];
+        };
+        /** AccessRoleResponse */
+        AccessRoleResponse: {
+            account_kind: components["schemas"]["Role"];
+            /** Assigned Count */
+            assigned_count: number;
+            /** Description */
+            description: string;
+            /** Id */
+            id: number;
+            /** Is System */
+            is_system: boolean;
+            /** Name */
+            name: string;
+            /** Permissions */
+            permissions: components["schemas"]["Permission"][];
+        };
         /** AccessTokenResponse */
         AccessTokenResponse: {
             /** Access Token */
@@ -930,7 +1345,7 @@ export interface components {
              * @default bearer
              */
             token_type: string;
-            user: components["schemas"]["UserResponse"];
+            user: components["schemas"]["CurrentUserResponse"];
         };
         /**
          * ActivityKind
@@ -943,7 +1358,7 @@ export interface components {
          *     historial.
          * @enum {string}
          */
-        ActivityKind: "signed_in" | "client_registered" | "profile_updated" | "staff_registered" | "user_status_changed" | "guard_duty_toggled" | "pet_registered" | "pet_status_changed" | "pet_status_corrected" | "pet_profile_updated" | "pet_clinical_profile_updated" | "slot_published" | "slot_withdrawn" | "appointment_booked" | "emergency_opened" | "appointment_confirmed" | "appointment_completed" | "appointment_cancelled" | "appointment_no_show" | "clinical_entry_added" | "attachment_uploaded" | "attachment_deleted" | "payment_registered" | "payment_voided" | "review_submitted" | "complaint_filed" | "hospitalization_opened" | "hospitalization_note_added" | "hospitalization_discharged";
+        ActivityKind: "signed_in" | "client_registered" | "profile_updated" | "staff_registered" | "user_status_changed" | "guard_duty_toggled" | "pet_registered" | "pet_status_changed" | "pet_status_corrected" | "pet_profile_updated" | "pet_clinical_profile_updated" | "slot_published" | "slot_withdrawn" | "shift_assigned" | "shift_removed" | "weekly_plan_applied" | "shift_change_requested" | "shift_change_resolved" | "appointment_booked" | "emergency_opened" | "appointment_confirmed" | "appointment_completed" | "appointment_cancelled" | "appointment_no_show" | "clinical_entry_added" | "attachment_uploaded" | "attachment_deleted" | "payment_registered" | "payment_voided" | "review_submitted" | "complaint_filed" | "hospitalization_opened" | "hospitalization_note_added" | "hospitalization_discharged" | "access_role_created" | "access_role_updated" | "access_role_deleted" | "access_role_assigned" | "document_looked_up";
         /** ActivityPageResponse */
         ActivityPageResponse: {
             /** Items */
@@ -1072,6 +1487,31 @@ export interface components {
             /** Price */
             price: string;
         };
+        /**
+         * AssignAccessRoleRequest
+         * @description Sin `role_id`, la cuenta vuelve al rol de sistema de su tipo.
+         */
+        AssignAccessRoleRequest: {
+            /** Role Id */
+            role_id?: number | null;
+        };
+        /** AssignShiftRequest */
+        AssignShiftRequest: {
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /** @default regular */
+            kind: components["schemas"]["ShiftKind"];
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /** Veterinarian Id */
+            veterinarian_id: number;
+        };
         /** AttachmentResponse */
         AttachmentResponse: {
             /** Clinical Entry Id */
@@ -1148,11 +1588,71 @@ export interface components {
             /** Reason Label */
             reason_label: string;
         };
+        /** CatalogBreedResponse */
+        CatalogBreedResponse: {
+            /** Id */
+            id: number;
+            /** Is Active */
+            is_active: boolean;
+            /** Is Locked */
+            is_locked: boolean;
+            /** Name */
+            name: string;
+        };
+        /** CatalogNameRequest */
+        CatalogNameRequest: {
+            /** Name */
+            name: string;
+        };
+        /** CatalogSpeciesResponse */
+        CatalogSpeciesResponse: {
+            /** Breeds */
+            breeds: components["schemas"]["CatalogBreedResponse"][];
+            /** Id */
+            id: number;
+            /** Is Active */
+            is_active: boolean;
+            /** Name */
+            name: string;
+        };
         /** ChangePetStatusRequest */
         ChangePetStatusRequest: {
             /** Is Active */
             is_active: boolean;
         };
+        /** ChangeRequestListResponse */
+        ChangeRequestListResponse: {
+            /** Items */
+            items: components["schemas"]["ChangeRequestResponse"][];
+        };
+        /** ChangeRequestResponse */
+        ChangeRequestResponse: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: number;
+            /** Message */
+            message: string;
+            /** Resolved At */
+            resolved_at: string | null;
+            /** Resolved By */
+            resolved_by: number | null;
+            /** Response */
+            response: string;
+            /** Slot Id */
+            slot_id: number | null;
+            status: components["schemas"]["ChangeRequestStatus"];
+            /** Veterinarian Id */
+            veterinarian_id: number;
+        };
+        /**
+         * ChangeRequestStatus
+         * @enum {string}
+         */
+        ChangeRequestStatus: "pending" | "accepted" | "rejected";
         /** ChangeUserStatusRequest */
         ChangeUserStatusRequest: {
             /** Is Active */
@@ -1206,6 +1706,27 @@ export interface components {
             /** Weight Kg */
             weight_kg: string | null;
         };
+        /** ClinicalSummaryRequest */
+        ClinicalSummaryRequest: {
+            /** Pet Id */
+            pet_id: number;
+        };
+        /** ClinicalSummaryResponse */
+        ClinicalSummaryResponse: {
+            /** Alerts */
+            alerts: string[];
+            /** Follow Ups */
+            follow_ups: string[];
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /** Model */
+            model: string;
+            /** Summary */
+            summary: string;
+        };
         /** ComplaintPageResponse */
         ComplaintPageResponse: {
             /** Items */
@@ -1215,10 +1736,16 @@ export interface components {
         };
         /** ComplaintResponse */
         ComplaintResponse: {
+            /** Appointment At */
+            appointment_at: string | null;
             /** Appointment Id */
             appointment_id: number;
+            /** Appointment Type */
+            appointment_type: string;
             /** Client Id */
             client_id: number;
+            /** Client Name */
+            client_name: string;
             /**
              * Created At
              * Format: date-time
@@ -1230,8 +1757,12 @@ export interface components {
             evidence: components["schemas"]["EvidenceResponse"][];
             /** Id */
             id: number;
+            /** Pet Name */
+            pet_name: string;
             /** Veterinarian Id */
             veterinarian_id: number;
+            /** Veterinarian Name */
+            veterinarian_name: string;
         };
         /** CorrectPetStatusRequest */
         CorrectPetStatusRequest: {
@@ -1240,12 +1771,80 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /** CreateAccessRoleRequest */
+        CreateAccessRoleRequest: {
+            account_kind: components["schemas"]["Role"];
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Name */
+            name: string;
+            /** Permissions */
+            permissions: components["schemas"]["Permission"][];
+        };
+        /** CreateChangeRequest */
+        CreateChangeRequest: {
+            /** Message */
+            message: string;
+            /** Slot Id */
+            slot_id?: number | null;
+        };
         /** CreateQrChargeRequest */
         CreateQrChargeRequest: {
             /** Amount */
             amount?: number | string | null;
             /** Appointment Id */
             appointment_id: number;
+        };
+        /**
+         * CurrentUserResponse
+         * @description La cuenta propia, con lo que su rol le deja hacer.
+         *
+         *     La interfaz oculta lo que no está permitido con esta lista; la API igual
+         *     lo rechaza, así que ocultar es comodidad y no seguridad.
+         */
+        CurrentUserResponse: {
+            /** Access Role Id */
+            access_role_id: number | null;
+            /** Access Role Name */
+            access_role_name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Document Id */
+            document_id: string;
+            /** Email */
+            email: string;
+            /** First Name */
+            first_name: string;
+            /** Id */
+            id: number;
+            /** Is Active */
+            is_active: boolean;
+            /** Last Name */
+            last_name: string;
+            /** Permissions */
+            permissions: components["schemas"]["Permission"][];
+            /** Phone */
+            phone: string;
+            role: components["schemas"]["Role"];
+        };
+        /**
+         * DayOpenTimesResponse
+         * @description Un día con horas libres. `day` es la fecha en el calendario de la clínica.
+         */
+        DayOpenTimesResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Veterinarians */
+            veterinarians: components["schemas"]["VeterinarianOpenTimesResponse"][];
         };
         /** DischargeRequest */
         DischargeRequest: {
@@ -1254,6 +1853,26 @@ export interface components {
              * @default
              */
             discharge_notes: string;
+        };
+        /** DocumentLookupRequest */
+        DocumentLookupRequest: {
+            /**
+             * Consent
+             * @constant
+             */
+            consent: true;
+            /** Document Id */
+            document_id: string;
+        };
+        /**
+         * DocumentLookupResponse
+         * @description Solo nombres y apellidos: nada más del DNI sale del servidor.
+         */
+        DocumentLookupResponse: {
+            /** First Names */
+            first_names: string;
+            /** Last Names */
+            last_names: string;
         };
         /**
          * EntryKind
@@ -1362,6 +1981,14 @@ export interface components {
             /** Password */
             password: string;
         };
+        /**
+         * ManagedCatalogResponse
+         * @description El catálogo completo para administrarlo, con lo desactivado incluido.
+         */
+        ManagedCatalogResponse: {
+            /** Species */
+            species: components["schemas"]["CatalogSpeciesResponse"][];
+        };
         /** MessageResponse */
         MessageResponse: {
             /** Message */
@@ -1434,6 +2061,14 @@ export interface components {
             reason: string;
         };
         /**
+         * OpenTimesResponse
+         * @description Solo trae los días que tienen al menos una hora libre.
+         */
+        OpenTimesResponse: {
+            /** Days */
+            days: components["schemas"]["DayOpenTimesResponse"][];
+        };
+        /**
          * OpenWalkInEmergencyRequest
          * @description La única excepción a la regla del módulo: acá sí viaja `client_id`.
          *
@@ -1466,6 +2101,8 @@ export interface components {
             appointment_type_label: string;
             /** Client Id */
             client_id: number;
+            /** Client Name */
+            client_name: string;
             /**
              * Paid At
              * Format: date-time
@@ -1473,6 +2110,8 @@ export interface components {
             paid_at: string;
             /** Payment Id */
             payment_id: number;
+            /** Pet Name */
+            pet_name: string;
             /** Typical Amount */
             typical_amount: string;
         };
@@ -1499,10 +2138,22 @@ export interface components {
         PaymentResponse: {
             /** Amount */
             amount: string;
+            /** Appointment At */
+            appointment_at?: string | null;
             /** Appointment Id */
             appointment_id: number;
+            /**
+             * Appointment Type
+             * @default
+             */
+            appointment_type: string;
             /** Client Id */
             client_id: number;
+            /**
+             * Client Name
+             * @default
+             */
+            client_name: string;
             /**
              * Created At
              * Format: date-time
@@ -1522,6 +2173,11 @@ export interface components {
              * Format: date-time
              */
             paid_at: string;
+            /**
+             * Pet Name
+             * @default
+             */
+            pet_name: string;
             /** Reference */
             reference: string;
             /** Registered By */
@@ -1530,6 +2186,36 @@ export interface components {
             void_reason: string;
             /** Voided At */
             voided_at: string | null;
+        };
+        /**
+         * Permission
+         * @enum {string}
+         */
+        Permission: "pets.manage_own" | "pets.register_for_owner" | "pets.read_any" | "pets.correct_status" | "pets.edit_clinical_profile" | "pets.manage_catalog" | "appointments.read" | "appointments.book" | "appointments.attend" | "appointments.cancel" | "emergencies.open" | "emergencies.open_walk_in" | "schedule.read" | "schedule.read_own" | "schedule.request_change" | "schedule.manage" | "veterinarians.read" | "clinical_records.read" | "clinical_records.write" | "hospitalizations.read" | "hospitalizations.manage" | "payments.read" | "payments.qr" | "payments.register" | "payments.void" | "payments.report" | "complaints.read" | "complaints.file" | "reviews.read" | "reviews.submit" | "clients.read" | "clients.register_walk_in" | "clients.update_contact" | "staff.read" | "staff.manage" | "users.change_status" | "activity.read" | "insights.read" | "roles.manage";
+        /** PermissionCatalogResponse */
+        PermissionCatalogResponse: {
+            /** Groups */
+            groups: string[];
+            /** Items */
+            items: components["schemas"]["PermissionResponse"][];
+        };
+        /** PermissionResponse */
+        PermissionResponse: {
+            /** Account Kinds */
+            account_kinds: components["schemas"]["Role"][];
+            code: components["schemas"]["Permission"];
+            /** Group */
+            group: string;
+            /** Label */
+            label: string;
+        };
+        /**
+         * PetCatalogResponse
+         * @description Lo que se ofrece hoy en los formularios: solo especies y razas activas.
+         */
+        PetCatalogResponse: {
+            /** Species */
+            species: components["schemas"]["SpeciesResponse"][];
         };
         /** PetPageResponse */
         PetPageResponse: {
@@ -1585,18 +2271,28 @@ export interface components {
          * @enum {string}
          */
         PetSex: "male" | "female";
-        /** PublishSlotRequest */
-        PublishSlotRequest: {
+        /** PublicVaccinationCardResponse */
+        PublicVaccinationCardResponse: {
+            /** Breed */
+            breed: string;
             /**
-             * Ends At
-             * Format: date-time
+             * Checked On
+             * Format: date
              */
-            ends_at: string;
+            checked_on: string;
+            /** Microchip Number */
+            microchip_number: string;
+            /** Pet Name */
+            pet_name: string;
+            /** Species */
+            species: string;
+            /** Summary */
+            summary: components["schemas"]["VaccineStatusResponse"][];
             /**
-             * Starts At
-             * Format: date-time
+             * Valid Until
+             * Format: date
              */
-            starts_at: string;
+            valid_until: string;
         };
         /** QrChargeResponse */
         QrChargeResponse: {
@@ -1640,8 +2336,43 @@ export interface components {
             /** Count */
             count: number;
         };
+        /** RecordVaccinationRequest */
+        RecordVaccinationRequest: {
+            /**
+             * Applied On
+             * Format: date
+             */
+            applied_on: string;
+            /** Appointment Id */
+            appointment_id?: number | null;
+            /**
+             * Batch
+             * @default
+             */
+            batch: string;
+            /** Next Due On */
+            next_due_on?: string | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            /** Pet Id */
+            pet_id: number;
+            /**
+             * Product Name
+             * @default
+             */
+            product_name: string;
+            vaccine: components["schemas"]["VaccineCode"];
+        };
         /** RegisterClientRequest */
         RegisterClientRequest: {
+            /**
+             * Accepts Identity Check
+             * @constant
+             */
+            accepts_identity_check: true;
             /** Document Id */
             document_id: string;
             /**
@@ -1750,6 +2481,16 @@ export interface components {
             /** Token */
             token: string;
         };
+        /** ResolveChangeRequest */
+        ResolveChangeRequest: {
+            /** Accepted */
+            accepted: boolean;
+            /**
+             * Response
+             * @default
+             */
+            response: string;
+        };
         /** ReviewResponse */
         ReviewResponse: {
             /** Client Id */
@@ -1777,7 +2518,24 @@ export interface components {
          * Role
          * @enum {string}
          */
-        Role: "admin" | "client" | "veterinarian" | "emergency_veterinarian";
+        Role: "admin" | "client" | "veterinarian";
+        /** RoleAssignmentListResponse */
+        RoleAssignmentListResponse: {
+            /** Items */
+            items: components["schemas"]["RoleAssignmentResponse"][];
+        };
+        /** RoleAssignmentResponse */
+        RoleAssignmentResponse: {
+            /** Role Id */
+            role_id: number;
+            /** User Id */
+            user_id: number;
+        };
+        /**
+         * ShiftKind
+         * @enum {string}
+         */
+        ShiftKind: "regular" | "on_call";
         /** SlotListResponse */
         SlotListResponse: {
             /** Items */
@@ -1787,6 +2545,8 @@ export interface components {
         };
         /** SlotResponse */
         SlotResponse: {
+            /** Assigned By */
+            assigned_by: number | null;
             /** Duration Minutes */
             duration_minutes: number;
             /**
@@ -1796,6 +2556,7 @@ export interface components {
             ends_at: string;
             /** Id */
             id: number;
+            kind: components["schemas"]["ShiftKind"];
             /**
              * Starts At
              * Format: date-time
@@ -1803,6 +2564,13 @@ export interface components {
             starts_at: string;
             /** Veterinarian Id */
             veterinarian_id: number;
+        };
+        /** SpeciesResponse */
+        SpeciesResponse: {
+            /** Breeds */
+            breeds: string[];
+            /** Name */
+            name: string;
         };
         /** SubmitReviewRequest */
         SubmitReviewRequest: {
@@ -1813,10 +2581,24 @@ export interface components {
             /** Veterinarian Id */
             veterinarian_id: number;
         };
-        /** ToggleEmergencyCoverageRequest */
-        ToggleEmergencyCoverageRequest: {
-            /** Can Cover Emergencies */
-            can_cover_emergencies: boolean;
+        /** UpdateAccessRoleRequest */
+        UpdateAccessRoleRequest: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Name */
+            name: string;
+            /** Permissions */
+            permissions: components["schemas"]["Permission"][];
+        };
+        /** UpdateCatalogEntryRequest */
+        UpdateCatalogEntryRequest: {
+            /** Is Active */
+            is_active: boolean;
+            /** Name */
+            name: string;
         };
         /** UpdateClientContactRequest */
         UpdateClientContactRequest: {
@@ -1843,11 +2625,8 @@ export interface components {
              * @default
              */
             allergies: string;
-            /**
-             * Birth Date
-             * Format: date
-             */
-            birth_date: string;
+            /** Birth Date */
+            birth_date?: string | null;
             /** Height Cm */
             height_cm?: number | string | null;
             /** Is Sterilized */
@@ -1857,8 +2636,10 @@ export interface components {
         };
         /** UpdatePetOwnerProfileRequest */
         UpdatePetOwnerProfileRequest: {
+            /** Birth Date */
+            birth_date?: string | null;
             /** Breed */
-            breed: string;
+            breed?: string | null;
             /**
              * Color
              * @default
@@ -1870,6 +2651,8 @@ export interface components {
              */
             microchip_number: string;
             sex?: components["schemas"]["PetSex"] | null;
+            /** Species */
+            species?: string | null;
             /**
              * Temperament
              * @default
@@ -1897,8 +2680,6 @@ export interface components {
         };
         /** UserResponse */
         UserResponse: {
-            /** Can Cover Emergencies */
-            can_cover_emergencies: boolean;
             /**
              * Created At
              * Format: date-time
@@ -1919,6 +2700,87 @@ export interface components {
             /** Phone */
             phone: string;
             role: components["schemas"]["Role"];
+        };
+        /**
+         * VaccinationCardResponse
+         * @description El estado de cada vacuna, lo más urgente primero, y todas las aplicaciones.
+         */
+        VaccinationCardResponse: {
+            /** Items */
+            items: components["schemas"]["VaccinationResponse"][];
+            /** Summary */
+            summary: components["schemas"]["VaccineStatusResponse"][];
+        };
+        /** VaccinationResponse */
+        VaccinationResponse: {
+            /**
+             * Applied On
+             * Format: date
+             */
+            applied_on: string;
+            /** Batch */
+            batch: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: number;
+            /** Next Due On */
+            next_due_on: string | null;
+            /** Notes */
+            notes: string;
+            /** Pet Id */
+            pet_id: number;
+            /** Product Name */
+            product_name: string;
+            /** Reminder Sent At */
+            reminder_sent_at: string | null;
+            vaccine: components["schemas"]["VaccineCode"];
+            /** Vaccine Label */
+            vaccine_label: string;
+            /** Veterinarian Id */
+            veterinarian_id: number;
+        };
+        /**
+         * VaccinationStatus
+         * @enum {string}
+         */
+        VaccinationStatus: "overdue" | "due_soon" | "up_to_date" | "no_booster";
+        /**
+         * VaccineCode
+         * @enum {string}
+         */
+        VaccineCode: "rabies" | "dog_multivalent" | "dog_kennel_cough" | "cat_triple" | "cat_leukemia" | "deworming" | "other";
+        /** VaccineOptionListResponse */
+        VaccineOptionListResponse: {
+            /** Items */
+            items: components["schemas"]["VaccineOptionResponse"][];
+        };
+        /** VaccineOptionResponse */
+        VaccineOptionResponse: {
+            /** Interval Days */
+            interval_days: number | null;
+            /** Label */
+            label: string;
+            vaccine: components["schemas"]["VaccineCode"];
+        };
+        /** VaccineStatusResponse */
+        VaccineStatusResponse: {
+            /** Label */
+            label: string;
+            /**
+             * Last Applied On
+             * Format: date
+             */
+            last_applied_on: string;
+            /** Next Due On */
+            next_due_on: string | null;
+            status: components["schemas"]["VaccinationStatus"];
+            /** Status Label */
+            status_label: string;
+            vaccine: components["schemas"]["VaccineCode"];
         };
         /** ValidationError */
         ValidationError: {
@@ -1956,6 +2818,13 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** VeterinarianOpenTimesResponse */
+        VeterinarianOpenTimesResponse: {
+            /** Times */
+            times: string[];
+            /** Veterinarian Id */
+            veterinarian_id: number;
+        };
         /**
          * VeterinarianResponse
          * @description Proyección mínima para elegir veterinario al reservar.
@@ -1987,6 +2856,41 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /** WeeklyPlanRequest */
+        WeeklyPlanRequest: {
+            /**
+             * First Day
+             * Format: date
+             */
+            first_day: string;
+            /** Shifts */
+            shifts: components["schemas"]["WeeklyShiftRequest"][];
+            /** Veterinarian Id */
+            veterinarian_id: number;
+            /** Weeks */
+            weeks: number;
+        };
+        /** WeeklyShiftRequest */
+        WeeklyShiftRequest: {
+            /**
+             * Ends
+             * Format: time
+             * @description Igual o anterior al inicio: termina al día siguiente
+             */
+            ends: string;
+            /** @default regular */
+            kind: components["schemas"]["ShiftKind"];
+            /**
+             * Starts
+             * Format: time
+             */
+            starts: string;
+            /**
+             * Weekday
+             * @description 0 es lunes y 6 domingo
+             */
+            weekday: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -1996,6 +2900,196 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_assignments_api_v1_access_assignments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleAssignmentListResponse"];
+                };
+            };
+        };
+    };
+    list_permissions_api_v1_access_permissions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PermissionCatalogResponse"];
+                };
+            };
+        };
+    };
+    list_roles_api_v1_access_roles_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessRoleListResponse"];
+                };
+            };
+        };
+    };
+    create_role_api_v1_access_roles_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAccessRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessRoleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_role_api_v1_access_roles__role_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_role_api_v1_access_roles__role_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAccessRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessRoleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assign_role_api_v1_access_users__user_id__role_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignAccessRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     read_activity_api_v1_activity_get: {
         parameters: {
             query?: {
@@ -2159,6 +3253,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AppointmentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_open_times_api_v1_appointments_open_times_get: {
+        parameters: {
+            query: {
+                /** @description Motivo: define la duración */
+                appointment_type_id: number;
+                /** @description Primer día, en la fecha de la clínica. Por defecto, hoy */
+                from_date?: string | null;
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpenTimesResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2401,7 +3530,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserResponse"];
+                    "application/json": components["schemas"]["CurrentUserResponse"];
                 };
             };
         };
@@ -2541,7 +3670,39 @@ export interface operations {
             };
         };
     };
-    publish_slot_api_v1_availability_post: {
+    list_change_requests_api_v1_availability_change_requests_get: {
+        parameters: {
+            query?: {
+                /** @description Estado */
+                status?: components["schemas"]["ChangeRequestStatus"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeRequestListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_change_api_v1_availability_change_requests_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -2550,7 +3711,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PublishSlotRequest"];
+                "application/json": components["schemas"]["CreateChangeRequest"];
             };
         };
         responses: {
@@ -2560,7 +3721,62 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SlotResponse"];
+                    "application/json": components["schemas"]["ChangeRequestResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_my_change_requests_api_v1_availability_change_requests_mine_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeRequestListResponse"];
+                };
+            };
+        };
+    };
+    resolve_change_request_api_v1_availability_change_requests__request_id__resolve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeRequestResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2608,7 +3824,74 @@ export interface operations {
             };
         };
     };
-    withdraw_slot_api_v1_availability__slot_id__delete: {
+    list_roster_api_v1_availability_roster_get: {
+        parameters: {
+            query: {
+                /** @description Desde */
+                starts_after: string;
+                /** @description Hasta */
+                ends_before: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlotListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assign_shift_api_v1_availability_shifts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignShiftRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlotResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_shift_api_v1_availability_shifts__slot_id__delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -2625,6 +3908,39 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_weekly_plan_api_v1_availability_weekly_plan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WeeklyPlanRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlotListResponse"];
+                };
             };
             /** @description Validation Error */
             422: {
@@ -2662,6 +3978,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClientPageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    look_up_document_api_v1_clients_document_lookup_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocumentLookupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentLookupResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2840,6 +4189,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stream_events_api_v1_events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": unknown;
                 };
             };
         };
@@ -3150,6 +4519,39 @@ export interface operations {
             };
         };
     };
+    summarize_clinical_history_api_v1_medical_records_assistant_summary_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClinicalSummaryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClinicalSummaryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     delete_attachment_api_v1_medical_records_attachments__attachment_id__delete: {
         parameters: {
             query?: never;
@@ -3198,6 +4600,135 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_vaccination_card_api_v1_medical_records_vaccinations_get: {
+        parameters: {
+            query: {
+                /** @description Mascota consultada */
+                pet_id: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VaccinationCardResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_vaccination_api_v1_medical_records_vaccinations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordVaccinationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VaccinationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_vaccination_card_api_v1_medical_records_vaccinations_card_pdf_get: {
+        parameters: {
+            query: {
+                /** @description Mascota consultada */
+                pet_id: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_vaccine_options_api_v1_medical_records_vaccinations_options_get: {
+        parameters: {
+            query: {
+                /** @description Mascota consultada */
+                pet_id: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VaccineOptionListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3553,6 +5084,184 @@ export interface operations {
             };
         };
     };
+    read_pet_catalog_api_v1_pets_catalog_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PetCatalogResponse"];
+                };
+            };
+        };
+    };
+    update_breed_api_v1_pets_catalog_breeds__breed_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breed_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCatalogEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogBreedResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_managed_catalog_api_v1_pets_catalog_manage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedCatalogResponse"];
+                };
+            };
+        };
+    };
+    add_species_api_v1_pets_catalog_species_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogNameRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogSpeciesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_species_api_v1_pets_catalog_species__species_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                species_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCatalogEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogSpeciesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_breed_api_v1_pets_catalog_species__species_id__breeds_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                species_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogNameRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogBreedResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     register_pet_for_owner_api_v1_pets_for_owner_post: {
         parameters: {
             query?: never;
@@ -3762,6 +5471,37 @@ export interface operations {
             };
         };
     };
+    verify_vaccination_card_api_v1_public_vaccination_cards__token__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicVaccinationCardResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_veterinarian_reviews_api_v1_reviews_get: {
         parameters: {
             query: {
@@ -3881,72 +5621,6 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    toggle_emergency_coverage_api_v1_staff__user_id__emergency_coverage_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ToggleEmergencyCoverageRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    toggle_guard_duty_api_v1_staff__user_id__guard_duty_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
                 headers: {
                     [name: string]: unknown;
                 };

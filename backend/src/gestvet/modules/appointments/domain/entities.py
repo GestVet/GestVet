@@ -7,7 +7,7 @@ por identificador: cada uno vive en otro módulo y este no puede importarlo.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from enum import StrEnum
 
@@ -24,25 +24,6 @@ MAX_APPOINTMENT_DURATION = timedelta(hours=8)
 
 MAX_DESCRIPTION_LENGTH = 500
 MAX_REASON_LENGTH = 300
-
-# La clínica opera en un único local, en Trujillo, sin horario de verano: el
-# desplazamiento es un dato del negocio, no una preferencia de quien mira la
-# pantalla, así que vive acá y no en el frontend pese a que el resto del
-# sistema solo convierte fechas en la interfaz.
-CLINIC_UTC_OFFSET = timedelta(hours=-5)
-
-
-def clinic_day_window(moment: datetime) -> tuple[datetime, datetime]:
-    """Ventana en UTC del día calendario de la clínica que contiene `moment`.
-
-    Comparar fechas de calendario en UTC directamente rompe cerca de la
-    medianoche: una cita de las 20:00 en Trujillo cae en el día siguiente en
-    UTC, y "todo ese día" dejaría de incluirla.
-    """
-    local_wall_clock = moment + CLINIC_UTC_OFFSET
-    local_midnight = datetime.combine(local_wall_clock.date(), time.min, tzinfo=UTC)
-    starts_at = local_midnight - CLINIC_UTC_OFFSET
-    return starts_at, starts_at + timedelta(days=1)
 
 
 class AppointmentStatus(StrEnum):

@@ -4,8 +4,10 @@ from typing import Annotated
 
 from fastapi import Depends
 
+from gestvet.core.activity_log import ActivityRecorderDep
 from gestvet.core.auth import SessionDep
-from gestvet.core.whatsapp import ConsoleWhatsAppSender, WhatsAppSender
+from gestvet.core.whatsapp import WhatsAppSender
+from gestvet.core.whatsapp_console import ConsoleWhatsAppSender
 from gestvet.modules.appointments.adapters.persistence.directories import (
     SqlClientDirectory,
     SqlPetDirectory,
@@ -22,6 +24,7 @@ from gestvet.modules.appointments.ports.repositories import (
     PetDirectory,
     ScheduleDirectory,
 )
+from gestvet.modules.appointments.use_cases.change_status import ChangeAppointmentStatus
 
 
 def get_appointment_repository(session: SessionDep) -> AppointmentRepository:
@@ -56,3 +59,17 @@ PetDirectoryDep = Annotated[PetDirectory, Depends(get_pet_directory)]
 ScheduleDirectoryDep = Annotated[ScheduleDirectory, Depends(get_schedule_directory)]
 ClientDirectoryDep = Annotated[ClientDirectory, Depends(get_client_directory)]
 WhatsAppSenderDep = Annotated[WhatsAppSender, Depends(get_whatsapp_sender)]
+
+
+def get_change_status(
+    appointments: AppointmentRepositoryDep,
+    activity: ActivityRecorderDep,
+    clients: ClientDirectoryDep,
+    pets: PetDirectoryDep,
+    whatsapp: WhatsAppSenderDep,
+) -> ChangeAppointmentStatus:
+    """Cambiar el estado de una cita, con todo lo que avisa al confirmarla."""
+    return ChangeAppointmentStatus(appointments, activity, clients, pets, whatsapp)
+
+
+ChangeStatusDep = Annotated[ChangeAppointmentStatus, Depends(get_change_status)]

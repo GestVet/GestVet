@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     debug: bool = True
 
+    # Nivel mínimo que se escribe: DEBUG, INFO, WARNING o ERROR.
+    log_level: str = "INFO"
+    # En desarrollo los logs salen en consola con color. En un despliegue van
+    # como una línea JSON por evento, que es lo que un recolector sabe indexar.
+    log_json: bool = False
+
     database_url: str = "sqlite+aiosqlite:///./gestvet.db"
     cors_allowed_origins: list[str] = ["http://localhost:5173"]
     # Con qué origen arma el enlace de recuperación de contraseña que manda
@@ -37,6 +43,22 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_ttl_seconds: int = 3600
 
+    # Asistente de IA por OpenRouter. Sin clave queda apagado y el resto de la
+    # aplicación funciona igual. Precios por millón de tokens en septiembre de
+    # 2026: DeepSeek V4.1 Flash US$ 0.15 de entrada y 0.60 de salida; V4 Flash
+    # 0731, US$ 0.06 y 0.12. El respaldo responde si el principal falla.
+    openrouter_api_key: str = ""
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    openrouter_model: str = "deepseek/deepseek-v4.1-flash"
+    openrouter_fallback_model: str = "deepseek/deepseek-v4-flash-0731"
+    openrouter_timeout_seconds: float = 45.0
+
+    # Consulta de DNI con Factiliza (https://factiliza.com). Sin clave, el
+    # registro no verifica nombres y el alta exprés no ofrece autocompletar.
+    factiliza_api_key: str = ""
+    factiliza_base_url: str = "https://api.factiliza.com/v1"
+    identity_registry_timeout_seconds: float = 10.0
+
     @model_validator(mode="after")
     def _validate_secret(self) -> Settings:
         if len(self.jwt_secret_key.encode()) < MIN_SECRET_LENGTH:
@@ -44,7 +66,7 @@ class Settings(BaseSettings):
         if not self.debug and self.jwt_secret_key == INSECURE_DEFAULT_SECRET:
             raise ValueError(
                 "JWT_SECRET_KEY conserva el valor de desarrollo. "
-                "Definí uno propio antes de desplegar con DEBUG=false."
+                "Define uno propio antes de desplegar con DEBUG=false."
             )
         return self
 

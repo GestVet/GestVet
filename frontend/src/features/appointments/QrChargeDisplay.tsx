@@ -1,4 +1,5 @@
 import FormMessage from '../../components/FormMessage'
+import { Button } from '../../components/ui/button'
 
 interface QrChargeLike {
   readonly status: string
@@ -28,28 +29,37 @@ export default function QrChargeDisplay({
 
   if (charge.status !== 'pending') {
     return (
-      <div className="stack">
+      <div className="flex flex-col items-start gap-3">
         <FormMessage tone="error">Este QR {charge.status_label.toLowerCase()}.</FormMessage>
-        <button type="button" className="btn btn-plain" onClick={onRetry}>
+        <Button type="button" variant="outline" onClick={onRetry}>
           Generar uno nuevo
-        </button>
+        </Button>
       </div>
     )
   }
 
   return (
-    <div className="stack">
+    <div className="flex flex-col items-start gap-3">
       <img
         src={charge.qr_image_data_url}
         alt="Código QR para pagar la cita"
         width={200}
         height={200}
+        className="rounded-xl bg-white p-2 ring-1 ring-foreground/10"
       />
-      <p className="muted">Escaneá el código con tu app de pagos. Monto: S/ {charge.amount}</p>
+      <p className="m-0 text-sm text-muted-foreground">
+        Escanea el código con tu app de pagos. Monto: S/ {charge.amount}
+      </p>
       {confirmError !== '' ? <FormMessage tone="error">{confirmError}</FormMessage> : null}
-      <button type="button" className="btn btn-plain" disabled={isConfirming} onClick={onConfirm}>
+      <Button
+        type="button"
+        variant="outline"
+        className="whitespace-normal"
+        disabled={isConfirming}
+        onClick={onConfirm}
+      >
         {isConfirming ? 'Confirmando…' : 'Simular confirmación del banco (modo de prueba)'}
-      </button>
+      </Button>
     </div>
   )
 }

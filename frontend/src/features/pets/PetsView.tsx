@@ -1,66 +1,100 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 
-import { changePetStatus, fetchMyPets, myPetsQueryKey } from '../../api/pets'
-import FormMessage from '../../components/FormMessage'
-import TableShell from '../../components/TableShell'
-import { errorMessage } from '../../services/api'
+import { fetchMyPets, myPetsQueryKey } from '../../api/pets'
+import type { PetResponse } from '../../api/types'
+import DataTable, { type DataColumn } from '../../components/DataTable'
+import FormDialog from '../../components/FormDialog'
+import Icon from '../../components/Icon'
+import PageHeader from '../../components/PageHeader'
+import SectionCard from '../../components/SectionCard'
+import StatusBadge from '../../components/StatusBadge'
+import { Button } from '../../components/ui/button'
+import PetActions from './PetActions'
+import PetDetails from './PetDetails'
 import PetForm from './PetForm'
-import PetRow from './PetRow'
 
-const COLUMNAS = ['Nombre', 'Especie', 'Raza', 'Edad', 'Peso', 'Altura', 'Estado', 'Acciones'] as const
+const COLUMNAS: readonly DataColumn<PetResponse>[] = [
+  { id: 'nombre', header: 'Nombre', cell: (mascota) => mascota.name },
+  { id: 'especie', header: 'Especie', cell: (mascota) => mascota.species },
+  { id: 'raza', header: 'Raza', cell: (mascota) => mascota.breed },
+  { id: 'edad', header: 'Edad', cell: (mascota) => `${String(mascota.age_in_years)} años` },
+  {
+    id: 'peso',
+    header: 'Peso',
+    cell: (mascota) => (mascota.weight_kg ? `${mascota.weight_kg} kg` : '—'),
+  },
+  {
+    id: 'altura',
+    header: 'Altura',
+    cell: (mascota) => (mascota.height_cm ? `${mascota.height_cm} cm` : '—'),
+  },
+  {
+    id: 'estado',
+    header: 'Estado',
+    cell: (mascota) => (
+      <StatusBadge
+        label={mascota.is_active ? 'Activa' : 'Fallecida'}
+        tone={mascota.is_active ? 'completed' : undefined}
+      />
+    ),
+  },
+  {
+    id: 'acciones',
+    header: 'Acciones',
+    cell: (mascota, fila) => (
+      <PetActions mascota={mascota} isExpanded={fila.isExpanded} onToggle={fila.toggleExpanded} />
+    ),
+  },
+]
 
 export default function PetsView() {
-  const queryClient = useQueryClient()
   const mascotas = useQuery({ queryKey: myPetsQueryKey, queryFn: fetchMyPets })
-
-  const darDeBaja = useMutation({
-    mutationFn: (id: number) => changePetStatus(id, false),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: myPetsQueryKey })
-    },
-  })
-
-  const items = mascotas.data?.items ?? []
+  const [registrando, setRegistrando] = useState(false)
+  const cerrar = () => {
+    setRegistrando(false)
+  }
 
   return (
-    <div className="stack">
-      <div className="page-header">
-        <h1>Mis mascotas</h1>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Mis mascotas"
+        description="Con una mascota registrada ya puedes reservarle citas."
+        actions={
+          <Button
+            type="button"
+            size="lg"
+            className="h-10 px-4"
+            onClick={() => {
+              setRegistrando(true)
+            }}
+          >
+            <Icon name="agregar" size={16} />
+            <span>Registrar mascota</span>
+          </Button>
+        }
+      />
 
-      <PetForm />
+      <FormDialog
+        open={registrando}
+        onOpenChange={setRegistrando}
+        title="Registrar una mascota"
+        description="El resto de la ficha, como el color o el microchip, lo completas después desde sus detalles."
+        size="lg"
+      >
+        <PetForm onDone={cerrar} />
+      </FormDialog>
 
-      <section className="card">
-        <h2>Registradas</h2>
-        {darDeBaja.isError ? (
-          <FormMessage tone="error">
-            {errorMessage(darDeBaja.error, 'No se pudo actualizar el estado.')}
-          </FormMessage>
-        ) : null}
-        <TableShell
+      <SectionCard title="Registradas">
+        <DataTable
           columns={COLUMNAS}
+          data={mascotas.data?.items ?? []}
           isLoading={mascotas.isPending}
-          isEmpty={items.length === 0}
           emptyMessage="Todavía no registraste ninguna mascota."
-        >
-          {items.map((mascota) => (
-            <PetRow
-              key={mascota.id}
-              mascota={mascota}
-              dandoDeBaja={darDeBaja.isPending}
-              onDarDeBaja={() => {
-                if (
-                  window.confirm(
-                    `¿Confirmás que ${mascota.name} falleció? Esta acción no se puede deshacer; solo el personal de la clínica puede corregirla si fue un error.`,
-                  )
-                ) {
-                  darDeBaja.mutate(mascota.id)
-                }
-              }}
-            />
-          ))}
-        </TableShell>
-      </section>
+          getRowId={(mascota) => String(mascota.id)}
+          renderExpanded={(mascota) => <PetDetails mascota={mascota} />}
+        />
+      </SectionCard>
     </div>
   )
 }
