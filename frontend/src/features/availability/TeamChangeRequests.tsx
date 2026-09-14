@@ -32,6 +32,8 @@ export default function TeamChangeRequests({ veterinarios }: TeamChangeRequestsP
 
   return (
     <SectionCard
+      collapsible
+      scrollable
       title="Pedidos de cambio"
       description="Aceptar no mueve el turno: reasígnalo en el cuadro y deja la respuesta."
       actions={

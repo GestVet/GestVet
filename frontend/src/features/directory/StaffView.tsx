@@ -136,6 +136,7 @@ export default function StaffView() {
           isLoading={personal.isPending}
           emptyMessage="Todavía no hay veterinarios registrados."
           getRowId={(cuenta) => String(cuenta.id)}
+          pageSize={15}
         />
       </SectionCard>
     </div>

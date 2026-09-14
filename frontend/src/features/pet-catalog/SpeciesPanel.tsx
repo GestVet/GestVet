@@ -30,6 +30,7 @@ export default function SpeciesPanel({ especies, isLoading, elegidaId, onElegir 
   return (
     <SectionCard
       title="Especies"
+      scrollable
       actions={
         <CatalogEntryDialogButton
           id="nueva-especie"

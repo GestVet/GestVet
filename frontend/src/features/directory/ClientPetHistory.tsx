@@ -2,8 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 
 import { clinicalEntriesQueryKey, fetchClinicalEntries } from '../../api/medicalRecords'
 import ClinicalEntryList from '../../components/ClinicalEntryList'
-import SectionHeading from '../../components/SectionHeading'
-import { Separator } from '../../components/ui/separator'
+import CollapsibleSection from '../../components/CollapsibleSection'
 import { useCan } from '../../store/session'
 import ClinicalEntryForm from './ClinicalEntryForm'
 import ClinicalSummaryPanel from './ClinicalSummaryPanel'
@@ -29,11 +28,13 @@ export default function ClientPetHistory({ petId }: ClientPetHistoryProps) {
         canManageAttachments={puedeCargar}
       />
       {puedeCargar ? (
-        <>
-          <Separator />
-          <SectionHeading as="h3">Agregar a la historia clínica</SectionHeading>
+        <CollapsibleSection
+          title="Agregar a la historia clínica"
+          description="Consulta, cirugía, control o carta de consentimiento."
+          defaultOpen={false}
+        >
           <ClinicalEntryForm petId={petId} />
-        </>
+        </CollapsibleSection>
       ) : null}
     </div>
   )

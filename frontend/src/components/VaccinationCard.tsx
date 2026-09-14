@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 
+import CollapsibleSection from './CollapsibleSection'
 import DataTable, { type DataColumn } from './DataTable'
 import EmptyState from './EmptyState'
-import SectionHeading from './SectionHeading'
 import { formatearFechaDeVacuna } from './vaccineDates'
 import VaccineStatusList, { type VaccineStatusLike } from './VaccineStatusList'
 
@@ -61,13 +61,11 @@ export default function VaccinationCard({ summary, items, isLoading, actions }: 
   const vacio = isLoading || items.length === 0
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <SectionHeading as="h3" description="Qué vacunas tiene y cuándo le toca la siguiente dosis.">
-          Carnet de vacunas
-        </SectionHeading>
-        {actions}
-      </div>
+    <CollapsibleSection
+      title="Carnet de vacunas"
+      description="Qué vacunas tiene y cuándo le toca la siguiente dosis."
+      actions={actions}
+    >
       {vacio ? (
         <EmptyState title={isLoading ? 'Cargando el carnet…' : 'Todavía no hay vacunas registradas.'} />
       ) : (
@@ -83,6 +81,6 @@ export default function VaccinationCard({ summary, items, isLoading, actions }: 
           />
         </>
       )}
-    </section>
+    </CollapsibleSection>
   )
 }

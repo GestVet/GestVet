@@ -76,6 +76,7 @@ export default function ClientsView() {
         isLoading={clientes.isPending}
         emptyMessage="Todavía no hay clientes registrados."
         getRowId={(cliente) => String(cliente.id)}
+        pageSize={15}
         renderExpanded={(cliente) => <ClientDetails cliente={cliente} />}
       />
     </div>

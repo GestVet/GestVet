@@ -1,7 +1,7 @@
+import CollapsibleSection from './CollapsibleSection'
 import DataTable, { type DataColumn } from './DataTable'
 import HospitalizationDetails from './HospitalizationDetails'
 import RowExpandButton from './RowExpandButton'
-import SectionHeading from './SectionHeading'
 import StatusBadge from './StatusBadge'
 
 const FORMATO = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
@@ -90,18 +90,19 @@ export default function HospitalizationList({
   canManage,
 }: HospitalizationListProps) {
   return (
-    <div className="flex flex-col gap-3">
-      <SectionHeading as="h3">Internaciones</SectionHeading>
+    // Cerrada al empezar: casi ninguna mascota tiene internaciones.
+    <CollapsibleSection title="Internaciones" defaultOpen={false}>
       <DataTable
         columns={COLUMNAS}
         data={items}
         isLoading={isLoading}
         emptyMessage="Esta mascota nunca fue internada."
         getRowId={(internacion) => String(internacion.id)}
+        pageSize={10}
         renderExpanded={(internacion) => (
           <HospitalizationDetails internacion={internacion} petId={petId} canManage={canManage} />
         )}
       />
-    </div>
+    </CollapsibleSection>
   )
 }

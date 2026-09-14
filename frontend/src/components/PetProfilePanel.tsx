@@ -1,7 +1,7 @@
+import CollapsibleSection from './CollapsibleSection'
 import PetClinicalProfileForm from './PetClinicalProfileForm'
 import PetOwnerProfileForm from './PetOwnerProfileForm'
 import PetProfileSummary from './PetProfileSummary'
-import SectionHeading from './SectionHeading'
 import { Separator } from './ui/separator'
 
 interface PetProfileLike {
@@ -28,11 +28,10 @@ interface PetProfilePanelProps {
 /**
  * Ficha completa de la mascota, con la parte editable que corresponda.
  *
- * La ficha siempre se ve entera: lo que cambia según quién mira es si además
- * aparece un formulario para editarla. El dueño edita lo que conoce de
- * memoria, especie, raza y nacimiento incluidos; el veterinario, lo que mide o
- * confirma en consulta, y también la fecha de nacimiento, que en una emergencia
- * queda provisoria.
+ * La ficha siempre se ve entera. Los formularios para editarla arrancan
+ * cerrados: se consultan mucho más de lo que se editan, y abiertos estiraban
+ * la pantalla. El dueño edita lo que conoce de memoria; el veterinario, lo que
+ * mide o confirma en consulta.
  */
 export default function PetProfilePanel({
   mascota,
@@ -40,37 +39,50 @@ export default function PetProfilePanel({
   canEditClinicalFields,
 }: PetProfilePanelProps) {
   return (
-    <div className="flex flex-col gap-4">
-      <SectionHeading as="h3">Ficha</SectionHeading>
+    <CollapsibleSection title="Ficha">
       <PetProfileSummary mascota={mascota} />
       {canEditOwnerFields ? (
         <>
           <Separator />
-          <PetOwnerProfileForm
-            petId={mascota.id}
-            species={mascota.species}
-            breed={mascota.breed}
-            birthDate={mascota.birth_date}
-            sex={mascota.sex}
-            color={mascota.color}
-            microchipNumber={mascota.microchip_number}
-            temperament={mascota.temperament}
-          />
+          <CollapsibleSection
+            as="h4"
+            title="Editar ficha"
+            description="Especie, raza, nacimiento, sexo, color, microchip y temperamento."
+            defaultOpen={false}
+          >
+            <PetOwnerProfileForm
+              petId={mascota.id}
+              species={mascota.species}
+              breed={mascota.breed}
+              birthDate={mascota.birth_date}
+              sex={mascota.sex}
+              color={mascota.color}
+              microchipNumber={mascota.microchip_number}
+              temperament={mascota.temperament}
+            />
+          </CollapsibleSection>
         </>
       ) : null}
       {canEditClinicalFields ? (
         <>
           <Separator />
-          <PetClinicalProfileForm
-            petId={mascota.id}
-            birthDate={mascota.birth_date}
-            weightKg={mascota.weight_kg}
-            heightCm={mascota.height_cm}
-            isSterilized={mascota.is_sterilized}
-            allergies={mascota.allergies}
-          />
+          <CollapsibleSection
+            as="h4"
+            title="Datos clínicos"
+            description="Nacimiento, peso, altura, esterilización y alergias, confirmados en consulta."
+            defaultOpen={false}
+          >
+            <PetClinicalProfileForm
+              petId={mascota.id}
+              birthDate={mascota.birth_date}
+              weightKg={mascota.weight_kg}
+              heightCm={mascota.height_cm}
+              isSterilized={mascota.is_sterilized}
+              allergies={mascota.allergies}
+            />
+          </CollapsibleSection>
         </>
       ) : null}
-    </div>
+    </CollapsibleSection>
   )
 }

@@ -49,6 +49,14 @@ export default function BreedList({ especie }: BreedListProps) {
       {visibles.length === 0 ? (
         <EmptyState title="Ninguna raza coincide con la búsqueda." />
       ) : (
+        // Las razas se desplazan dentro de su recuadro: el buscador y la
+        // especie quedan a la vista aunque haya setenta.
+        <div
+          role="region"
+          aria-label={`Razas de ${especie.name}`}
+          tabIndex={0}
+          className="max-h-[min(32rem,60dvh)] overflow-y-auto overscroll-contain rounded-lg border px-3 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
         <ul className="m-0 flex list-none flex-col divide-y p-0">
           {visibles.map((raza) => (
             <li key={raza.id} className="py-3">
@@ -64,6 +72,7 @@ export default function BreedList({ especie }: BreedListProps) {
             </li>
           ))}
         </ul>
+        </div>
       )}
     </div>
   )

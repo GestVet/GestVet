@@ -28,6 +28,8 @@ export default function CareRemindersSection() {
 
   return (
     <SectionCard
+      collapsible
+      scrollable
       title="Cuidado vencido"
       description="Mascotas sin vacuna hace más de un año o sin control hace más de medio año."
     >

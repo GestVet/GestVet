@@ -25,6 +25,8 @@ export default function PaymentAnomaliesSection() {
 
   return (
     <SectionCard
+      collapsible
+      scrollable
       title="Pagos fuera de lo típico"
       description="Pagos de los últimos 30 días cuyo monto se aleja bastante del promedio de su tipo de cita. Las emergencias no entran, porque su precio varía por diseño."
     >

@@ -2,7 +2,7 @@ import AttachmentsPanel from './AttachmentsPanel'
 import ClinicalHistoryReportButton from './ClinicalHistoryReportButton'
 import DataTable, { type DataColumn } from './DataTable'
 import RowExpandButton from './RowExpandButton'
-import SectionHeading from './SectionHeading'
+import CollapsibleSection from './CollapsibleSection'
 
 // Las celdas de texto libre pueden partirse; las demas no.
 const TEXTO_LARGO = 'min-w-48 whitespace-normal'
@@ -93,17 +93,14 @@ export default function ClinicalEntryList({
   canManageAttachments,
 }: ClinicalEntryListProps) {
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <SectionHeading as="h3">Historia clínica</SectionHeading>
-        <ClinicalHistoryReportButton petId={petId} />
-      </div>
+    <CollapsibleSection title="Historia clínica" actions={<ClinicalHistoryReportButton petId={petId} />}>
       <DataTable
         columns={COLUMNAS}
         data={items}
         isLoading={isLoading}
         emptyMessage="Todavía no hay entradas en la historia clínica."
         getRowId={(entrada) => String(entrada.id)}
+        pageSize={10}
         renderExpanded={(entrada) => (
           <AttachmentsPanel
             clinicalEntryId={entrada.id}
@@ -113,6 +110,6 @@ export default function ClinicalEntryList({
           />
         )}
       />
-    </div>
+    </CollapsibleSection>
   )
 }

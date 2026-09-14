@@ -122,6 +122,7 @@ export default function PaymentsReportView() {
           isLoading={pagos.isPending}
           emptyMessage="No hay pagos para mostrar."
           getRowId={(pago) => String(pago.id)}
+          pageSize={15}
         />
       </SectionCard>
     </div>

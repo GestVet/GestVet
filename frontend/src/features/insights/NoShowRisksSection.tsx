@@ -9,7 +9,6 @@ type Riesgo = Awaited<ReturnType<typeof fetchNoShowRisks>>['items'][number]
 const FORMATO = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
 
 const COLUMNAS: readonly DataColumn<Riesgo>[] = [
-  { id: 'cita', header: 'Cita', cell: (item) => `#${String(item.appointment_id)}` },
   { id: 'cliente', header: 'Cliente', cell: (item) => item.client_name },
   { id: 'mascota', header: 'Mascota', cell: (item) => item.pet_name },
   { id: 'cuando', header: 'Cuándo', cell: (item) => FORMATO.format(new Date(item.scheduled_at)) },
@@ -21,6 +20,8 @@ export default function NoShowRisksSection() {
 
   return (
     <SectionCard
+      collapsible
+      scrollable
       title="Riesgo de inasistencia"
       description="Citas próximas de clientes con dos o más citas pasadas que quedaron sin cerrar. Vale la pena llamar para confirmar."
     >

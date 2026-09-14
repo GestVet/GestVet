@@ -123,6 +123,7 @@ export default function AppointmentsView() {
         isLoading={citas.isPending}
         emptyMessage="No hay citas para mostrar."
         getRowId={(cita) => String(cita.id)}
+        pageSize={15}
         renderExpanded={(cita) => <AppointmentDetails cita={cita} />}
       />
     </div>

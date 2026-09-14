@@ -20,6 +20,8 @@ export default function VeterinarianAlertsSection() {
 
   return (
     <SectionCard
+      collapsible
+      scrollable
       title="Veterinarios a seguir de cerca"
       description="Tres o más reseñas de 1-2 estrellas, o dos o más reclamos, en los últimos 60 días."
     >
