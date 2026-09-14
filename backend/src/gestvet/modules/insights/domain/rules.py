@@ -120,6 +120,8 @@ def build_payment_anomalies(records: list[PaymentRecord]) -> list[PaymentAnomaly
                     amount=record.amount,
                     typical_amount=typical,
                     paid_at=record.paid_at,
+                    client_name=record.client_name,
+                    pet_name=record.pet_name,
                 )
             )
     return sorted(anomalies, key=lambda anomaly: anomaly.paid_at, reverse=True)

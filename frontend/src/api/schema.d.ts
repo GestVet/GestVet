@@ -2110,6 +2110,10 @@ export interface components {
              * Format: date-time
              */
             paid_at: string;
+            /** Client Name */
+            client_name: string;
+            /** Pet Name */
+            pet_name: string;
         };
         /**
          * PaymentMethod
@@ -2165,6 +2169,23 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /**
+             * Client Name
+             * @default
+             */
+            client_name: string;
+            /**
+             * Pet Name
+             * @default
+             */
+            pet_name: string;
+            /**
+             * Appointment Type
+             * @default
+             */
+            appointment_type: string;
+            /** Appointment At */
+            appointment_at?: string | null;
         };
         /**
          * Permission
@@ -2714,6 +2735,8 @@ export interface components {
             batch: string;
             /** Notes */
             notes: string;
+            /** Reminder Sent At */
+            reminder_sent_at: string | null;
             /**
              * Created At
              * Format: date-time

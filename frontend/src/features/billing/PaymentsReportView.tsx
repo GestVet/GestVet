@@ -19,10 +19,33 @@ import PaymentReportSummary from './PaymentReportSummary'
 type Pago = Awaited<ReturnType<typeof fetchPayments>>['items'][number]
 
 const FORMATO = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
+const FORMATO_CITA = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium' })
+
+/** Qué se atendió, por ejemplo "Consulta general de Rocco, cita del 14 set. 2026". */
+function atencion(pago: Pago): string {
+  const cita = pago.appointment_at ?? null
+  if (cita === null) {
+    return ''
+  }
+  return `${pago.appointment_type} de ${pago.pet_name}, cita del ${FORMATO_CITA.format(new Date(cita))}`
+}
 
 const COLUMNAS: readonly DataColumn<Pago>[] = [
   { id: 'fecha', header: 'Fecha', cell: (pago) => FORMATO.format(new Date(pago.paid_at)) },
-  { id: 'cita', header: 'Cita', cell: (pago) => `#${String(pago.appointment_id)}` },
+  {
+    id: 'cliente',
+    header: 'Cliente y atención',
+    className: 'min-w-56 whitespace-normal',
+    cell: (pago) =>
+      pago.client_name === '' ? (
+        'Cita no encontrada'
+      ) : (
+        <span className="flex flex-col">
+          <span className="font-medium">{pago.client_name}</span>
+          <span className="text-muted-foreground">{atencion(pago)}</span>
+        </span>
+      ),
+  },
   { id: 'monto', header: 'Monto', cell: (pago) => `S/ ${pago.amount}` },
   { id: 'medio', header: 'Medio', cell: (pago) => pago.method_label },
   { id: 'referencia', header: 'Referencia', cell: (pago) => pago.reference || '—' },

@@ -9,8 +9,8 @@ type Anomalia = Awaited<ReturnType<typeof fetchPaymentAnomalies>>['items'][numbe
 const FORMATO = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
 
 const COLUMNAS: readonly DataColumn<Anomalia>[] = [
-  { id: 'pago', header: 'Pago', cell: (item) => `#${String(item.payment_id)}` },
-  { id: 'cita', header: 'Cita', cell: (item) => `#${String(item.appointment_id)}` },
+  { id: 'cliente', header: 'Cliente', className: 'whitespace-normal', cell: (item) => item.client_name },
+  { id: 'mascota', header: 'Mascota', cell: (item) => item.pet_name },
   { id: 'tipo', header: 'Tipo', cell: (item) => item.appointment_type_label },
   { id: 'monto', header: 'Monto', cell: (item) => `S/ ${item.amount}` },
   { id: 'tipico', header: 'Típico', cell: (item) => `S/ ${item.typical_amount}` },

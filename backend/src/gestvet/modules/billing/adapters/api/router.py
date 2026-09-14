@@ -130,6 +130,7 @@ async def void_payment(
 async def list_payments(
     principal: PaymentsReaderDep,
     payments: PaymentRepositoryDep,
+    appointments: AppointmentDirectoryDep,
     appointment_id: Annotated[int | None, Query(ge=1)] = None,
     method: Annotated[PaymentMethod | None, Query(description="Filtra por medio")] = None,
     include_voided: Annotated[bool, Query(description="Incluye los anulados")] = True,
@@ -153,8 +154,12 @@ async def list_payments(
         ),
     )
     page = await ListPayments(payments)(query)
+    contexts = await appointments.contexts_for([item.appointment_id for item in page.items])
     return PaymentPageResponse(
-        items=[PaymentResponse.from_entity(item) for item in page.items],
+        items=[
+            PaymentResponse.from_entity(item, contexts.get(item.appointment_id))
+            for item in page.items
+        ],
         total=page.total,
     )
 
