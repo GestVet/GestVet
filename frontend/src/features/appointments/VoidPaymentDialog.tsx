@@ -3,6 +3,7 @@ import { useState } from 'react'
 
 import { paymentsQueryKey, voidPayment } from '../../api/payments'
 import type { PaymentResponse } from '../../api/types'
+import FieldIcon from '../../components/FieldIcon'
 import FormMessage from '../../components/FormMessage'
 import {
   AlertDialog,
@@ -65,6 +66,7 @@ export default function VoidPaymentDialog({ pago }: VoidPaymentDialogProps) {
         </AlertDialogHeader>
         <div className="flex flex-col gap-2">
           <Label htmlFor={motivoId}>Motivo</Label>
+          <FieldIcon icon="mensaje" multiline>
           <Textarea
             id={motivoId}
             rows={2}
@@ -75,6 +77,7 @@ export default function VoidPaymentDialog({ pago }: VoidPaymentDialogProps) {
               setMotivo(evento.target.value)
             }}
           />
+          </FieldIcon>
           <p id={`${motivoId}-ayuda`} className="m-0 text-xs text-muted-foreground">
             {`Al menos ${String(MIN_MOTIVO)} caracteres. ${String(motivo.trim().length)} de ${String(MAX_MOTIVO)}.`}
           </p>

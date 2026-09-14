@@ -5,15 +5,8 @@ import SectionHeading from '../../components/SectionHeading'
 import SpeciesBreedFields from '../../components/SpeciesBreedFields'
 import TextareaField from '../../components/TextareaField'
 import TextField from '../../components/TextField'
-import {
-  LARGO_DNI,
-  MAX_APELLIDO,
-  MAX_NOMBRE,
-  soloDigitos,
-  soloLetras,
-  soloTelefono,
-} from '../../services/fieldRules'
 import type { WalkInEmergencyFormValues } from './formValues'
+import WalkInClientFields from './WalkInClientFields'
 
 interface WalkInEmergencyFieldsProps {
   readonly register: UseFormRegister<WalkInEmergencyFormValues>
@@ -29,47 +22,7 @@ export default function WalkInEmergencyFields({
 }: WalkInEmergencyFieldsProps) {
   return (
     <>
-      <fieldset className="m-0 flex flex-col gap-4 border-0 p-0">
-        <legend className="mb-3 p-0">
-          <SectionHeading as="h2">Cliente</SectionHeading>
-        </legend>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <TextField
-            id="first_name"
-            label="Nombre"
-            maxLength={MAX_NOMBRE}
-            sanitize={soloLetras}
-            field={register('first_name')}
-            error={errors.first_name?.message}
-          />
-          <TextField
-            id="last_name"
-            label="Apellido"
-            maxLength={MAX_APELLIDO}
-            sanitize={soloLetras}
-            field={register('last_name')}
-            error={errors.last_name?.message}
-          />
-          <TextField
-            id="document_id"
-            label="DNI"
-            inputMode="numeric"
-            maxLength={LARGO_DNI}
-            sanitize={soloDigitos}
-            field={register('document_id')}
-            error={errors.document_id?.message}
-          />
-          <TextField
-            id="phone"
-            label="Teléfono (si lo tiene a mano)"
-            type="tel"
-            inputMode="tel"
-            sanitize={soloTelefono}
-            field={register('phone')}
-            error={errors.phone?.message}
-          />
-        </div>
-      </fieldset>
+      <WalkInClientFields register={register} errors={errors} />
 
       <fieldset className="m-0 flex flex-col gap-4 border-0 p-0">
         <legend className="mb-3 p-0">
@@ -79,6 +32,7 @@ export default function WalkInEmergencyFields({
           <TextField
             id="pet_name"
             label="Nombre de la mascota"
+            icon="mascota"
             maxLength={MAX_NOMBRE_DE_MASCOTA}
             field={register('pet_name')}
             error={errors.pet_name?.message}
@@ -93,6 +47,7 @@ export default function WalkInEmergencyFields({
         <TextareaField
           id="description"
           label="Motivo de la emergencia (opcional)"
+          icon="emergencia"
           rows={2}
           field={register('description')}
           error={errors.description?.message}

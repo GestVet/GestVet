@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { accessQueryKey, assignAccessRole } from '../../api/access'
 import type { AccessRoleResponse, UserResponse } from '../../api/types'
+import FieldIcon from '../../components/FieldIcon'
 import FormMessage from '../../components/FormMessage'
 import { NativeSelect, NativeSelectOption } from '../../components/ui/native-select'
 import { errorMessage } from '../../services/api'
@@ -37,6 +38,7 @@ export default function StaffAccessRole({ account, roles, assignedRoleId }: Staf
 
   return (
     <div className="flex min-w-44 flex-col gap-1 whitespace-normal">
+      <FieldIcon icon="permisos">
       <NativeSelect
         aria-label={`Rol de ${account.first_name} ${account.last_name}`}
         value={valor === undefined ? '' : String(valor)}
@@ -52,6 +54,7 @@ export default function StaffAccessRole({ account, roles, assignedRoleId }: Staf
           </NativeSelectOption>
         ))}
       </NativeSelect>
+      </FieldIcon>
       {asignacion.isError ? (
         <FormMessage tone="error">
           {errorMessage(asignacion.error, 'No se pudo cambiar el rol.')}

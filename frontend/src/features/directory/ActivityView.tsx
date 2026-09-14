@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { activityQueryKey, fetchActivity } from '../../api/directory'
 import type { UserRole } from '../../api/types'
 import DataTable, { type DataColumn } from '../../components/DataTable'
+import FieldIcon from '../../components/FieldIcon'
 import PageHeader from '../../components/PageHeader'
 import StatusBadge from '../../components/StatusBadge'
 import { Label } from '../../components/ui/label'
@@ -65,6 +66,7 @@ export default function ActivityView() {
         actions={
           <div className="flex min-w-56 flex-col gap-2">
             <Label htmlFor="rol">Filtrar por rol</Label>
+            <FieldIcon icon="filtro">
             <NativeSelect
               id="rol"
               className="w-full [&_select]:h-10"
@@ -79,6 +81,7 @@ export default function ActivityView() {
                 </NativeSelectOption>
               ))}
             </NativeSelect>
+            </FieldIcon>
           </div>
         }
       />

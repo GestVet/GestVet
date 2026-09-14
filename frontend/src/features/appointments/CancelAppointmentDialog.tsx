@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { appointmentsQueryKey, cancelAppointment } from '../../api/appointments'
+import FieldIcon from '../../components/FieldIcon'
 import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
 import {
@@ -64,6 +65,7 @@ export default function CancelAppointmentDialog({ appointmentId }: CancelAppoint
         </AlertDialogHeader>
         <div className="flex flex-col gap-2">
           <Label htmlFor={motivoId}>Motivo</Label>
+          <FieldIcon icon="mensaje" multiline>
           <Textarea
             id={motivoId}
             rows={2}
@@ -74,6 +76,7 @@ export default function CancelAppointmentDialog({ appointmentId }: CancelAppoint
               setMotivo(evento.target.value)
             }}
           />
+          </FieldIcon>
           <p id={`${motivoId}-ayuda`} className="m-0 text-xs text-muted-foreground">
             {`Al menos ${String(MIN_MOTIVO)} caracteres. ${String(motivo.trim().length)} de ${String(MAX_MOTIVO)}.`}
           </p>

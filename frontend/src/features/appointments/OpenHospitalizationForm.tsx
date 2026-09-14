@@ -56,6 +56,7 @@ export default function OpenHospitalizationForm({ appointmentId }: OpenHospitali
       <TextareaField
         id={`internacion-${String(appointmentId)}`}
         label="Motivo de la internación"
+        icon="nota"
         rows={2}
         field={register('reason')}
         error={formState.errors.reason?.message}

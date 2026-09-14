@@ -63,6 +63,7 @@ export default function PetForm() {
           <TextField
             id="name"
             label="Nombre"
+            icon="mascota"
             maxLength={MAX_NOMBRE_DE_MASCOTA}
             field={register('name')}
             error={errores.name?.message}

@@ -75,6 +75,7 @@ export default function PaymentForm({ appointmentId }: PaymentFormProps) {
         <TextField
           id={campo('amount')}
           label="Monto (S/)"
+          icon="pago"
           type="number"
           inputMode="decimal"
           step="0.01"
@@ -82,7 +83,7 @@ export default function PaymentForm({ appointmentId }: PaymentFormProps) {
           field={register('amount')}
           error={formState.errors.amount?.message}
         />
-        <SelectField id={campo('method')} label="Medio de pago" field={register('method')}>
+        <SelectField id={campo('method')} label="Medio de pago" icon="medioDePago" field={register('method')}>
           {METODOS.map((metodo) => (
             <NativeSelectOption key={metodo.value} value={metodo.value}>
               {metodo.label}
@@ -92,6 +93,7 @@ export default function PaymentForm({ appointmentId }: PaymentFormProps) {
         <TextField
           id={campo('reference')}
           label="Referencia (opcional)"
+          icon="numero"
           placeholder="N° de operación"
           maxLength={120}
           field={register('reference')}

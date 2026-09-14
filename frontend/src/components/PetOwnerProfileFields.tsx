@@ -42,13 +42,14 @@ export default function PetOwnerProfileFields({ formulario, petId }: PetOwnerPro
         field={register('birth_date')}
         error={errores.birth_date?.message}
       />
-      <SelectField id={id('sex')} label="Sexo" field={register('sex')} placeholder="No especificado">
+      <SelectField id={id('sex')} label="Sexo" icon="sexo" field={register('sex')} placeholder="No especificado">
         <NativeSelectOption value="male">Macho</NativeSelectOption>
         <NativeSelectOption value="female">Hembra</NativeSelectOption>
       </SelectField>
       <TextField
         id={id('color')}
         label="Color"
+        icon="color"
         maxLength={MAX_COLOR}
         field={register('color')}
         error={errores.color?.message}
@@ -56,6 +57,7 @@ export default function PetOwnerProfileFields({ formulario, petId }: PetOwnerPro
       <TextField
         id={id('microchip')}
         label="Microchip"
+        icon="microchip"
         inputMode="numeric"
         maxLength={15}
         hint="De 9 a 15 dígitos. Déjalo vacío si no tiene."
@@ -66,6 +68,7 @@ export default function PetOwnerProfileFields({ formulario, petId }: PetOwnerPro
       <TextField
         id={id('temperament')}
         label="Temperamento"
+        icon="temperamento"
         maxLength={MAX_TEMPERAMENTO}
         placeholder="Por ejemplo: tranquilo, nervioso con extraños"
         field={register('temperament')}

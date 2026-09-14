@@ -39,6 +39,7 @@ export default function BookingFields() {
         <SelectField
           id="pet_id"
           label="Mascota"
+          icon="mascota"
           placeholder="Elige una"
           field={register('pet_id')}
           error={mensajeDeError(errores, 'pet_id')}
@@ -53,6 +54,7 @@ export default function BookingFields() {
         <SelectField
           id="appointment_type_id"
           label="Tipo de atención"
+          icon="diagnostico"
           placeholder="Elige uno"
           field={register('appointment_type_id', {
             // Otro tipo cambia la duracion: la hora elegida puede dejar de caber.
@@ -85,6 +87,7 @@ export default function BookingFields() {
       <TextareaField
         id="description"
         label="3. ¿Qué le pasa a tu mascota? (opcional)"
+        icon="mensaje"
         hint="Ayuda al veterinario a preparar la consulta."
         rows={3}
         field={register('description')}

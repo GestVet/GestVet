@@ -62,6 +62,7 @@ export default function ComplaintForm({ appointmentId }: ComplaintFormProps) {
       <TextareaField
         id={`reclamo-${String(appointmentId)}`}
         label="¿Qué pasó?"
+        icon="mensaje"
         field={register('description')}
         error={formState.errors.description?.message}
       />

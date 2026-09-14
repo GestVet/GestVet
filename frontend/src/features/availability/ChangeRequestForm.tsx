@@ -74,6 +74,7 @@ export default function ChangeRequestForm({ turnos }: ChangeRequestFormProps) {
       <SelectField
         id="cambio-turno"
         label="Turno"
+        icon="turno"
         placeholder="Ninguno en particular"
         hint="Solo aparecen los turnos de la semana que estás viendo."
         field={register('slot_id')}
@@ -87,6 +88,7 @@ export default function ChangeRequestForm({ turnos }: ChangeRequestFormProps) {
       <TextareaField
         id="cambio-mensaje"
         label="Qué necesitas"
+        icon="mensaje"
         placeholder="Por ejemplo: tengo control médico el martes por la mañana."
         field={register('message')}
         error={formState.errors.message?.message}

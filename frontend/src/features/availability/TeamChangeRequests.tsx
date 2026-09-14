@@ -3,6 +3,7 @@ import { useState } from 'react'
 
 import { changeRequestsQueryKey, fetchChangeRequests } from '../../api/availability'
 import type { UserResponse } from '../../api/types'
+import FieldIcon from '../../components/FieldIcon'
 import SectionCard from '../../components/SectionCard'
 import { NativeSelect, NativeSelectOption } from '../../components/ui/native-select'
 import ChangeRequestList from './ChangeRequestList'
@@ -34,6 +35,7 @@ export default function TeamChangeRequests({ veterinarios }: TeamChangeRequestsP
       title="Pedidos de cambio"
       description="Aceptar no mueve el turno: reasígnalo en el cuadro y deja la respuesta."
       actions={
+        <FieldIcon icon="filtro">
         <NativeSelect
           aria-label="Qué pedidos ver"
           className="[&_select]:h-9"
@@ -45,6 +47,7 @@ export default function TeamChangeRequests({ veterinarios }: TeamChangeRequestsP
           <NativeSelectOption value={PENDIENTES}>Pendientes</NativeSelectOption>
           <NativeSelectOption value="">Todos</NativeSelectOption>
         </NativeSelect>
+        </FieldIcon>
       }
     >
       <ChangeRequestList

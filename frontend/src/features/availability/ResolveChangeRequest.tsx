@@ -3,6 +3,7 @@ import { useState } from 'react'
 
 import { availabilityQueryKey, resolveChangeRequest } from '../../api/availability'
 import type { ChangeRequestResponse } from '../../api/types'
+import FieldIcon from '../../components/FieldIcon'
 import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
 import { Button } from '../../components/ui/button'
@@ -33,6 +34,7 @@ export default function ResolveChangeRequest({ pedido }: ResolveChangeRequestPro
       <Label htmlFor={id} className="sr-only">
         Respuesta al pedido
       </Label>
+      <FieldIcon icon="mensaje">
       <Input
         id={id}
         className="h-8"
@@ -43,6 +45,7 @@ export default function ResolveChangeRequest({ pedido }: ResolveChangeRequestPro
           setRespuesta(evento.target.value)
         }}
       />
+      </FieldIcon>
       <div className="flex flex-wrap gap-2">
         <Button
           type="button"

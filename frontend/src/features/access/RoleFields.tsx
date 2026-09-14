@@ -27,6 +27,7 @@ export default function RoleFields({ register, errors, isNew, isSystem }: RoleFi
         <TextField
           id="role-name"
           label="Nombre"
+          icon="permisos"
           maxLength={60}
           placeholder="Por ejemplo, Recepción"
           field={register('name')}
@@ -37,6 +38,7 @@ export default function RoleFields({ register, errors, isNew, isSystem }: RoleFi
         <SelectField
           id="role-kind"
           label="Tipo de cuenta"
+          icon="tipoDeCuenta"
           hint="Define qué permisos puede tener."
           field={register('account_kind')}
         >
@@ -51,6 +53,7 @@ export default function RoleFields({ register, errors, isNew, isSystem }: RoleFi
         <TextareaField
           id="role-description"
           label="Descripción"
+          icon="descripcion"
           rows={2}
           placeholder="Para qué sirve este rol"
           field={register('description')}

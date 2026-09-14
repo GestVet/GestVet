@@ -1,4 +1,5 @@
 import type { AppointmentStatus } from '../../api/types'
+import FieldIcon from '../../components/FieldIcon'
 import { Checkbox } from '../../components/ui/checkbox'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
@@ -39,6 +40,7 @@ export default function AppointmentsFilters({
     <div className="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <div className="flex flex-col gap-2">
         <Label htmlFor="filtro-estado">Estado</Label>
+        <FieldIcon icon="filtro">
         <NativeSelect
           id="filtro-estado"
           className="w-full [&_select]:h-10"
@@ -54,9 +56,11 @@ export default function AppointmentsFilters({
             </NativeSelectOption>
           ))}
         </NativeSelect>
+        </FieldIcon>
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="filtro-desde">Desde</Label>
+        <FieldIcon icon="fecha">
         <Input
           id="filtro-desde"
           type="date"
@@ -67,9 +71,11 @@ export default function AppointmentsFilters({
             onDesdeChange(evento.target.value)
           }}
         />
+        </FieldIcon>
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="filtro-hasta">Hasta</Label>
+        <FieldIcon icon="fecha">
         <Input
           id="filtro-hasta"
           type="date"
@@ -80,6 +86,7 @@ export default function AppointmentsFilters({
             onHastaChange(evento.target.value)
           }}
         />
+        </FieldIcon>
       </div>
       {mostrarEmergencias ? (
         <div className="flex h-10 items-center gap-2">

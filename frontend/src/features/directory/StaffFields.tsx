@@ -1,5 +1,6 @@
 import type { FieldErrors, UseFormRegister } from 'react-hook-form'
 
+import PasswordField from '../../components/PasswordField'
 import TextField from '../../components/TextField'
 import { soloLetras, soloTelefono } from '../../services/fieldRules'
 import type { StaffFormValues } from './staffSchema'
@@ -15,6 +16,7 @@ export default function StaffFields({ register, errors }: StaffFieldsProps) {
       <TextField
         id="first_name"
         label="Nombre"
+        icon="perfil"
         sanitize={soloLetras}
         field={register('first_name')}
         error={errors.first_name?.message}
@@ -22,6 +24,7 @@ export default function StaffFields({ register, errors }: StaffFieldsProps) {
       <TextField
         id="last_name"
         label="Apellido"
+        icon="perfil"
         sanitize={soloLetras}
         field={register('last_name')}
         error={errors.last_name?.message}
@@ -42,10 +45,9 @@ export default function StaffFields({ register, errors }: StaffFieldsProps) {
         field={register('phone')}
         error={errors.phone?.message}
       />
-      <TextField
+      <PasswordField
         id="password"
         label="Contraseña inicial"
-        type="password"
         autoComplete="new-password"
         hint="Al menos 10 caracteres."
         field={register('password')}

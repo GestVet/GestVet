@@ -3,6 +3,7 @@ import { useState } from 'react'
 
 import { correctPetStatus, petsOfOwnerQueryKey } from '../../api/pets'
 import type { PetResponse } from '../../api/types'
+import FieldIcon from '../../components/FieldIcon'
 import FormMessage from '../../components/FormMessage'
 import {
   AlertDialog,
@@ -65,6 +66,7 @@ export default function CorrectPetStatusDialog({ mascota }: CorrectPetStatusDial
         </AlertDialogHeader>
         <div className="flex flex-col gap-2">
           <Label htmlFor={motivoId}>Motivo</Label>
+          <FieldIcon icon="mensaje" multiline>
           <Textarea
             id={motivoId}
             rows={2}
@@ -73,6 +75,7 @@ export default function CorrectPetStatusDialog({ mascota }: CorrectPetStatusDial
               setMotivo(evento.target.value)
             }}
           />
+          </FieldIcon>
         </div>
         {corregir.isError ? (
           <FormMessage tone="error">

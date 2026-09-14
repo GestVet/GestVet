@@ -38,6 +38,7 @@ export default function SpeciesBreedFields({
       <SelectField
         id={`${idPrefix}-species`}
         label="Especie"
+        icon="mascota"
         placeholder={isPending ? 'Cargando…' : 'Elige una'}
         field={speciesField}
         error={speciesError}
@@ -52,6 +53,7 @@ export default function SpeciesBreedFields({
         <SelectField
           id={`${idPrefix}-breed`}
           label="Raza"
+          icon="raza"
           placeholder={species === '' ? 'Primero elige la especie' : 'Elige una'}
           hint="Si no la sabes, elige «Sin especificar»."
           field={breedField}

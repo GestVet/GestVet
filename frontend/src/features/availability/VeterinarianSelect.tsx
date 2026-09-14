@@ -18,7 +18,7 @@ export default function VeterinarianSelect({
   error,
 }: VeterinarianSelectProps) {
   return (
-    <SelectField id={id} label="Veterinario" placeholder="Elige a quién" field={field} error={error}>
+    <SelectField id={id} label="Veterinario" icon="personal" placeholder="Elige a quién" field={field} error={error}>
       {veterinarios.map((veterinario) => (
         <NativeSelectOption key={veterinario.id} value={String(veterinario.id)}>
           {`${veterinario.first_name} ${veterinario.last_name}`}

@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { createQrCharge } from '../../api/payments'
+import FieldIcon from '../../components/FieldIcon'
 import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
 import { Button } from '../../components/ui/button'
@@ -60,6 +61,7 @@ export default function QrPaymentPanel({
       {puedeAjustarMonto ? (
         <div className="flex w-full max-w-sm flex-col gap-2">
           <Label htmlFor={montoId}>Monto (opcional)</Label>
+          <FieldIcon icon="pago">
           <Input
             id={montoId}
             type="number"
@@ -74,6 +76,7 @@ export default function QrPaymentPanel({
               setMonto(evento.target.value)
             }}
           />
+          </FieldIcon>
           <p id={`${montoId}-ayuda`} className="m-0 text-sm text-muted-foreground">
             Déjalo vacío para usar el precio de catálogo. En una cita normal admite hasta S/ 5
             de diferencia; en una emergencia no hay límite.

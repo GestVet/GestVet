@@ -34,6 +34,7 @@ export default function RegisterFields({ register, errors }: RegisterFieldsProps
         <TextField
           id="first_name"
           label="Nombre"
+          icon="perfil"
           autoComplete="given-name"
           maxLength={MAX_NOMBRE}
           sanitize={soloLetras}
@@ -43,6 +44,7 @@ export default function RegisterFields({ register, errors }: RegisterFieldsProps
         <TextField
           id="last_name"
           label="Apellido"
+          icon="perfil"
           autoComplete="family-name"
           maxLength={MAX_APELLIDO}
           sanitize={soloLetras}
@@ -66,6 +68,7 @@ export default function RegisterFields({ register, errors }: RegisterFieldsProps
         <TextField
           id="document_id"
           label="DNI"
+          icon="documento"
           inputMode="numeric"
           autoComplete="off"
           maxLength={LARGO_DNI}

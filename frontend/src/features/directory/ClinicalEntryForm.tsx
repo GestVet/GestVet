@@ -87,7 +87,7 @@ export default function ClinicalEntryForm({ petId }: ClinicalEntryFormProps) {
       )}
     >
       <div className="grid gap-5 sm:grid-cols-2">
-        <SelectField id={campo('kind')} label="Tipo" field={register('kind')}>
+        <SelectField id={campo('kind')} label="Tipo" icon="registroClinico" field={register('kind')}>
           {TIPOS.map((tipo) => (
             <NativeSelectOption key={tipo.value} value={tipo.value}>
               {tipo.label}
@@ -97,6 +97,7 @@ export default function ClinicalEntryForm({ petId }: ClinicalEntryFormProps) {
         <TextField
           id={campo('weight_kg')}
           label="Peso (kg)"
+          icon="peso"
           type="number"
           inputMode="decimal"
           step="0.1"
@@ -104,12 +105,13 @@ export default function ClinicalEntryForm({ petId }: ClinicalEntryFormProps) {
           field={register('weight_kg')}
           error={formState.errors.weight_kg?.message}
         />
-        <TextField id={campo('diagnosis')} label="Diagnóstico" maxLength={300} field={register('diagnosis')} error={formState.errors.diagnosis?.message} />
-        <TextField id={campo('treatment')} label="Tratamiento" maxLength={300} field={register('treatment')} error={formState.errors.treatment?.message} />
+        <TextField id={campo('diagnosis')} label="Diagnóstico" icon="diagnostico" maxLength={300} field={register('diagnosis')} error={formState.errors.diagnosis?.message} />
+        <TextField id={campo('treatment')} label="Tratamiento" icon="tratamiento" maxLength={300} field={register('treatment')} error={formState.errors.treatment?.message} />
       </div>
       <TextareaField
         id={campo('notes')}
         label="Notas"
+        icon="nota"
         rows={2}
         field={register('notes')}
         error={formState.errors.notes?.message}

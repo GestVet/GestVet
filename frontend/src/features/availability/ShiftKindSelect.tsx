@@ -13,6 +13,7 @@ export default function ShiftKindSelect({ id, field }: ShiftKindSelectProps) {
     <SelectField
       id={id}
       label="Tipo"
+      icon="turno"
       hint="En atención recibe citas. En guardia cubre las emergencias y puede pasar la medianoche."
       field={field}
     >

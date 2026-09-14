@@ -3,7 +3,9 @@ import type { UseFormRegisterReturn } from 'react-hook-form'
 
 import FieldError from './FieldError'
 import FieldHint from './FieldHint'
+import FieldIcon from './FieldIcon'
 import { fieldIds } from './fieldIds'
+import type { IconName } from './icons'
 import { Label } from './ui/label'
 import { NativeSelect, NativeSelectOption } from './ui/native-select'
 
@@ -12,6 +14,7 @@ interface SelectFieldProps {
   readonly label: string
   /** Lo que devuelve `register(...)` de react-hook-form. */
   readonly field: UseFormRegisterReturn
+  readonly icon?: IconName
   readonly error?: string
   readonly hint?: string
   /** Texto de la opcion vacia. Sin el, la lista no ofrece "ninguna". */
@@ -20,7 +23,7 @@ interface SelectFieldProps {
 }
 
 /**
- * Una lista desplegable con su etiqueta, su error y su ayuda.
+ * Una lista desplegable con su etiqueta, su icono, su error y su ayuda.
  *
  * Usa el select nativo de shadcn y no el de Radix: se registra con
  * react-hook-form igual que un campo de texto, y en el celular abre la lista
@@ -30,6 +33,7 @@ export default function SelectField({
   id,
   label,
   field,
+  icon,
   error,
   hint,
   placeholder,
@@ -40,18 +44,20 @@ export default function SelectField({
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor={id}>{label}</Label>
-      <NativeSelect
-        id={id}
-        className="w-full [&_select]:h-10"
-        aria-invalid={error !== undefined}
-        aria-describedby={ids.describedBy}
-        {...field}
-      >
-        {placeholder === undefined ? null : (
-          <NativeSelectOption value="">{placeholder}</NativeSelectOption>
-        )}
-        {children}
-      </NativeSelect>
+      <FieldIcon icon={icon}>
+        <NativeSelect
+          id={id}
+          className="w-full [&_select]:h-10"
+          aria-invalid={error !== undefined}
+          aria-describedby={ids.describedBy}
+          {...field}
+        >
+          {placeholder === undefined ? null : (
+            <NativeSelectOption value="">{placeholder}</NativeSelectOption>
+          )}
+          {children}
+        </NativeSelect>
+      </FieldIcon>
       <FieldHint id={ids.hintId} hint={hint} />
       <FieldError id={ids.errorId} message={error} />
     </div>

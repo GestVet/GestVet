@@ -8,6 +8,7 @@ import {
   paymentsQueryKey,
 } from '../../api/payments'
 import DataTable, { type DataColumn } from '../../components/DataTable'
+import FieldIcon from '../../components/FieldIcon'
 import PageHeader from '../../components/PageHeader'
 import { instanteEnClinica, sumarDias } from '../../services/clinicTime'
 import SectionCard from '../../components/SectionCard'
@@ -77,6 +78,7 @@ export default function PaymentsReportView() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
             <Label htmlFor="reporte-desde">Desde</Label>
+            <FieldIcon icon="fecha">
             <Input
               id="reporte-desde"
               type="date"
@@ -87,9 +89,11 @@ export default function PaymentsReportView() {
                 setDesde(evento.target.value)
               }}
             />
+            </FieldIcon>
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="reporte-hasta">Hasta</Label>
+            <FieldIcon icon="fecha">
             <Input
               id="reporte-hasta"
               type="date"
@@ -100,6 +104,7 @@ export default function PaymentsReportView() {
                 setHasta(evento.target.value)
               }}
             />
+            </FieldIcon>
           </div>
         </div>
 

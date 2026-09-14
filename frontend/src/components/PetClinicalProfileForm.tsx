@@ -74,6 +74,7 @@ export default function PetClinicalProfileForm(props: PetClinicalProfileFormProp
         <TextField
           id="weight_kg"
           label="Peso (kg)"
+          icon="peso"
           type="number"
           inputMode="decimal"
           step="0.1"
@@ -84,6 +85,7 @@ export default function PetClinicalProfileForm(props: PetClinicalProfileFormProp
         <TextField
           id="height_cm"
           label="Altura (cm)"
+          icon="altura"
           type="number"
           inputMode="decimal"
           step="0.1"
@@ -94,6 +96,7 @@ export default function PetClinicalProfileForm(props: PetClinicalProfileFormProp
         <SelectField
           id="is_sterilized"
           label="Esterilizado"
+          icon="salud"
           field={register('is_sterilized')}
           placeholder="No evaluado"
         >
@@ -104,6 +107,7 @@ export default function PetClinicalProfileForm(props: PetClinicalProfileFormProp
       <TextareaField
         id="allergies"
         label="Alergias / condiciones crónicas"
+        icon="alergia"
         rows={2}
         field={register('allergies')}
         error={errores.allergies?.message}

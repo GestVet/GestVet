@@ -59,7 +59,7 @@ export default function ReviewForm({ appointmentId, veterinarianId }: ReviewForm
       )}
     >
       <div className="max-w-xs">
-        <SelectField id={campo('rating')} label="Calificación" field={register('rating')}>
+        <SelectField id={campo('rating')} label="Calificación" icon="estrella" field={register('rating')}>
           <NativeSelectOption value="5">★★★★★ (5)</NativeSelectOption>
           <NativeSelectOption value="4">★★★★ (4)</NativeSelectOption>
           <NativeSelectOption value="3">★★★ (3)</NativeSelectOption>
@@ -71,6 +71,7 @@ export default function ReviewForm({ appointmentId, veterinarianId }: ReviewForm
       <TextareaField
         id={campo('comment')}
         label="Comentario"
+        icon="mensaje"
         rows={2}
         field={register('comment')}
         error={formState.errors.comment?.message}

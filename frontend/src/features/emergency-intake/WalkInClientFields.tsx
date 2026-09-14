@@ -1,32 +1,34 @@
 import type { FieldErrors, UseFormRegister } from 'react-hook-form'
 
-import PasswordField from '../../components/PasswordField'
+import SectionHeading from '../../components/SectionHeading'
 import TextField from '../../components/TextField'
 import {
   LARGO_DNI,
   MAX_APELLIDO,
   MAX_NOMBRE,
-  MAX_TELEFONO,
   soloDigitos,
   soloLetras,
   soloTelefono,
 } from '../../services/fieldRules'
-import type { ProfileForm } from './profileSchema'
+import type { WalkInEmergencyFormValues } from './formValues'
 
-interface ProfileFieldsProps {
-  readonly register: UseFormRegister<ProfileForm>
-  readonly errors: FieldErrors<ProfileForm>
+interface WalkInClientFieldsProps {
+  readonly register: UseFormRegister<WalkInEmergencyFormValues>
+  readonly errors: FieldErrors<WalkInEmergencyFormValues>
 }
 
-export default function ProfileFields({ register, errors }: ProfileFieldsProps) {
+/** Los datos del cliente que llega sin cuenta: lo justo para abrir la emergencia. */
+export default function WalkInClientFields({ register, errors }: WalkInClientFieldsProps) {
   return (
-    <>
-      <div className="grid items-start gap-5 sm:grid-cols-2">
+    <fieldset className="m-0 flex flex-col gap-4 border-0 p-0">
+      <legend className="mb-3 p-0">
+        <SectionHeading as="h2">Cliente</SectionHeading>
+      </legend>
+      <div className="grid gap-5 sm:grid-cols-2">
         <TextField
           id="first_name"
           label="Nombre"
           icon="perfil"
-          autoComplete="given-name"
           maxLength={MAX_NOMBRE}
           sanitize={soloLetras}
           field={register('first_name')}
@@ -36,22 +38,10 @@ export default function ProfileFields({ register, errors }: ProfileFieldsProps) 
           id="last_name"
           label="Apellido"
           icon="perfil"
-          autoComplete="family-name"
           maxLength={MAX_APELLIDO}
           sanitize={soloLetras}
           field={register('last_name')}
           error={errors.last_name?.message}
-        />
-        <TextField
-          id="phone"
-          label="Teléfono"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          maxLength={MAX_TELEFONO}
-          sanitize={soloTelefono}
-          field={register('phone')}
-          error={errors.phone?.message}
         />
         <TextField
           id="document_id"
@@ -63,15 +53,16 @@ export default function ProfileFields({ register, errors }: ProfileFieldsProps) 
           field={register('document_id')}
           error={errors.document_id?.message}
         />
+        <TextField
+          id="phone"
+          label="Teléfono (si lo tiene a mano)"
+          type="tel"
+          inputMode="tel"
+          sanitize={soloTelefono}
+          field={register('phone')}
+          error={errors.phone?.message}
+        />
       </div>
-      <PasswordField
-        id="new_password"
-        label="Nueva contraseña"
-        autoComplete="new-password"
-        hint="Déjala vacía para conservar la actual."
-        field={register('new_password')}
-        error={errors.new_password?.message}
-      />
-    </>
+    </fieldset>
   )
 }

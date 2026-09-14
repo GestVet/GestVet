@@ -3,6 +3,7 @@ import type { UseFormRegisterReturn } from 'react-hook-form'
 
 import FieldError from './FieldError'
 import FieldHint from './FieldHint'
+import FieldIcon from './FieldIcon'
 import { fieldIds } from './fieldIds'
 import Icon from './Icon'
 import { Button } from './ui/button'
@@ -40,7 +41,7 @@ export default function PasswordField({
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor={id}>{label}</Label>
-      <div className="relative">
+      <FieldIcon icon="candado">
         <Input
           id={id}
           type={visible ? 'text' : 'password'}
@@ -66,7 +67,7 @@ export default function PasswordField({
             <Icon name={visible ? 'ocultar' : 'ver'} size={18} />
           </Button>
         </div>
-      </div>
+      </FieldIcon>
       <FieldHint id={ids.hintId} hint={hint} />
       <FieldError id={ids.errorId} message={error} />
     </div>

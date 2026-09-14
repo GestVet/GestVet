@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { useAddHospitalizationNote, useDischargeHospitalization } from '../hooks/useHospitalizations'
+import FieldIcon from './FieldIcon'
 import FormMessage from './FormMessage'
 import { Button } from './ui/button'
 import { Label } from './ui/label'
@@ -30,6 +31,7 @@ export default function HospitalizationManageForm({
     <div className="grid gap-6 md:grid-cols-2">
       <div className="flex flex-col gap-2">
         <Label htmlFor={notaId}>Nota de seguimiento</Label>
+        <FieldIcon icon="nota" multiline>
         <Textarea
           id={notaId}
           rows={2}
@@ -39,6 +41,7 @@ export default function HospitalizationManageForm({
             setNota(evento.target.value)
           }}
         />
+        </FieldIcon>
         {agregarNota.isError ? (
           <FormMessage tone="error">{agregarNota.errorMessage}</FormMessage>
         ) : null}
@@ -64,6 +67,7 @@ export default function HospitalizationManageForm({
 
       <div className="flex flex-col gap-2">
         <Label htmlFor={altaId}>Notas de alta (opcional)</Label>
+        <FieldIcon icon="nota" multiline>
         <Textarea
           id={altaId}
           rows={2}
@@ -73,6 +77,7 @@ export default function HospitalizationManageForm({
             setNotasDeAlta(evento.target.value)
           }}
         />
+        </FieldIcon>
         {darDeAlta.isError ? (
           <FormMessage tone="error">{darDeAlta.errorMessage}</FormMessage>
         ) : null}

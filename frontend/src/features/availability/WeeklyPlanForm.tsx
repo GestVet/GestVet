@@ -69,7 +69,7 @@ export default function WeeklyPlanForm({ veterinarios }: WeeklyPlanFormProps) {
         <div className="grid gap-5 sm:grid-cols-2">
           <VeterinarianSelect id="plan-veterinario" veterinarios={veterinarios} field={register('veterinarian_id')} error={formState.errors.veterinarian_id?.message} />
           <TextField id="plan-desde-dia" label="Desde el" type="date" min={limites.min} max={limites.max} field={register('first_day')} error={formState.errors.first_day?.message} />
-          <SelectField id="plan-semanas" label="Durante" field={register('weeks')} error={formState.errors.weeks?.message}>
+          <SelectField id="plan-semanas" label="Durante" icon="repetir" field={register('weeks')} error={formState.errors.weeks?.message}>
             {SEMANAS.map((semanas) => (
               <NativeSelectOption key={semanas} value={String(semanas)}>
                 {semanas === 1 ? '1 semana' : `${String(semanas)} semanas`}
