@@ -34,7 +34,7 @@ export default function WalkInEmergencyFields({
           <TextField
             id="pet_name"
             label="Nombre de la mascota"
-            placeholder="Por ejemplo: Firulais"
+            placeholder="Firulais"
             icon="mascota"
             maxLength={MAX_NOMBRE_DE_MASCOTA}
             field={register('pet_name')}
@@ -50,7 +50,7 @@ export default function WalkInEmergencyFields({
         <TextareaField
           id="description"
           label="Motivo de la emergencia (opcional)"
-          placeholder="Por ejemplo: lo atropelló un auto y sangra de una pata"
+          placeholder="Lo atropelló un auto y sangra de una pata"
           icon="emergencia"
           rows={2}
           field={register('description')}

@@ -18,7 +18,7 @@ export default function StaffFields({ register, control, errors }: StaffFieldsPr
       <TextField
         id="first_name"
         label="Nombre"
-        placeholder="Por ejemplo: María"
+        placeholder="María"
         icon="perfil"
         sanitize={soloLetras}
         field={register('first_name')}
@@ -27,7 +27,7 @@ export default function StaffFields({ register, control, errors }: StaffFieldsPr
       <TextField
         id="last_name"
         label="Apellido"
-        placeholder="Por ejemplo: Quispe Rojas"
+        placeholder="Quispe Rojas"
         icon="perfil"
         sanitize={soloLetras}
         field={register('last_name')}

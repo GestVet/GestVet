@@ -56,7 +56,7 @@ export default function OpenHospitalizationForm({ appointmentId }: OpenHospitali
       <TextareaField
         id={`internacion-${String(appointmentId)}`}
         label="Motivo de la internación"
-        placeholder="Por ejemplo: deshidratación, necesita suero y observación"
+        placeholder="Deshidratación, necesita suero y observación"
         icon="nota"
         rows={2}
         field={register('reason')}

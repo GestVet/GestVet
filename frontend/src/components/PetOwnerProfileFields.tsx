@@ -49,7 +49,7 @@ export default function PetOwnerProfileFields({ formulario, petId }: PetOwnerPro
       <TextField
         id={id('color')}
         label="Color"
-        placeholder="Por ejemplo: negro con manchas blancas"
+        placeholder="Negro con manchas blancas"
         icon="color"
         maxLength={MAX_COLOR}
         field={register('color')}
@@ -72,7 +72,7 @@ export default function PetOwnerProfileFields({ formulario, petId }: PetOwnerPro
         label="Temperamento"
         icon="temperamento"
         maxLength={MAX_TEMPERAMENTO}
-        placeholder="Por ejemplo: tranquilo, nervioso con extraños"
+        placeholder="Tranquilo, nervioso con extraños"
         field={register('temperament')}
         error={errores.temperament?.message}
       />

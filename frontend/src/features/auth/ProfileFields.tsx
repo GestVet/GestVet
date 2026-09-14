@@ -25,7 +25,7 @@ export default function ProfileFields({ register, control, errors }: ProfileFiel
         <TextField
           id="first_name"
           label="Nombre"
-          placeholder="Por ejemplo: María"
+          placeholder="María"
           icon="perfil"
           autoComplete="given-name"
           maxLength={MAX_NOMBRE}
@@ -36,7 +36,7 @@ export default function ProfileFields({ register, control, errors }: ProfileFiel
         <TextField
           id="last_name"
           label="Apellido"
-          placeholder="Por ejemplo: Quispe Rojas"
+          placeholder="Quispe Rojas"
           icon="perfil"
           autoComplete="family-name"
           maxLength={MAX_APELLIDO}

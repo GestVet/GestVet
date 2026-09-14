@@ -92,7 +92,7 @@ export default function VoidPaymentDialog({ pago }: VoidPaymentDialogProps) {
             icon="mensaje"
             rows={2}
             maxLength={MAX_MOTIVO}
-            placeholder="Por ejemplo: el pago se registró dos veces"
+            placeholder="El pago se registró dos veces"
             hint={`Entre ${String(MIN_TEXTO)} y ${String(MAX_MOTIVO)} caracteres.`}
             field={register('motivo')}
             error={formState.errors.motivo?.message}

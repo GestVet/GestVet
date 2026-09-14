@@ -29,7 +29,7 @@ export default function RoleFields({ register, errors, isNew, isSystem }: RoleFi
           label="Nombre"
           icon="permisos"
           maxLength={60}
-          placeholder="Por ejemplo, Recepción"
+          placeholder="Recepción"
           field={register('name')}
           error={errors.name?.message}
         />

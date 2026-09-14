@@ -87,7 +87,7 @@ export default function BookingFields() {
       <TextareaField
         id="description"
         label="3. ¿Qué le pasa a tu mascota? (opcional)"
-        placeholder="Por ejemplo: vomita desde ayer y no quiere comer"
+        placeholder="Vomita desde ayer y no quiere comer"
         icon="mensaje"
         hint="Ayuda al veterinario a preparar la consulta."
         rows={3}

@@ -29,7 +29,7 @@ export default function WalkInClientFields({ register, control, errors }: WalkIn
         <TextField
           id="first_name"
           label="Nombre"
-          placeholder="Por ejemplo: María"
+          placeholder="María"
           icon="perfil"
           maxLength={MAX_NOMBRE}
           sanitize={soloLetras}
@@ -39,7 +39,7 @@ export default function WalkInClientFields({ register, control, errors }: WalkIn
         <TextField
           id="last_name"
           label="Apellido"
-          placeholder="Por ejemplo: Quispe Rojas"
+          placeholder="Quispe Rojas"
           icon="perfil"
           maxLength={MAX_APELLIDO}
           sanitize={soloLetras}

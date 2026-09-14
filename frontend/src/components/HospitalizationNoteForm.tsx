@@ -57,7 +57,7 @@ export default function HospitalizationNoteForm({
         icon="nota"
         rows={2}
         maxLength={MAX_NOTA}
-        placeholder="Por ejemplo: come bien, sin fiebre, se retira el suero"
+        placeholder="Come bien, sin fiebre, se retira el suero"
         hint={`Entre ${String(MIN_TEXTO)} y ${String(MAX_NOTA)} caracteres.`}
         field={register('nota')}
         error={formState.errors.nota?.message}

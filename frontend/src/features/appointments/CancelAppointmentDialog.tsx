@@ -91,7 +91,7 @@ export default function CancelAppointmentDialog({ appointmentId }: CancelAppoint
             icon="mensaje"
             rows={2}
             maxLength={MAX_MOTIVO}
-            placeholder="Por ejemplo: no podré llegar a esa hora"
+            placeholder="No podré llegar a esa hora"
             hint={`Entre ${String(MIN_TEXTO)} y ${String(MAX_MOTIVO)} caracteres.`}
             field={register('motivo')}
             error={formState.errors.motivo?.message}

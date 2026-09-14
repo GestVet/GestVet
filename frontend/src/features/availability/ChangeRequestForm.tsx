@@ -89,7 +89,7 @@ export default function ChangeRequestForm({ turnos }: ChangeRequestFormProps) {
         id="cambio-mensaje"
         label="Qué necesitas"
         icon="mensaje"
-        placeholder="Por ejemplo: tengo control médico el martes por la mañana."
+        placeholder="Tengo control médico el martes por la mañana"
         field={register('message')}
         error={formState.errors.message?.message}
       />
