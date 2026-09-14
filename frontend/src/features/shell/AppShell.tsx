@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router'
 
-import UserWayWidget from '../../components/UserWayWidget'
+import AccessibilityWidget from '../../components/AccessibilityWidget'
 import { useSession } from '../../store/session'
 import AppFooter from './AppFooter'
 import Brand from './Brand'
@@ -32,7 +32,7 @@ export default function AppShell() {
   const invitados = user === null
   const content = (
     <>
-      <UserWayWidget />
+      <AccessibilityWidget />
       <ToastStack />
       <main
         id="contenido"

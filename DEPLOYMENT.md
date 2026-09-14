@@ -88,19 +88,13 @@ Recomendado: **Vercel** o **Netlify**.
 ### Variables de Entorno del Frontend:
 ```env
 VITE_API_BASE_URL=https://gestvet-api.onrender.com
-VITE_USERWAY_ACCOUNT_ID=tu_userway_account_id
 ```
 
 ---
 
-## 5. Configuración de Accesibilidad (UserWay)
+## 5. Accesibilidad (Sienna)
 
-1. Ingresa a [UserWay.org](https://userway.org/) con la cuenta asignada:
-   - **Correo:** `soporte.gestvet@gmail.com`
-   - **Contraseña:** `12345678gestvet`
-2. Registra la URL pública de tu aplicación desplegada (ejemplo: `https://gestvet.vercel.app`).
-3. Copia el **Account ID** que te proporcione UserWay y agrégalo en la variable de entorno `VITE_USERWAY_ACCOUNT_ID` de tu frontend Vercel/Netlify.
-4. El widget flotante de accesibilidad (icono azul con persona) aparecerá automáticamente en la esquina de tu sitio web.
+El widget de accesibilidad es [Sienna](https://github.com/bennyluk/Sienna-Accessibility-Widget) (MIT, código abierto), instalado como dependencia npm del frontend (`sienna-accessibility`). Se auto-inicializa al cargar la app — corre enteramente en el navegador, sin llamar a ningún servidor externo, sin cuenta ni variable de entorno que configurar. Reemplazó a UserWay.
 
 ---
 
