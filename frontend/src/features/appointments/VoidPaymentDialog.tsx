@@ -19,6 +19,9 @@ import { Label } from '../../components/ui/label'
 import { Textarea } from '../../components/ui/textarea'
 import { errorMessage } from '../../services/api'
 
+const MIN_MOTIVO = 5
+const MAX_MOTIVO = 300
+
 interface VoidPaymentDialogProps {
   readonly pago: PaymentResponse
 }
@@ -65,11 +68,16 @@ export default function VoidPaymentDialog({ pago }: VoidPaymentDialogProps) {
           <Textarea
             id={motivoId}
             rows={2}
+            maxLength={MAX_MOTIVO}
+            aria-describedby={`${motivoId}-ayuda`}
             value={motivo}
             onChange={(evento) => {
               setMotivo(evento.target.value)
             }}
           />
+          <p id={`${motivoId}-ayuda`} className="m-0 text-xs text-muted-foreground">
+            {`Al menos ${String(MIN_MOTIVO)} caracteres. ${String(motivo.trim().length)} de ${String(MAX_MOTIVO)}.`}
+          </p>
         </div>
         {anular.isError ? (
           <FormMessage tone="error">
@@ -81,7 +89,7 @@ export default function VoidPaymentDialog({ pago }: VoidPaymentDialogProps) {
           <Button
             type="button"
             variant="danger"
-            disabled={anular.isPending || motivo.trim() === ''}
+            disabled={anular.isPending || motivo.trim().length < MIN_MOTIVO}
             onClick={() => {
               anular.mutate()
             }}

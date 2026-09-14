@@ -161,8 +161,10 @@ python -c "import secrets; print(secrets.token_urlsafe(48))"
 En una terminal, iniciar el API:
 
 ```powershell
-uv run --directory backend uvicorn gestvet.main:app --app-dir src --reload
+uv run --directory backend uvicorn gestvet.main:app --app-dir src --reload --reload-dir src --timeout-graceful-shutdown 3
 ```
+
+`--reload-dir src` evita que la instalación de un paquete en `.venv` dispare una recarga. `--timeout-graceful-shutdown 3` hace falta por el canal de tiempo real: uvicorn espera a que terminen todas las respuestas antes de recargar, y una conexión de avisos no termina nunca; sin el límite, un navegador abierto deja la recarga colgada. Al cortarse, el navegador se reconecta solo.
 
 En otra terminal, iniciar el frontend:
 
@@ -178,6 +180,37 @@ URLs locales:
 - Esquema OpenAPI: <http://127.0.0.1:8000/api/v1/openapi.json>
 
 Todo cuelga de `/api/v1`, documentación y esquema incluidos, para que el proxy del frontend, que solo reenvía `/api`, los alcance sin reglas aparte.
+
+## Logs
+
+El backend registra con [structlog](https://www.structlog.org/) y el frontend con [Pino](https://getpino.io/), en su versión para navegador.
+
+En el backend todo sale con el mismo formato, también lo que escriben uvicorn o SQLAlchemy. En desarrollo va a la consola con color; en un despliegue conviene una línea JSON por evento:
+
+| Variable | Valor por defecto | Para qué |
+|---|---|---|
+| `LOG_LEVEL` | `INFO` | Nivel mínimo: `DEBUG`, `INFO`, `WARNING` o `ERROR` |
+| `LOG_JSON` | `false` | `true` escribe JSON en vez de texto con color |
+
+Cada petición deja un evento `request.completed` con método, ruta, estado y duración. Una respuesta 4xx sale como aviso y una 5xx como error, con la traza. Los eventos de acceso quedan como `auth.*`: altas, ingresos, ingresos fallidos y recuperación de contraseña. Las claves `password`, `token` y `authorization` se escriben siempre como `[oculto]`, y los correos de un ingreso fallido van enmascarados (`j***@example.com`).
+
+Cada petición lleva un identificador en la cabecera `X-Request-ID`. Lo genera el frontend y el backend lo devuelve en la respuesta, así que un error de la consola del navegador y su línea en el servidor se encuentran buscando el mismo valor.
+
+En el frontend el nivel se fija con `VITE_LOG_LEVEL`; sin definirlo es `debug` en desarrollo y `warn` en producción. Se registran las peticiones que fallan (`http.request_failed`, `http.request_rejected`), los errores que nadie capturó y los de React, con su pila de componentes. Ningún evento lleva cuerpos de petición ni tokens.
+
+## Tiempo real
+
+Las pantallas abiertas se actualizan solas cuando cambia una cita: el veterinario ve la reserva nueva o la emergencia asignada, y el cliente la confirmación o la cancelación, sin recargar.
+
+Funciona con Server-Sent Events en `GET /api/v1/events`. Es un canal de un solo sentido: el servidor avisa y el navegador escucha; las acciones siguen yendo por la API normal. El aviso no trae datos, solo el tema y el identificador (`appointments`, cita 42). El frontend marca como desactualizadas las consultas de ese tema y React Query vuelve a pedir las que están en pantalla, así que los permisos por rol siguen decidiéndose en un solo lugar.
+
+- Un aviso sale recién cuando la transacción se confirma. Si se deshace, no sale.
+- Cada conexión recibe solo los avisos de su cuenta: una cita avisa a su cliente, a su veterinario y a la administración.
+- Con PostgreSQL los avisos se reparten entre procesos con `LISTEN/NOTIFY`, así que no hace falta Redis ni RabbitMQ. Con SQLite, o si no logra escuchar, se reparten dentro del proceso.
+- El navegador lee el canal con `fetch` para poder mandar el token en la cabecera, y reconecta solo con espera creciente. Al reconectar vuelve a pedir lo que pudo cambiar mientras no hubo conexión.
+- El sondeo de avisos quedó cada 60 segundos, como respaldo si el canal se corta.
+
+Detrás de Nginx, esa ruta necesita `proxy_buffering off;` y un `proxy_read_timeout` largo; el servidor manda un ping cada 15 segundos para que ningún proxy la cierre por inactividad. Al desplegar o reiniciar, el proceso debe arrancar con un `--timeout-graceful-shutdown` corto, por la misma razón que en desarrollo.
 
 ## Base de datos
 
@@ -357,9 +390,59 @@ El padrón de clientes es dato personal: solo lo ve el personal de la clínica.
 | --- | --- |
 | `POST /api/v1/auth/register` | cualquiera |
 | `POST /api/v1/auth/login` | cualquiera |
-| `GET /api/v1/auth/me` | cuenta autenticada |
-| `GET /api/v1/clients` | administración y veterinarios |
-| `GET /api/v1/activity` | administración |
+| `GET /api/v1/auth/me` | cuenta autenticada; trae su rol y sus permisos |
+| `GET /api/v1/clients` | permiso `clients.read` |
+| `GET /api/v1/activity` | permiso `activity.read` |
+| `/api/v1/access/*` | permiso `roles.manage` |
+
+### Especies y razas
+
+La especie y la raza de una mascota se eligen de un catálogo, no se escriben. Con texto libre, "perro", "Perro" y "can" eran tres especies distintas para cualquier búsqueda o indicador.
+
+- **Contenido.** Vive en `modules/pets/domain/catalog.py`: perro, gato, ave, conejo, roedor, reptil, pez y otro. Cada especie tiene sus razas habituales en el Perú, entre ellas el perro sin pelo del Perú y el cuy. Toda especie acepta "Sin especificar", que es lo que deja el alta exprés de una emergencia.
+- **Validación.** El servidor la aplica al registrar y al editar la ficha. El frontend pide la lista a `GET /api/v1/pets/catalog` y la raza depende de la especie elegida.
+- **Ficha del dueño.** Además del sexo, el color, el microchip y el temperamento, el dueño corrige la especie, la raza y la fecha de nacimiento. Así completa una mascota dada de alta en una emergencia. Una mascota cargada antes del catálogo conserva su texto hasta que alguien lo cambie.
+- **Otras validaciones.**
+  - La fecha de nacimiento no puede estar en el futuro ni ser de hace más de 60 años.
+  - El microchip tiene de 9 a 15 dígitos.
+  - El peso va hasta 120 kg y la altura hasta 200 cm.
+  - Los textos respetan los topes del servidor, y los motivos y descripciones piden al menos 5 caracteres.
+
+Las reglas compartidas del frontend están en dos archivos:
+
+- `components/formRules.ts`: textos, números y datos de la mascota.
+- `services/fieldRules.ts`: nombres, DNI, teléfono, correo y contraseña.
+
+### Turnos y guardias
+
+Los turnos los asigna la clínica, no el veterinario. Así trabajan las veterinarias de Trujillo: atención de día y una guardia de noche que cubre las emergencias.
+
+- **Dos tipos de turno.** En uno de *atención* el veterinario recibe citas; empieza y termina el mismo día y dura hasta 12 horas. En una *guardia* cubre las emergencias, puede cruzar la medianoche y dura hasta 24 horas. La guardia no se ofrece para reservar. Ya no existe un rol "veterinario de guardia": cualquier veterinario puede tener guardias.
+- **Asignación.** La administración, con el permiso `schedule.manage`, asigna turnos sueltos o aplica un horario semanal de 1 a 12 semanas. El horario se aplica entero o no se aplica: si un día choca con otro turno, no se crea ninguno.
+- **Validaciones.** Hay tres, en el servidor y en el formulario:
+  - un turno no se asigna en un día que ya pasó ni a más de un año;
+  - dos turnos del mismo veterinario no se cruzan;
+  - un turno con citas reservadas no se puede quitar.
+- **Emergencias.** Se asignan al veterinario de guardia menos cargado. Si todos ya atienden una o nadie está de guardia a esa hora, cubre un veterinario en turno de atención que tenga libre el resto del día.
+- **Pedidos de cambio.** El veterinario (`schedule.read_own`, `schedule.request_change`) ve sus turnos por semana y pide cambios. La administración acepta o rechaza con una respuesta. Aceptar no mueve el turno: se reasigna a mano, porque un cambio suele necesitar a otro veterinario que lo cubra.
+- **Tiempo real.** Cada cambio avisa por el tema `schedule` al veterinario afectado y a la administración.
+- **Datos de prueba.** `scripts/seed_dev.py` asigna a `veterinario.demo` atención de lunes a sábado de 9 a 18, y a `guardia.demo` guardia todas las noches de 20 a 8, las próximas cuatro semanas.
+
+### Roles y permisos
+
+Cada endpoint exige un **permiso**, no un rol: `Depends(require_permission(Permission.X))`. Hay dos ideas separadas:
+
+- **Tipo de cuenta** (`users.role`: cliente, veterinario, administración). No cambia y decide qué datos ve la cuenta. Por ejemplo, un cliente solo ve sus propias citas.
+- **Rol de acceso** (`access_roles`). Es un conjunto de permisos que la administración edita desde *Roles y permisos*.
+
+Detalles:
+
+- **Catálogo.** Vive en `core/permissions.py`. Cada permiso declara qué tipos de cuenta pueden tenerlo: a un cliente no se le puede dar `appointments.attend`. Agregar un permiso es sumar una línea al catálogo y usarlo en el endpoint. Si además cambian los permisos por defecto, hace falta una migración que siembre el cambio. Una prueba compara la semilla con el código.
+- **Roles por defecto.** Cada tipo de cuenta tiene un rol de sistema, que la migración 0017 siembra con los permisos de antes. Una cuenta sin rol asignado usa el de su tipo. Estos roles se editan pero no se renombran ni se borran.
+- **Roles propios.** La administración los crea para un tipo de cuenta y los asigna desde *Personal*. Un rol asignado a alguien no se puede borrar.
+- **Protecciones.** El rol de administración por defecto no pierde `roles.manage`. Nadie se quita ese permiso de su propio rol y nadie cambia su propio rol. Así la clínica no se queda sin quien administre.
+- **Permisos por petición.** Se leen de la base en cada petición con una sola consulta. Un cambio rige en la siguiente petición, sin esperar a que venza el token.
+- **Interfaz.** La sesión guarda los permisos. El menú (`navigation.ts`), las rutas (`RequireSession`) y cada botón (`useCan('...')`) preguntan por permisos, nunca por roles. Cuando un rol cambia, el servidor avisa por el tema `permissions` del canal en tiempo real. La interfaz vuelve a pedir `/auth/me` y oculta lo que ya no corresponde sin recargar. Ocultar es comodidad: el servidor igual responde 403.
 
 ## Convenciones iniciales
 

@@ -44,6 +44,11 @@ class ActivityKind(StrEnum):
     PET_CLINICAL_PROFILE_UPDATED = "pet_clinical_profile_updated"
     SLOT_PUBLISHED = "slot_published"
     SLOT_WITHDRAWN = "slot_withdrawn"
+    SHIFT_ASSIGNED = "shift_assigned"
+    SHIFT_REMOVED = "shift_removed"
+    WEEKLY_PLAN_APPLIED = "weekly_plan_applied"
+    SHIFT_CHANGE_REQUESTED = "shift_change_requested"
+    SHIFT_CHANGE_RESOLVED = "shift_change_resolved"
     APPOINTMENT_BOOKED = "appointment_booked"
     EMERGENCY_OPENED = "emergency_opened"
     APPOINTMENT_CONFIRMED = "appointment_confirmed"
@@ -60,6 +65,10 @@ class ActivityKind(StrEnum):
     HOSPITALIZATION_OPENED = "hospitalization_opened"
     HOSPITALIZATION_NOTE_ADDED = "hospitalization_note_added"
     HOSPITALIZATION_DISCHARGED = "hospitalization_discharged"
+    ACCESS_ROLE_CREATED = "access_role_created"
+    ACCESS_ROLE_UPDATED = "access_role_updated"
+    ACCESS_ROLE_DELETED = "access_role_deleted"
+    ACCESS_ROLE_ASSIGNED = "access_role_assigned"
 
     @property
     def label(self) -> str:
@@ -80,6 +89,11 @@ _KIND_LABELS: dict[ActivityKind, str] = {
     ActivityKind.PET_CLINICAL_PROFILE_UPDATED: "Actualizó los datos clínicos de una mascota",
     ActivityKind.SLOT_PUBLISHED: "Publicó un tramo de disponibilidad",
     ActivityKind.SLOT_WITHDRAWN: "Retiró un tramo de disponibilidad",
+    ActivityKind.SHIFT_ASSIGNED: "Asignó un turno",
+    ActivityKind.SHIFT_REMOVED: "Quitó un turno",
+    ActivityKind.WEEKLY_PLAN_APPLIED: "Aplicó un horario semanal",
+    ActivityKind.SHIFT_CHANGE_REQUESTED: "Pidió un cambio de turno",
+    ActivityKind.SHIFT_CHANGE_RESOLVED: "Respondió un pedido de cambio de turno",
     ActivityKind.APPOINTMENT_BOOKED: "Reservó una cita",
     ActivityKind.EMERGENCY_OPENED: "Abrió una emergencia",
     ActivityKind.APPOINTMENT_CONFIRMED: "Confirmó una cita",
@@ -96,6 +110,10 @@ _KIND_LABELS: dict[ActivityKind, str] = {
     ActivityKind.HOSPITALIZATION_OPENED: "Abrió una internación",
     ActivityKind.HOSPITALIZATION_NOTE_ADDED: "Agregó una nota de seguimiento",
     ActivityKind.HOSPITALIZATION_DISCHARGED: "Dio de alta una internación",
+    ActivityKind.ACCESS_ROLE_CREATED: "Creó un rol",
+    ActivityKind.ACCESS_ROLE_UPDATED: "Cambió los permisos de un rol",
+    ActivityKind.ACCESS_ROLE_DELETED: "Borró un rol",
+    ActivityKind.ACCESS_ROLE_ASSIGNED: "Cambió el rol de una cuenta",
 }
 
 

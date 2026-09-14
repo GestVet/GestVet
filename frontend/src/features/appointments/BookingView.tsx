@@ -17,7 +17,7 @@ export default function BookingView() {
 
       {sinMascotas ? (
         <FormMessage tone="error">
-          Primero registrá una mascota activa en la sección Mis mascotas.
+          Primero registra una mascota activa en la sección Mis mascotas.
         </FormMessage>
       ) : null}
 

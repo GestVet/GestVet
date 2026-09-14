@@ -10,6 +10,7 @@ no puede anidarse dentro del que abriría pytest-asyncio.
 
 from __future__ import annotations
 
+from collections import defaultdict
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -18,10 +19,11 @@ from alembic import command
 from alembic.autogenerate import compare_metadata
 from alembic.config import Config
 from alembic.migration import MigrationContext
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 from gestvet.core.config import get_settings
 from gestvet.core.database import Base
+from gestvet.core.permissions import SYSTEM_ROLE_PERMISSIONS
 from tests.conftest import REGISTERED_MODELS
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
@@ -62,3 +64,27 @@ def test_las_migraciones_reproducen_el_modelo(migrated_database: Path) -> None:
         "El modelo y las migraciones divergieron. Generá la migración que falta con "
         "`uv run --directory backend alembic revision --autogenerate -m '...'`."
     )
+
+
+def test_la_migracion_siembra_los_roles_de_sistema_del_codigo(migrated_database: Path) -> None:
+    """La semilla de la migración está escrita a mano; no puede apartarse del código."""
+    engine = create_engine(f"sqlite:///{migrated_database.as_posix()}")
+    try:
+        with engine.connect() as connection:
+            filas = connection.execute(
+                text(
+                    "SELECT r.account_kind, p.permission FROM access_roles r "
+                    "JOIN access_role_permissions p ON p.role_id = r.id WHERE r.is_system = 1"
+                )
+            ).all()
+    finally:
+        engine.dispose()
+
+    sembrado: dict[str, set[str]] = defaultdict(set)
+    for tipo, permiso in filas:
+        sembrado[tipo].add(permiso)
+    esperado = {
+        kind.value: {permission.value for permission in permissions}
+        for kind, permissions in SYSTEM_ROLE_PERMISSIONS.items()
+    }
+    assert dict(sembrado) == esperado

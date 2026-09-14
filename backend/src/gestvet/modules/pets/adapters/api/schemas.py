@@ -11,6 +11,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, Field
 
+from gestvet.modules.pets.domain.catalog import SPECIES_CATALOG
 from gestvet.modules.pets.domain.entities import (
     MAX_ALLERGIES_LENGTH,
     MAX_BREED_LENGTH,
@@ -53,11 +54,33 @@ class CorrectPetStatusRequest(BaseModel):
     reason: str = Field(min_length=1, max_length=300)
 
 
+class SpeciesResponse(BaseModel):
+    name: str
+    breeds: list[str]
+
+
+class PetCatalogResponse(BaseModel):
+    species: list[SpeciesResponse]
+
+    @classmethod
+    def build(cls) -> PetCatalogResponse:
+        return cls(
+            species=[
+                SpeciesResponse(name=name, breeds=list(breeds))
+                for name, breeds in SPECIES_CATALOG.items()
+            ]
+        )
+
+
 class UpdatePetOwnerProfileRequest(BaseModel):
     sex: PetSex | None = None
     color: str = Field(default="", max_length=MAX_COLOR_LENGTH)
     microchip_number: str = Field(default="", max_length=MAX_MICROCHIP_LENGTH)
     temperament: str = Field(default="", max_length=MAX_TEMPERAMENT_LENGTH)
+    # Sin estos tres, la ficha conserva lo que tenía.
+    species: str | None = Field(default=None, min_length=1, max_length=MAX_SPECIES_LENGTH)
+    breed: str | None = Field(default=None, min_length=1, max_length=MAX_BREED_LENGTH)
+    birth_date: date | None = None
 
 
 class UpdatePetClinicalProfileRequest(BaseModel):

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { fetchPayments, paymentsQueryKey } from '../../api/payments'
-import { useIsStaff } from '../../store/session'
+import { useCan } from '../../store/session'
 import NewPaymentOptions from './NewPaymentOptions'
 import PaymentsTable from './PaymentsTable'
 
@@ -11,7 +11,7 @@ interface PaymentPanelProps {
 }
 
 export default function PaymentPanel({ appointmentId, appointmentStatus }: PaymentPanelProps) {
-  const puedeCobrar = useIsStaff()
+  const puedeCobrar = useCan('payments.register')
   const pagos = useQuery({
     queryKey: paymentsQueryKey({ appointment_id: appointmentId }),
     queryFn: () => fetchPayments({ appointment_id: appointmentId }),

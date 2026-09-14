@@ -29,7 +29,7 @@ class ListClinicalEntries:
         if is_staff:
             if not await self._pets.exists(query.pet_id):
                 raise PetNotFound(query.pet_id)
-        # Una mascota ajena responde "no existe" y no "no podés": responder
+        # Una mascota ajena responde "no existe" y no "no puedes": responder
         # distinto confirmaría que ese identificador pertenece a alguien.
         elif not await self._pets.is_owned_by(query.pet_id, requester_id):
             raise PetNotFound(query.pet_id)

@@ -14,9 +14,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from gestvet.core.activity_log import ActivityRecorderDep
-from gestvet.core.auth import PrincipalDep, require_roles
-from gestvet.core.identity import STAFF_ROLES, Principal, Role
+from gestvet.core.auth import require_permission
+from gestvet.core.identity import STAFF_ROLES, Principal
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
+from gestvet.core.permissions import Permission
 from gestvet.modules.billing.adapters.api.dependencies import (
     AppointmentDirectoryDep,
     PaymentGatewayDep,
@@ -61,7 +62,12 @@ from gestvet.modules.billing.use_cases.void_payment import VoidPayment, VoidPaym
 
 router = APIRouter()
 
-StaffDep = Annotated[Principal, Depends(require_roles(*STAFF_ROLES))]
+PaymentRegistrarDep = Annotated[
+    Principal, Depends(require_permission(Permission.PAYMENTS_REGISTER))
+]
+PaymentVoiderDep = Annotated[Principal, Depends(require_permission(Permission.PAYMENTS_VOID))]
+PaymentsReaderDep = Annotated[Principal, Depends(require_permission(Permission.PAYMENTS_READ))]
+QrPayerDep = Annotated[Principal, Depends(require_permission(Permission.PAYMENTS_QR))]
 
 
 @router.post(
@@ -72,7 +78,7 @@ StaffDep = Annotated[Principal, Depends(require_roles(*STAFF_ROLES))]
 )
 async def register_payment(
     payload: RegisterPaymentRequest,
-    staff: StaffDep,
+    staff: PaymentRegistrarDep,
     payments: PaymentRepositoryDep,
     appointments: AppointmentDirectoryDep,
     activity: ActivityRecorderDep,
@@ -103,7 +109,7 @@ async def register_payment(
 async def void_payment(
     payment_id: int,
     payload: VoidPaymentRequest,
-    staff: StaffDep,
+    staff: PaymentVoiderDep,
     payments: PaymentRepositoryDep,
     activity: ActivityRecorderDep,
 ) -> PaymentResponse:
@@ -120,7 +126,7 @@ async def void_payment(
 
 @router.get("", response_model=PaymentPageResponse, summary="Listar pagos")
 async def list_payments(
-    principal: PrincipalDep,
+    principal: PaymentsReaderDep,
     payments: PaymentRepositoryDep,
     appointment_id: Annotated[int | None, Query(ge=1)] = None,
     method: Annotated[PaymentMethod | None, Query(description="Filtra por medio")] = None,
@@ -154,7 +160,7 @@ async def list_payments(
 @router.get(
     "/report",
     response_model=PaymentReportResponse,
-    dependencies=[Depends(require_roles(Role.ADMIN))],
+    dependencies=[Depends(require_permission(Permission.PAYMENTS_REPORT))],
     summary="Cuánto se cobró y por qué medio",
 )
 async def payment_report(
@@ -177,7 +183,7 @@ async def payment_report(
 )
 async def create_qr_charge(
     payload: CreateQrChargeRequest,
-    principal: PrincipalDep,
+    principal: QrPayerDep,
     charges: QrChargeRepositoryDep,
     appointments: AppointmentDirectoryDep,
     gateway: PaymentGatewayDep,
@@ -209,7 +215,7 @@ async def create_qr_charge(
 )
 async def get_qr_charge(
     charge_id: int,
-    principal: PrincipalDep,
+    principal: QrPayerDep,
     charges: QrChargeRepositoryDep,
 ) -> QrChargeResponse:
     try:
@@ -228,7 +234,7 @@ async def get_qr_charge(
 )
 async def confirm_qr_charge(
     charge_id: int,
-    principal: PrincipalDep,
+    principal: QrPayerDep,
     charges: QrChargeRepositoryDep,
     payments: PaymentRepositoryDep,
     activity: ActivityRecorderDep,

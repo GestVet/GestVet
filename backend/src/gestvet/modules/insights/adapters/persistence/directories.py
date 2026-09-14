@@ -91,8 +91,7 @@ _COMPLAINT_COUNTS = text(
 ).bindparams(bindparam("since", type_=_MOMENT))
 
 _ACTIVE_VETERINARIANS = text(
-    "SELECT id, first_name, last_name FROM users "
-    "WHERE role IN (:vet_role, :emergency_role) AND is_active"
+    "SELECT id, first_name, last_name FROM users WHERE role = :vet_role AND is_active"
 )
 
 
@@ -176,7 +175,6 @@ class SqlReputationDirectory:
             _ACTIVE_VETERINARIANS,
             {
                 "vet_role": Role.VETERINARIAN.value,
-                "emergency_role": Role.EMERGENCY_VETERINARIAN.value,
             },
         )
         return [

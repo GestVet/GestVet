@@ -18,7 +18,7 @@ export default function MissingResetToken() {
       }
     >
       <FormMessage tone="error">
-        El enlace no trae el código de recuperación. Pedí uno nuevo.
+        El enlace no trae el código de recuperación. Pide uno nuevo.
       </FormMessage>
     </AuthCard>
   )

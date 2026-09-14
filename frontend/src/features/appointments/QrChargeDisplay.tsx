@@ -48,7 +48,7 @@ export default function QrChargeDisplay({
         className="rounded-xl bg-white p-2 ring-1 ring-foreground/10"
       />
       <p className="m-0 text-sm text-muted-foreground">
-        Escaneá el código con tu app de pagos. Monto: S/ {charge.amount}
+        Escanea el código con tu app de pagos. Monto: S/ {charge.amount}
       </p>
       {confirmError !== '' ? <FormMessage tone="error">{confirmError}</FormMessage> : null}
       <Button

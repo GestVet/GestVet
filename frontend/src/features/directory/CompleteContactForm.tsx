@@ -9,10 +9,11 @@ import TextField from '../../components/TextField'
 import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
+import { correoRule, soloTelefono, telefonoRule } from '../../services/fieldRules'
 
 const esquema = z.object({
-  email: z.email('Ingresá un correo válido'),
-  phone: z.string().max(32).optional(),
+  email: correoRule,
+  phone: telefonoRule,
 })
 
 type Formulario = z.infer<typeof esquema>
@@ -34,7 +35,7 @@ export default function CompleteContactForm({ clientId, phone }: CompleteContact
     mutationFn: (valores: Formulario) =>
       updateClientContact(clientId, {
         email: valores.email,
-        phone: valores.phone ?? '',
+        phone: valores.phone,
         document_id: '',
       }),
     onSuccess: async () => {
@@ -69,7 +70,9 @@ export default function CompleteContactForm({ clientId, phone }: CompleteContact
           label="Teléfono"
           type="tel"
           inputMode="tel"
+          sanitize={soloTelefono}
           field={register('phone')}
+          error={formState.errors.phone?.message}
         />
       </div>
 

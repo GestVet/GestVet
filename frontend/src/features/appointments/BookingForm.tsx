@@ -12,17 +12,19 @@ import { errorMessage } from '../../services/api'
 import BookingFields from './BookingFields'
 import { bookingSchema, type BookingForm as Valores } from './bookingSchema'
 
+const VACIO: Valores = {
+  pet_id: '',
+  appointment_type_id: '',
+  veterinarian_id: '',
+  scheduled_at: '',
+  description: '',
+}
+
 export default function BookingForm() {
   const queryClient = useQueryClient()
   const formulario = useForm<Valores>({
     resolver: zodResolver(bookingSchema),
-    defaultValues: {
-      pet_id: '',
-      veterinarian_id: '',
-      appointment_type_id: '',
-      scheduled_at: '',
-      description: '',
-    },
+    defaultValues: VACIO,
   })
 
   const reservar = useMutation({
@@ -31,13 +33,14 @@ export default function BookingForm() {
         pet_id: Number(valores.pet_id),
         veterinarian_id: Number(valores.veterinarian_id),
         appointment_type_id: Number(valores.appointment_type_id),
-        // El backend exige zona horaria. `datetime-local` no la trae, asi que
-        // la pone el navegador al pasar a ISO.
-        scheduled_at: new Date(valores.scheduled_at).toISOString(),
-        description: valores.description ?? '',
+        // La hora llega del selector tal como la calculo el servidor, en ISO
+        // y con zona horaria.
+        scheduled_at: valores.scheduled_at,
+        description: valores.description,
       }),
     onSuccess: async () => {
-      formulario.reset()
+      formulario.reset(VACIO)
+      // Incluye las horas libres: la que se acaba de tomar deja de ofrecerse.
       await queryClient.invalidateQueries({ queryKey: appointmentsQueryKey })
     },
   })
@@ -62,18 +65,20 @@ export default function BookingForm() {
             </FormMessage>
           ) : null}
           {reservar.isSuccess ? (
-            <FormMessage tone="ok">Cita reservada. Queda pendiente de confirmar.</FormMessage>
+            <FormMessage tone="ok">
+              Cita reservada. Queda pendiente de que el veterinario la confirme.
+            </FormMessage>
           ) : null}
 
           <Button
             type="submit"
             variant="success"
             size="lg"
-            className="h-10 self-start px-4"
+            className="h-11 self-start px-5"
             disabled={reservar.isPending}
           >
-            <Icon name="agenda" size={16} />
-            <span>{reservar.isPending ? 'Reservando…' : 'Reservar'}</span>
+            <Icon name="agenda" size={18} />
+            <span>{reservar.isPending ? 'Reservando…' : 'Reservar cita'}</span>
           </Button>
         </form>
       </FormProvider>

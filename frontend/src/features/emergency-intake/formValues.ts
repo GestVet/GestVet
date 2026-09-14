@@ -1,13 +1,24 @@
 import { z } from 'zod'
 
+import { nombreDeMascotaRule, textoOpcional } from '../../components/formRules'
+import {
+  dniRule,
+  MAX_APELLIDO,
+  MAX_NOMBRE,
+  nombreRule,
+  telefonoRule,
+} from '../../services/fieldRules'
+
+export const MAX_MOTIVO = 500
+
 export const walkInEmergencySchema = z.object({
-  first_name: z.string().min(1, 'Ingresá el nombre'),
-  last_name: z.string().min(1, 'Ingresá el apellido'),
-  document_id: z.string().regex(/^\d{8}$/, 'El DNI tiene 8 dígitos'),
-  phone: z.string().max(32).optional(),
-  pet_name: z.string().min(1, 'Ingresá el nombre de la mascota'),
-  pet_species: z.string().min(1, 'Ingresá la especie'),
-  description: z.string().max(500).optional(),
+  first_name: nombreRule('nombre', MAX_NOMBRE, 'el'),
+  last_name: nombreRule('apellido', MAX_APELLIDO, 'el'),
+  document_id: dniRule,
+  phone: telefonoRule,
+  pet_name: nombreDeMascotaRule,
+  pet_species: z.string().min(1, 'Elige la especie'),
+  description: textoOpcional(MAX_MOTIVO),
 })
 
 export type WalkInEmergencyFormValues = z.infer<typeof walkInEmergencySchema>

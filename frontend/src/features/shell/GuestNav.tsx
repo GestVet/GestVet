@@ -4,9 +4,11 @@ interface GuestNavProps {
   readonly className?: string
 }
 
+// La marca ya lleva al inicio, asi que el menu usa ese lugar para la seccion
+// que mas le sirve a quien llega: como reservar.
 const ENLACES = [
-  { to: '/', hash: '', label: 'Inicio' },
   { to: '/', hash: 'oferta', label: 'Qué ofrece' },
+  { to: '/', hash: 'como-reservar', label: 'Cómo reservar' },
   { to: '/', hash: 'contacto', label: 'Contacto' },
 ] as const
 
@@ -18,10 +20,7 @@ export default function GuestNav({ className }: GuestNavProps) {
           <li key={enlace.label}>
             <Link
               className="inline-flex rounded-lg px-2.5 py-1.5 text-sm font-medium text-foreground no-underline outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
-              to={{
-                pathname: enlace.to,
-                hash: enlace.hash === '' ? '' : `#${enlace.hash}`,
-              }}
+              to={{ pathname: enlace.to, hash: `#${enlace.hash}` }}
             >
               {enlace.label}
             </Link>

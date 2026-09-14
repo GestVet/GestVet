@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import {
@@ -9,10 +9,11 @@ import {
 import type { AppointmentResponse, AppointmentStatus } from '../../api/types'
 import DataTable, { type DataColumn } from '../../components/DataTable'
 import PageHeader from '../../components/PageHeader'
+import { instanteEnClinica, sumarDias } from '../../services/clinicTime'
 import RowExpandButton from '../../components/RowExpandButton'
 import StatusBadge, { type StatusTone } from '../../components/StatusBadge'
 import { Card, CardContent } from '../../components/ui/card'
-import { useIsVeterinarian } from '../../store/session'
+import { useCan } from '../../store/session'
 import AppointmentActions from './AppointmentActions'
 import AppointmentDetails from './AppointmentDetails'
 import AppointmentsFilters from './AppointmentsFilters'
@@ -75,7 +76,7 @@ const COLUMNAS: readonly DataColumn<AppointmentResponse>[] = [
 ]
 
 export default function AppointmentsView() {
-  const atiende = useIsVeterinarian()
+  const atiende = useCan('appointments.attend')
   const [estado, setEstado] = useState('')
   const [desde, setDesde] = useState('')
   const [hasta, setHasta] = useState('')
@@ -83,14 +84,17 @@ export default function AppointmentsView() {
 
   const filtro: AppointmentsFilter = {
     status: esEstado(estado) ? estado : undefined,
-    starts_after: desde === '' ? undefined : new Date(desde).toISOString(),
-    ends_before: hasta === '' ? undefined : new Date(hasta).toISOString(),
+    starts_after: desde === '' ? undefined : instanteEnClinica(desde),
+    ends_before: hasta === '' ? undefined : instanteEnClinica(sumarDias(hasta, 1)),
     is_emergency: soloEmergencias ? true : undefined,
   }
 
   const citas = useQuery({
     queryKey: appointmentsFilterQueryKey(filtro),
     queryFn: () => fetchAppointments(filtro),
+    // Al cambiar un filtro la tabla sigue mostrando las filas anteriores
+    // hasta que llegan las nuevas, en vez de vaciarse con "Cargando…".
+    placeholderData: keepPreviousData,
   })
 
   return (

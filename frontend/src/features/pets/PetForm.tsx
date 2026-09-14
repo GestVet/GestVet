@@ -1,22 +1,29 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 
 import { myPetsQueryKey, registerPet } from '../../api/pets'
 import FormMessage from '../../components/FormMessage'
+import {
+  fechaDeNacimientoRule,
+  limitesDeNacimiento,
+  MAX_NOMBRE_DE_MASCOTA,
+  nombreDeMascotaRule,
+} from '../../components/formRules'
 import Icon from '../../components/Icon'
 import SectionCard from '../../components/SectionCard'
+import SpeciesBreedFields from '../../components/SpeciesBreedFields'
 import TextField from '../../components/TextField'
 import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 
 const esquema = z.object({
-  name: z.string().min(1, 'Ingresá el nombre'),
-  species: z.string().min(1, 'Ingresá la especie'),
-  breed: z.string().min(1, 'Ingresá la raza'),
-  birth_date: z.string().min(1, 'Ingresá la fecha de nacimiento'),
+  name: nombreDeMascotaRule,
+  species: z.string().min(1, 'Elige la especie'),
+  breed: z.string().min(1, 'Elige la raza'),
+  birth_date: fechaDeNacimientoRule,
 })
 
 type Formulario = z.infer<typeof esquema>
@@ -25,11 +32,13 @@ const VACIO: Formulario = { name: '', species: '', breed: '', birth_date: '' }
 
 export default function PetForm() {
   const queryClient = useQueryClient()
-  const { register, handleSubmit, reset, formState } = useForm<Formulario>({
+  const { register, handleSubmit, reset, formState, control, setValue } = useForm<Formulario>({
     resolver: zodResolver(esquema),
     defaultValues: VACIO,
   })
+  const especie = useWatch({ control, name: 'species' })
   const errores = formState.errors
+  const limites = limitesDeNacimiento()
 
   const alta = useMutation({
     mutationFn: registerPet,
@@ -51,21 +60,35 @@ export default function PetForm() {
         )}
       >
         <div className="grid gap-5 sm:grid-cols-2">
-          <TextField id="name" label="Nombre" field={register('name')} error={errores.name?.message} />
           <TextField
-            id="species"
-            label="Especie"
-            placeholder="Perro, gato, conejo…"
-            field={register('species')}
-            error={errores.species?.message}
+            id="name"
+            label="Nombre"
+            maxLength={MAX_NOMBRE_DE_MASCOTA}
+            field={register('name')}
+            error={errores.name?.message}
           />
-          <TextField id="breed" label="Raza" field={register('breed')} error={errores.breed?.message} />
           <TextField
             id="birth_date"
             label="Fecha de nacimiento"
             type="date"
+            min={limites.min}
+            max={limites.max}
+            hint="Si no la sabes exacta, pon una aproximada."
             field={register('birth_date')}
             error={errores.birth_date?.message}
+          />
+          <SpeciesBreedFields
+            idPrefix="mascota"
+            species={especie}
+            speciesField={register('species', {
+              // Otra especie tiene otras razas: la elegida deja de valer.
+              onChange: () => {
+                setValue('breed', '')
+              },
+            })}
+            speciesError={errores.species?.message}
+            breedField={register('breed')}
+            breedError={errores.breed?.message}
           />
         </div>
 

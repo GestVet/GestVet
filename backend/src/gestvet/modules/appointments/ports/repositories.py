@@ -4,8 +4,8 @@ Los tres primeros son de persistencia propia. Los dos últimos son *lectores*:
 preguntas que el negocio le hace a datos que posee otro módulo.
 
 Un lector existe porque los módulos de dominio no se importan entre sí. La cita
-necesita saber si la mascota es del cliente y si el veterinario tiene la hora
-libre, pero no puede llamar a `pets` ni a `availability`. Declara la pregunta
+necesita saber si la mascota es del cliente y si el veterinario tiene turno a
+esa hora, pero no puede llamar a `pets` ni a `availability`. Declara la pregunta
 acá y un adaptador la responde leyendo la tabla del otro módulo, igual que hace
 `gestvet.core.auth` con la de usuarios. Es una lectura, nunca una escritura.
 """
@@ -67,8 +67,21 @@ class PetDirectory(Protocol):
     async def is_owned_by(self, pet_id: int, owner_id: int) -> bool: ...
 
 
+@dataclass(frozen=True, slots=True)
+class ScheduleSlot:
+    """Un tramo publicado, visto desde las citas: de quién es y cuándo."""
+
+    veterinarian_id: int
+    starts_at: datetime
+    ends_at: datetime
+
+
 class ScheduleDirectory(Protocol):
     """Lo que las citas necesitan saber de la agenda y de a quién atiende."""
+
+    async def bookable_slots_between(
+        self, starts_at: datetime, ends_at: datetime
+    ) -> list[ScheduleSlot]: ...
 
     async def covers(
         self, veterinarian_id: int, starts_at: datetime, ends_at: datetime
@@ -78,4 +91,4 @@ class ScheduleDirectory(Protocol):
 
     async def is_bookable_for_normal_appointments(self, veterinarian_id: int) -> bool: ...
 
-    async def list_emergency_backup_candidates(self) -> list[int]: ...
+    async def veterinarians_working(self, moment: datetime) -> list[int]: ...

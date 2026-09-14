@@ -1,6 +1,16 @@
 import type { FieldErrors, UseFormRegister } from 'react-hook-form'
 
+import PasswordField from '../../components/PasswordField'
 import TextField from '../../components/TextField'
+import {
+  LARGO_DNI,
+  MAX_APELLIDO,
+  MAX_NOMBRE,
+  MAX_TELEFONO,
+  soloDigitos,
+  soloLetras,
+  soloTelefono,
+} from '../../services/fieldRules'
 import type { ProfileForm } from './profileSchema'
 
 interface ProfileFieldsProps {
@@ -11,11 +21,13 @@ interface ProfileFieldsProps {
 export default function ProfileFields({ register, errors }: ProfileFieldsProps) {
   return (
     <>
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid items-start gap-5 sm:grid-cols-2">
         <TextField
           id="first_name"
           label="Nombre"
           autoComplete="given-name"
+          maxLength={MAX_NOMBRE}
+          sanitize={soloLetras}
           field={register('first_name')}
           error={errors.first_name?.message}
         />
@@ -23,6 +35,8 @@ export default function ProfileFields({ register, errors }: ProfileFieldsProps) 
           id="last_name"
           label="Apellido"
           autoComplete="family-name"
+          maxLength={MAX_APELLIDO}
+          sanitize={soloLetras}
           field={register('last_name')}
           error={errors.last_name?.message}
         />
@@ -32,6 +46,8 @@ export default function ProfileFields({ register, errors }: ProfileFieldsProps) 
           type="tel"
           inputMode="tel"
           autoComplete="tel"
+          maxLength={MAX_TELEFONO}
+          sanitize={soloTelefono}
           field={register('phone')}
           error={errors.phone?.message}
         />
@@ -39,17 +55,17 @@ export default function ProfileFields({ register, errors }: ProfileFieldsProps) 
           id="document_id"
           label="DNI"
           inputMode="numeric"
-          maxLength={8}
+          maxLength={LARGO_DNI}
+          sanitize={soloDigitos}
           field={register('document_id')}
           error={errors.document_id?.message}
         />
       </div>
-      <TextField
+      <PasswordField
         id="new_password"
         label="Nueva contraseña"
-        type="password"
         autoComplete="new-password"
-        hint="Dejala vacía para conservar la actual."
+        hint="Déjala vacía para conservar la actual."
         field={register('new_password')}
         error={errors.new_password?.message}
       />

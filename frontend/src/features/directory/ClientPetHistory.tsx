@@ -4,7 +4,7 @@ import { clinicalEntriesQueryKey, fetchClinicalEntries } from '../../api/medical
 import ClinicalEntryList from '../../components/ClinicalEntryList'
 import SectionHeading from '../../components/SectionHeading'
 import { Separator } from '../../components/ui/separator'
-import { useIsVeterinarian } from '../../store/session'
+import { useCan } from '../../store/session'
 import ClinicalEntryForm from './ClinicalEntryForm'
 
 interface ClientPetHistoryProps {
@@ -12,7 +12,7 @@ interface ClientPetHistoryProps {
 }
 
 export default function ClientPetHistory({ petId }: ClientPetHistoryProps) {
-  const puedeCargar = useIsVeterinarian()
+  const puedeCargar = useCan('clinical_records.write')
   const historia = useQuery({
     queryKey: clinicalEntriesQueryKey(petId),
     queryFn: () => fetchClinicalEntries(petId),

@@ -5,13 +5,14 @@ import { z } from 'zod'
 
 import { openHospitalization } from '../../api/hospitalizations'
 import FormMessage from '../../components/FormMessage'
+import { textoObligatorio } from '../../components/formRules'
 import TextareaField from '../../components/TextareaField'
 import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 
 const esquema = z.object({
-  reason: z.string().min(1, 'Contanos por qué queda internada'),
+  reason: textoObligatorio(300, 'Cuenta por qué queda internada'),
 })
 
 type Formulario = z.infer<typeof esquema>
@@ -37,7 +38,7 @@ export default function OpenHospitalizationForm({ appointmentId }: OpenHospitali
   if (abrir.isSuccess) {
     return (
       <FormMessage tone="ok">
-        Internación abierta. Podés agregar notas de seguimiento desde la ficha de la mascota.
+        Internación abierta. Puedes agregar notas de seguimiento desde la ficha de la mascota.
       </FormMessage>
     )
   }

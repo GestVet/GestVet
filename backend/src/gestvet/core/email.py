@@ -12,11 +12,14 @@ API transaccional) sin tocar ningún caso de uso: el puerto no cambia.
 
 from __future__ import annotations
 
+from gestvet.core.logs import get_logger
+
+logger = get_logger("gestvet.email")
+
 
 class ConsoleEmailSender:
     async def send_password_reset(self, *, to: str, reset_url: str) -> None:
-        # `print` y no `logging`: uvicorn no propaga loggers propios de la
-        # aplicación a la consola salvo que alguien configure `dictConfig`, y
-        # este adaptador es justamente el que se reemplaza antes de que eso
-        # importe.
-        print(f"Correo de recuperación para {to}: {reset_url}")
+        # El enlace va entero a propósito: es la única forma de recuperar una
+        # contraseña mientras no haya un proveedor de correo. Por eso este
+        # adaptador no puede quedar activo en un despliegue real.
+        logger.warning("email.password_reset_not_sent", to=to, reset_url=reset_url)

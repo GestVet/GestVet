@@ -6,6 +6,9 @@ import { Separator } from './ui/separator'
 
 interface PetProfileLike {
   readonly id: number
+  readonly species: string
+  readonly breed: string
+  readonly birth_date: string
   readonly sex: 'male' | 'female' | null
   readonly color: string
   readonly microchip_number: string
@@ -43,6 +46,9 @@ export default function PetProfilePanel({
           <Separator />
           <PetOwnerProfileForm
             petId={mascota.id}
+            species={mascota.species}
+            breed={mascota.breed}
+            birthDate={mascota.birth_date}
             sex={mascota.sex}
             color={mascota.color}
             microchipNumber={mascota.microchip_number}

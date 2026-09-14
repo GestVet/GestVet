@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 
 import { openWalkInEmergency } from '../../api/appointments'
 import { registerWalkInClient } from '../../api/directory'
@@ -30,10 +30,11 @@ export default function WalkInEmergencyForm() {
   const clienteIdRef = useRef<number | null>(null)
   const mascotaIdRef = useRef<number | null>(null)
 
-  const { register, handleSubmit, formState, reset } = useForm<WalkInEmergencyFormValues>({
+  const { register, handleSubmit, formState, reset, control } = useForm<WalkInEmergencyFormValues>({
     resolver: zodResolver(walkInEmergencySchema),
     defaultValues: EMPTY_WALK_IN_EMERGENCY,
   })
+  const especie = useWatch({ control, name: 'pet_species' })
 
   const abrir = useMutation({
     mutationFn: async (valores: WalkInEmergencyFormValues) => {
@@ -42,7 +43,7 @@ export default function WalkInEmergencyForm() {
           first_name: valores.first_name,
           last_name: valores.last_name,
           document_id: valores.document_id,
-          phone: valores.phone ?? '',
+          phone: valores.phone,
         })
         clienteIdRef.current = cliente.id
       }
@@ -57,7 +58,7 @@ export default function WalkInEmergencyForm() {
       return openWalkInEmergency({
         client_id: clienteIdRef.current,
         pet_id: mascotaIdRef.current,
-        description: valores.description ?? '',
+        description: valores.description,
       })
     },
     onSuccess: setResultado,
@@ -84,7 +85,7 @@ export default function WalkInEmergencyForm() {
         }),
       )}
     >
-      <WalkInEmergencyFields register={register} errors={formState.errors} />
+      <WalkInEmergencyFields register={register} errors={formState.errors} species={especie} />
 
       {abrir.isError ? (
         <FormMessage tone="error">

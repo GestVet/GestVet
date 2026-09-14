@@ -61,6 +61,7 @@ export default function AppointmentsFilters({
           id="filtro-desde"
           type="date"
           className="h-10"
+          max={hasta === '' ? undefined : hasta}
           value={desde}
           onChange={(evento) => {
             onDesdeChange(evento.target.value)
@@ -73,6 +74,7 @@ export default function AppointmentsFilters({
           id="filtro-hasta"
           type="date"
           className="h-10"
+          min={desde === '' ? undefined : desde}
           value={hasta}
           onChange={(evento) => {
             onHastaChange(evento.target.value)

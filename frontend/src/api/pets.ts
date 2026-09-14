@@ -1,5 +1,6 @@
 import { api } from '../services/api'
 import type {
+  PetCatalogResponse,
   PetPageResponse,
   PetResponse,
   RegisterPetForOwnerRequest,
@@ -9,6 +10,13 @@ import type {
 } from './types'
 
 export const myPetsQueryKey = ['pets', 'mine'] as const
+// Fuera de `pets`: invalidar las mascotas no tiene por qué volver a pedir el catálogo.
+export const petCatalogQueryKey = ['pet-catalog'] as const
+
+export async function fetchPetCatalog(): Promise<PetCatalogResponse> {
+  const { data } = await api.get<PetCatalogResponse>('/pets/catalog')
+  return data
+}
 
 export function petsOfOwnerQueryKey(ownerId: number) {
   return ['pets', 'owner', ownerId] as const

@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 import { submitReview } from '../../api/reviews'
 import FormMessage from '../../components/FormMessage'
+import { textoObligatorio } from '../../components/formRules'
 import Icon from '../../components/Icon'
 import SelectField from '../../components/SelectField'
 import TextareaField from '../../components/TextareaField'
@@ -15,7 +16,7 @@ import { errorMessage } from '../../services/api'
 
 const esquema = z.object({
   rating: z.enum(['1', '2', '3', '4', '5']),
-  comment: z.string().min(1, 'Contanos cómo fue la atención'),
+  comment: textoObligatorio(500, 'Cuéntanos cómo fue la atención'),
 })
 
 type Formulario = z.infer<typeof esquema>

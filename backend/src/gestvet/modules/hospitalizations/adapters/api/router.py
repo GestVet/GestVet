@@ -13,9 +13,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from gestvet.core.activity_log import ActivityRecorderDep
-from gestvet.core.auth import PrincipalDep, require_roles
-from gestvet.core.identity import STAFF_ROLES, VETERINARIAN_ROLES, Principal
+from gestvet.core.auth import require_permission
+from gestvet.core.identity import STAFF_ROLES, Principal
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
+from gestvet.core.permissions import Permission
 from gestvet.modules.hospitalizations.adapters.api.dependencies import (
     AppointmentDirectoryDep,
     HospitalizationRepositoryDep,
@@ -52,7 +53,12 @@ from gestvet.modules.hospitalizations.use_cases.open_hospitalization import (
 
 router = APIRouter()
 
-VeterinarianDep = Annotated[Principal, Depends(require_roles(*VETERINARIAN_ROLES))]
+HospitalizationManagerDep = Annotated[
+    Principal, Depends(require_permission(Permission.HOSPITALIZATIONS_MANAGE))
+]
+HospitalizationsReaderDep = Annotated[
+    Principal, Depends(require_permission(Permission.HOSPITALIZATIONS_READ))
+]
 
 
 @router.post(
@@ -63,7 +69,7 @@ VeterinarianDep = Annotated[Principal, Depends(require_roles(*VETERINARIAN_ROLES
 )
 async def open_hospitalization(
     payload: OpenHospitalizationRequest,
-    veterinarian: VeterinarianDep,
+    veterinarian: HospitalizationManagerDep,
     hospitalizations: HospitalizationRepositoryDep,
     appointments: AppointmentDirectoryDep,
     activity: ActivityRecorderDep,
@@ -83,7 +89,7 @@ async def open_hospitalization(
 
 @router.get("", response_model=HospitalizationPageResponse, summary="Internaciones de una mascota")
 async def list_hospitalizations(
-    principal: PrincipalDep,
+    principal: HospitalizationsReaderDep,
     hospitalizations: HospitalizationRepositoryDep,
     notes: NoteRepositoryDep,
     pets: PetDirectoryDep,
@@ -119,7 +125,7 @@ async def list_hospitalizations(
 async def add_note(
     hospitalization_id: int,
     payload: AddNoteRequest,
-    veterinarian: VeterinarianDep,
+    veterinarian: HospitalizationManagerDep,
     notes: NoteRepositoryDep,
     hospitalizations: HospitalizationRepositoryDep,
     activity: ActivityRecorderDep,
@@ -147,7 +153,7 @@ async def add_note(
 async def discharge_hospitalization(
     hospitalization_id: int,
     payload: DischargeRequest,
-    veterinarian: VeterinarianDep,
+    veterinarian: HospitalizationManagerDep,
     hospitalizations: HospitalizationRepositoryDep,
     notes: NoteRepositoryDep,
     activity: ActivityRecorderDep,

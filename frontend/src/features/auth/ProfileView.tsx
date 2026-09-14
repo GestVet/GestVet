@@ -58,7 +58,7 @@ export default function ProfileView() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Mi perfil"
-        description={`${user?.email ?? ''} · el correo y el rol no se editan desde acá.`}
+        description={`${user?.email ?? ''} · el correo y el rol no se editan desde aquí.`}
       />
 
       <SectionCard title="Tus datos">

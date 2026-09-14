@@ -11,8 +11,8 @@ export default function HomeHeroCopy() {
   return (
     <div className="flex flex-col gap-7">
       <div className="flex flex-col gap-4">
-        <h1 className="m-0 font-heading text-[clamp(2.5rem,5.5vw,4rem)] leading-[1.08] font-bold tracking-tight text-balance text-foreground">
-          GestVet: La Gestión Veterinaria Simplificada
+        <h1 className="m-0 font-heading text-[clamp(2.25rem,3.8vw,3rem)] leading-[1.1] font-bold tracking-tight text-balance text-foreground">
+          GestVet: la gestión veterinaria simplificada
         </h1>
         <p className="m-0 text-lg font-semibold text-primary">
           Clínica veterinaria en Trujillo

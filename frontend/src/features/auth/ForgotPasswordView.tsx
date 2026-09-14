@@ -12,9 +12,10 @@ import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 import AuthCard from './AuthCard'
+import { correoRule } from '../../services/fieldRules'
 
 const esquema = z.object({
-  email: z.email('Ingresá un correo válido'),
+  email: correoRule,
 })
 
 type Formulario = z.infer<typeof esquema>
@@ -22,6 +23,7 @@ type Formulario = z.infer<typeof esquema>
 export default function ForgotPasswordView() {
   const { register, handleSubmit, formState } = useForm<Formulario>({
     resolver: zodResolver(esquema),
+    mode: 'onTouched',
     defaultValues: { email: '' },
   })
 
@@ -30,7 +32,7 @@ export default function ForgotPasswordView() {
   return (
     <AuthCard
       title="Recuperar contraseña"
-      description="Ingresá el correo con el que te registraste. Si existe una cuenta, te mandamos un enlace para elegir una contraseña nueva."
+      description="Escribe el correo con el que te registraste. Si hay una cuenta con ese correo, te enviamos un enlace para elegir una contraseña nueva."
       footer={
         <Link to="/acceso" className="font-medium text-primary underline underline-offset-4">
           Volver a iniciar sesión
@@ -53,20 +55,22 @@ export default function ForgotPasswordView() {
             id="email"
             label="Correo"
             type="email"
+            inputMode="email"
             autoComplete="email"
+            spellCheck={false}
             field={register('email')}
             error={formState.errors.email?.message}
           />
 
           {pedir.isError ? (
             <FormMessage tone="error">
-              {errorMessage(pedir.error, 'No se pudo procesar el pedido.')}
+              {errorMessage(pedir.error, 'No se pudo enviar el enlace. Inténtalo de nuevo.')}
             </FormMessage>
           ) : null}
 
-          <Button type="submit" size="lg" className="h-10 w-full" disabled={pedir.isPending}>
-            <Icon name="confirmar" size={16} />
-            <span>{pedir.isPending ? 'Enviando…' : 'Mandar enlace'}</span>
+          <Button type="submit" size="lg" className="h-11 w-full" disabled={pedir.isPending}>
+            <Icon name="correo" size={18} />
+            <span>{pedir.isPending ? 'Enviando…' : 'Enviar enlace'}</span>
           </Button>
         </form>
       )}

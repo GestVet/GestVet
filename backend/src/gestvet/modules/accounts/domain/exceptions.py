@@ -64,38 +64,9 @@ class RoleNotAssignable(AccountsError):
         self.role = role
 
 
-class RoleNotSwappable(AccountsError):
-    def __init__(self, role: str) -> None:
-        super().__init__(
-            f"El rol {role} no participa del turno de guardia. "
-            "Solo se alterna entre veterinario y veterinario de emergencia."
-        )
-        self.role = role
-
-
 class CannotDeactivateSelf(AccountsError):
     def __init__(self) -> None:
-        super().__init__("No podés desactivar tu propia cuenta.")
-
-
-class VeterinarianHasUpcomingAppointments(AccountsError):
-    """Pasar a guardia no puede dejar huérfana una cita normal ya asignada."""
-
-    def __init__(self, user_id: int) -> None:
-        super().__init__(
-            "Tiene citas normales pendientes o confirmadas. Reasignalas antes de "
-            "ponerlo de guardia."
-        )
-        self.user_id = user_id
-
-
-class RoleNotBackupEligible(AccountsError):
-    def __init__(self, role: str) -> None:
-        super().__init__(
-            f"El rol {role} no puede marcarse como respaldo de emergencias. "
-            "Solo un veterinario normal puede serlo."
-        )
-        self.role = role
+        super().__init__("No puedes desactivar tu propia cuenta.")
 
 
 class InvalidResetToken(AccountsError):

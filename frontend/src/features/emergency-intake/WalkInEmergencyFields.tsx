@@ -1,17 +1,32 @@
 import type { FieldErrors, UseFormRegister } from 'react-hook-form'
 
+import { MAX_NOMBRE_DE_MASCOTA } from '../../components/formRules'
 import SectionHeading from '../../components/SectionHeading'
+import SpeciesBreedFields from '../../components/SpeciesBreedFields'
 import TextareaField from '../../components/TextareaField'
 import TextField from '../../components/TextField'
+import {
+  LARGO_DNI,
+  MAX_APELLIDO,
+  MAX_NOMBRE,
+  soloDigitos,
+  soloLetras,
+  soloTelefono,
+} from '../../services/fieldRules'
 import type { WalkInEmergencyFormValues } from './formValues'
 
 interface WalkInEmergencyFieldsProps {
   readonly register: UseFormRegister<WalkInEmergencyFormValues>
   readonly errors: FieldErrors<WalkInEmergencyFormValues>
+  readonly species: string
 }
 
 /** Los campos del alta exprés, separados del envío para no pasar de tamaño. */
-export default function WalkInEmergencyFields({ register, errors }: WalkInEmergencyFieldsProps) {
+export default function WalkInEmergencyFields({
+  register,
+  errors,
+  species,
+}: WalkInEmergencyFieldsProps) {
   return (
     <>
       <fieldset className="m-0 flex flex-col gap-4 border-0 p-0">
@@ -22,12 +37,16 @@ export default function WalkInEmergencyFields({ register, errors }: WalkInEmerge
           <TextField
             id="first_name"
             label="Nombre"
+            maxLength={MAX_NOMBRE}
+            sanitize={soloLetras}
             field={register('first_name')}
             error={errors.first_name?.message}
           />
           <TextField
             id="last_name"
             label="Apellido"
+            maxLength={MAX_APELLIDO}
+            sanitize={soloLetras}
             field={register('last_name')}
             error={errors.last_name?.message}
           />
@@ -35,7 +54,8 @@ export default function WalkInEmergencyFields({ register, errors }: WalkInEmerge
             id="document_id"
             label="DNI"
             inputMode="numeric"
-            maxLength={8}
+            maxLength={LARGO_DNI}
+            sanitize={soloDigitos}
             field={register('document_id')}
             error={errors.document_id?.message}
           />
@@ -44,7 +64,9 @@ export default function WalkInEmergencyFields({ register, errors }: WalkInEmerge
             label="Teléfono (si lo tiene a mano)"
             type="tel"
             inputMode="tel"
+            sanitize={soloTelefono}
             field={register('phone')}
+            error={errors.phone?.message}
           />
         </div>
       </fieldset>
@@ -57,14 +79,15 @@ export default function WalkInEmergencyFields({ register, errors }: WalkInEmerge
           <TextField
             id="pet_name"
             label="Nombre de la mascota"
+            maxLength={MAX_NOMBRE_DE_MASCOTA}
             field={register('pet_name')}
             error={errors.pet_name?.message}
           />
-          <TextField
-            id="pet_species"
-            label="Especie"
-            field={register('pet_species')}
-            error={errors.pet_species?.message}
+          <SpeciesBreedFields
+            idPrefix="emergencia"
+            species={species}
+            speciesField={register('pet_species')}
+            speciesError={errors.pet_species?.message}
           />
         </div>
         <TextareaField

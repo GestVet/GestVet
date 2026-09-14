@@ -23,9 +23,16 @@ from gestvet.core.activity_log import ActivityRow
 from gestvet.core.auth import get_token_service
 from gestvet.core.database import Base, get_session
 from gestvet.core.identity import Role
+from gestvet.core.permissions import SYSTEM_ROLE_NAMES, SYSTEM_ROLE_PERMISSIONS
+from gestvet.core.realtime_broker import LocalBroker, get_broker
 from gestvet.core.security import BcryptPasswordHasher
 from gestvet.core.tokens import JwtTokenService
 from gestvet.main import create_app
+from gestvet.modules.access.adapters.persistence import models as access_models
+from gestvet.modules.access.adapters.persistence.models import (
+    AccessRolePermissionRow,
+    AccessRoleRow,
+)
 from gestvet.modules.accounts.adapters.api.dependencies import (
     get_email_sender,
     get_password_hasher,
@@ -66,6 +73,7 @@ TEST_TOKEN_SERVICE = JwtTokenService(
 # `Base.metadata` antes de crearlas. La tupla hace explicita esa intencion.
 REGISTERED_MODELS = (
     ActivityRow,
+    access_models,
     accounts_models,
     appointments_models,
     availability_models,
@@ -107,6 +115,25 @@ GENERAL_TYPE_ID = 1
 SURGERY_TYPE_ID = 2
 EMERGENCY_TYPE_ID = 3
 
+# Un rol de sistema por tipo de cuenta, con identificador fijo para que las
+# pruebas puedan referirse a ellos.
+SYSTEM_ROLE_IDS: dict[Role, int] = {kind: index for index, kind in enumerate(Role, start=1)}
+SYSTEM_ROLES = [
+    {
+        "id": SYSTEM_ROLE_IDS[kind],
+        "name": SYSTEM_ROLE_NAMES[kind],
+        "description": "",
+        "account_kind": kind.value,
+        "is_system": True,
+    }
+    for kind in Role
+]
+SYSTEM_ROLE_PERMISSION_ROWS = [
+    {"role_id": SYSTEM_ROLE_IDS[kind], "permission": permission.value}
+    for kind, permissions in SYSTEM_ROLE_PERMISSIONS.items()
+    for permission in sorted(permissions)
+]
+
 
 @pytest.fixture
 async def session() -> AsyncIterator[AsyncSession]:
@@ -120,6 +147,10 @@ async def session() -> AsyncIterator[AsyncSession]:
         # Los motivos de consulta son datos de referencia que en produccion
         # siembra la migracion. Sin ellos no se puede reservar nada.
         await connection.execute(insert(AppointmentTypeRow), REFERENCE_TYPES)
+        # Los roles de sistema también los siembra una migración. Sin ellos
+        # ninguna cuenta tendría permisos y todo respondería 403.
+        await connection.execute(insert(AccessRoleRow), SYSTEM_ROLES)
+        await connection.execute(insert(AccessRolePermissionRow), SYSTEM_ROLE_PERMISSION_ROWS)
 
     factory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     async with factory() as open_session:
@@ -144,8 +175,14 @@ def sent_emails() -> list[tuple[str, str]]:
 
 
 @pytest.fixture
+def broker() -> LocalBroker:
+    """Reparto de avisos en memoria: ninguna prueba abre `LISTEN` en Postgres."""
+    return LocalBroker()
+
+
+@pytest.fixture
 async def client(
-    session: AsyncSession, sent_emails: list[tuple[str, str]]
+    session: AsyncSession, sent_emails: list[tuple[str, str]], broker: LocalBroker
 ) -> AsyncIterator[AsyncClient]:
     app = create_app()
 
@@ -170,6 +207,7 @@ async def client(
     app.dependency_overrides[get_email_sender] = lambda: RecordingEmailSender()
     app.dependency_overrides[get_attachment_storage] = lambda: InMemoryAttachmentStorage()
     app.dependency_overrides[get_evidence_storage] = lambda: InMemoryAttachmentStorage()
+    app.dependency_overrides[get_broker] = lambda: broker
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as http_client:
@@ -184,7 +222,6 @@ def build_user(
     phone: str = "",
     document_id: str = "",
     is_active: bool = True,
-    can_cover_emergencies: bool = False,
 ) -> User:
     return User(
         email=email,
@@ -195,7 +232,6 @@ def build_user(
         role=role,
         password_hash=TEST_HASHER.hash(VALID_PASSWORD),
         is_active=is_active,
-        can_cover_emergencies=can_cover_emergencies,
     )
 
 

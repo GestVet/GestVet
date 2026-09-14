@@ -19,7 +19,7 @@ export default function HomeHero({ bleed }: HomeHeroProps) {
     >
       <div
         className={cn(
-          'grid items-center gap-12 py-10 md:grid-cols-[1.05fr_1fr] md:gap-8 lg:gap-14',
+          'grid items-center gap-12 py-10 md:grid-cols-[1.25fr_1fr] md:gap-8 lg:gap-12',
           bleed && 'mx-auto max-w-[1100px] px-4 sm:px-6 sm:py-16',
         )}
       >

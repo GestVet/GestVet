@@ -2,52 +2,44 @@ import { useQuery } from '@tanstack/react-query'
 import { type FieldErrors, useFormContext, useWatch } from 'react-hook-form'
 
 import { appointmentTypesQueryKey, fetchAppointmentTypes } from '../../api/appointments'
-import { fetchVeterinarians, veterinariansQueryKey } from '../../api/directory'
 import { fetchMyPets, myPetsQueryKey } from '../../api/pets'
-import type { VeterinarianResponse } from '../../api/types'
 import SelectField from '../../components/SelectField'
-import TextField from '../../components/TextField'
+import TextareaField from '../../components/TextareaField'
 import { NativeSelectOption } from '../../components/ui/native-select'
 import type { BookingForm } from './bookingSchema'
-import VeterinarianSchedule from './VeterinarianSchedule'
+import BookingSlotPicker from './BookingSlotPicker'
 
 function mensajeDeError(errores: FieldErrors<BookingForm>, campo: keyof BookingForm) {
   return errores[campo]?.message
 }
 
-function etiquetaVeterinario(veterinario: VeterinarianResponse): string {
-  if (veterinario.average_rating === null) {
-    return veterinario.full_name
-  }
-  return `${veterinario.full_name} · ★ ${veterinario.average_rating} (${String(veterinario.review_count)})`
-}
-
 /**
- * Los campos de la reserva.
+ * Los campos de la reserva, en el orden en que se decide.
+ *
+ * Primero la mascota y el tipo de atención, porque el tipo define la duración
+ * y con ella qué horas caben. Recién ahí aparecen los días y las horas libres.
  *
  * Toma el formulario del contexto en vez de recibirlo por props: asi el
- * formulario que lo envuelve se queda solo con la mutacion y el envio, y
- * ninguno de los dos pasa del limite de tamano.
+ * formulario que lo envuelve se queda solo con la mutacion y el envio.
  */
 export default function BookingFields() {
-  const { register, control, formState } = useFormContext<BookingForm>()
+  const { register, control, formState, setValue } = useFormContext<BookingForm>()
   const errores = formState.errors
 
   const mascotas = useQuery({ queryKey: myPetsQueryKey, queryFn: fetchMyPets })
   const motivos = useQuery({ queryKey: appointmentTypesQueryKey, queryFn: fetchAppointmentTypes })
-  const veterinarios = useQuery({ queryKey: veterinariansQueryKey, queryFn: fetchVeterinarians })
-
-  const veterinarianId = Number(useWatch({ control, name: 'veterinarian_id' }) || 0)
+  const tipoId = Number(useWatch({ control, name: 'appointment_type_id' }) || 0)
 
   const activas = mascotas.data?.items.filter((mascota) => mascota.is_active) ?? []
 
   return (
     <>
-      <div className="grid gap-5 sm:grid-cols-2">
+      <p className="m-0 text-sm font-semibold">1. ¿Para quién y qué necesita?</p>
+      <div className="grid items-start gap-5 sm:grid-cols-2">
         <SelectField
           id="pet_id"
           label="Mascota"
-          placeholder="Elegí una"
+          placeholder="Elige una"
           field={register('pet_id')}
           error={mensajeDeError(errores, 'pet_id')}
         >
@@ -59,49 +51,42 @@ export default function BookingFields() {
         </SelectField>
 
         <SelectField
-          id="veterinarian_id"
-          label="Veterinario"
-          placeholder="Elegí uno"
-          field={register('veterinarian_id')}
-          error={mensajeDeError(errores, 'veterinarian_id')}
+          id="appointment_type_id"
+          label="Tipo de atención"
+          placeholder="Elige uno"
+          field={register('appointment_type_id', {
+            // Otro tipo cambia la duracion: la hora elegida puede dejar de caber.
+            onChange: () => {
+              setValue('veterinarian_id', '')
+              setValue('scheduled_at', '')
+            },
+          })}
+          error={mensajeDeError(errores, 'appointment_type_id')}
+          hint="El precio es estimado: puede variar según lo que requiera la atención."
         >
-          {veterinarios.data?.items.map((veterinario) => (
-            <NativeSelectOption key={veterinario.id} value={veterinario.id}>
-              {etiquetaVeterinario(veterinario)}
+          {motivos.data?.items.map((motivo) => (
+            <NativeSelectOption key={motivo.id} value={motivo.id}>
+              {motivo.name} · {motivo.duration_minutes} min · S/ {motivo.price}
             </NativeSelectOption>
           ))}
         </SelectField>
       </div>
 
-      <SelectField
-        id="appointment_type_id"
-        label="Motivo"
-        placeholder="Elegí el motivo"
-        field={register('appointment_type_id')}
-        error={mensajeDeError(errores, 'appointment_type_id')}
-        hint="Precio estimado: puede variar según lo que finalmente requiera la atención."
-      >
-        {motivos.data?.items.map((motivo) => (
-          <NativeSelectOption key={motivo.id} value={motivo.id}>
-            {motivo.name} · {motivo.duration_minutes} min · S/ {motivo.price}
-          </NativeSelectOption>
-        ))}
-      </SelectField>
+      {tipoId > 0 ? (
+        // La clave vuelve a montar el selector con cada tipo: el dia elegido
+        // para una consulta no tiene por que servir para una cirugia.
+        <BookingSlotPicker key={tipoId} appointmentTypeId={tipoId} />
+      ) : (
+        <p className="m-0 rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground">
+          Elige el tipo de atención para ver los días y las horas libres.
+        </p>
+      )}
 
-      <VeterinarianSchedule veterinarianId={veterinarianId} />
-
-      <TextField
-        id="scheduled_at"
-        label="Fecha y hora"
-        type="datetime-local"
-        field={register('scheduled_at')}
-        error={mensajeDeError(errores, 'scheduled_at')}
-        hint="Tiene que caer dentro de un tramo publicado por el veterinario."
-      />
-
-      <TextField
+      <TextareaField
         id="description"
-        label="Motivo de consulta"
+        label="3. ¿Qué le pasa a tu mascota? (opcional)"
+        hint="Ayuda al veterinario a preparar la consulta."
+        rows={3}
         field={register('description')}
         error={mensajeDeError(errores, 'description')}
       />

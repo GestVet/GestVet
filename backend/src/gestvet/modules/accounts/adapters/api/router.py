@@ -11,8 +11,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from gestvet.core.activity_log import ActivityRecorderDep
-from gestvet.core.auth import PrincipalDep, require_roles
-from gestvet.core.identity import STAFF_ROLES
+from gestvet.core.auth import require_permission
+from gestvet.core.identity import Principal
+from gestvet.core.permissions import Permission
 from gestvet.modules.accounts.adapters.api.dependencies import (
     PasswordHasherDep,
     UserRepositoryDep,
@@ -42,12 +43,24 @@ from gestvet.modules.accounts.use_cases.manage_accounts import (
 DEFAULT_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 100
 
-# El padrón de clientes es dato personal. Solo lo ve quien atiende la clínica,
-# nunca un cliente autenticado mirando el listado de los demás.
-router = APIRouter(dependencies=[Depends(require_roles(*STAFF_ROLES))])
+# El padrón de clientes es dato personal. Cada endpoint exige un permiso que
+# los roles de sistema solo le dan a quien atiende la clínica.
+router = APIRouter()
+
+WalkInRegistrarDep = Annotated[
+    Principal, Depends(require_permission(Permission.CLIENTS_REGISTER_WALK_IN))
+]
+ContactEditorDep = Annotated[
+    Principal, Depends(require_permission(Permission.CLIENTS_UPDATE_CONTACT))
+]
 
 
-@router.get("", response_model=ClientPageResponse, summary="Listar clientes")
+@router.get(
+    "",
+    response_model=ClientPageResponse,
+    dependencies=[Depends(require_permission(Permission.CLIENTS_READ))],
+    summary="Listar clientes",
+)
 async def list_clients(
     users: UserRepositoryDep,
     search: Annotated[str | None, Query(description="Busca en nombre, correo y teléfono")] = None,
@@ -79,7 +92,7 @@ async def list_clients(
 )
 async def register_walk_in_client(
     payload: RegisterWalkInClientRequest,
-    principal: PrincipalDep,
+    principal: WalkInRegistrarDep,
     users: UserRepositoryDep,
     hasher: PasswordHasherDep,
     activity: ActivityRecorderDep,
@@ -107,7 +120,7 @@ async def register_walk_in_client(
 async def update_client_contact(
     client_id: int,
     payload: UpdateClientContactRequest,
-    principal: PrincipalDep,
+    principal: ContactEditorDep,
     users: UserRepositoryDep,
     activity: ActivityRecorderDep,
 ) -> UserResponse:

@@ -144,7 +144,7 @@ def test_correo_invalido(raw: str) -> None:
 
 @pytest.mark.parametrize(
     "role",
-    [Role.ADMIN, Role.VETERINARIAN, Role.EMERGENCY_VETERINARIAN],
+    [Role.ADMIN, Role.VETERINARIAN],
 )
 def test_ningun_rol_privilegiado_es_autoasignable(role: Role) -> None:
     """Cierra el hallazgo P0 de la auditoría de CitasVet."""

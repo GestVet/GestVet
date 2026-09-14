@@ -6,7 +6,10 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router/dom'
 
 import router from './router'
+import { logger, logUncaughtErrors } from './services/logger'
 import './index.css'
+
+logUncaughtErrors()
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,7 +29,20 @@ if (!container) {
   throw new Error('No se encontró el elemento #root en el documento.')
 }
 
-createRoot(container).render(
+// React escribe estos errores en la consola por su cuenta. Pasarlos por el
+// logger los deja con el mismo formato y nivel que el resto, junto con la pila
+// de componentes, que es lo que dice en que pantalla ocurrio.
+createRoot(container, {
+  onUncaughtError: (error, info) => {
+    logger.error({ err: error, componentStack: info.componentStack }, 'react.uncaught_error')
+  },
+  onCaughtError: (error, info) => {
+    logger.error({ err: error, componentStack: info.componentStack }, 'react.caught_error')
+  },
+  onRecoverableError: (error, info) => {
+    logger.warn({ err: error, componentStack: info.componentStack }, 'react.recoverable_error')
+  },
+}).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />

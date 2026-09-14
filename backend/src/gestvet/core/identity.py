@@ -11,7 +11,7 @@ puro a propósito: lo importa hasta la capa de dominio.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Protocol
 
@@ -20,7 +20,6 @@ class Role(StrEnum):
     ADMIN = "admin"
     CLIENT = "client"
     VETERINARIAN = "veterinarian"
-    EMERGENCY_VETERINARIAN = "emergency_veterinarian"
 
     @property
     def label(self) -> str:
@@ -31,15 +30,12 @@ _ROLE_LABELS: dict[Role, str] = {
     Role.ADMIN: "Administrador",
     Role.CLIENT: "Cliente",
     Role.VETERINARIAN: "Veterinario",
-    Role.EMERGENCY_VETERINARIAN: "Veterinario de emergencia",
 }
 
 # El personal de la clínica: todo el que no es cliente y atiende el servicio.
-STAFF_ROLES: frozenset[Role] = frozenset(
-    {Role.ADMIN, Role.VETERINARIAN, Role.EMERGENCY_VETERINARIAN}
-)
+STAFF_ROLES: frozenset[Role] = frozenset({Role.ADMIN, Role.VETERINARIAN})
 # Roles que atienden citas.
-VETERINARIAN_ROLES: frozenset[Role] = frozenset({Role.VETERINARIAN, Role.EMERGENCY_VETERINARIAN})
+VETERINARIAN_ROLES: frozenset[Role] = frozenset({Role.VETERINARIAN})
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,6 +50,10 @@ class Principal:
     user_id: int
     role: Role
     is_active: bool
+    # Códigos de permiso del rol que tiene asignado, o del rol de sistema de su
+    # tipo de cuenta. Texto y no el enum del catálogo: este archivo no puede
+    # importar el catálogo, que a su vez depende de los tipos de cuenta de acá.
+    permissions: frozenset[str] = field(default_factory=frozenset)
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,3 +104,15 @@ def ensure_role_is_allowed(role: Role, allowed: frozenset[Role]) -> None:
     """
     if role not in allowed:
         raise PermissionDenied(tuple(sorted(candidate.value for candidate in allowed)))
+
+
+class MissingPermission(IdentityError):
+    def __init__(self, required: tuple[str, ...]) -> None:
+        super().__init__("Tu rol no tiene permiso para esta acción.")
+        self.required = required
+
+
+def ensure_permission(principal: Principal, *required: str) -> None:
+    """Alcanza con tener uno de los permisos pedidos."""
+    if not any(permission in principal.permissions for permission in required):
+        raise MissingPermission(tuple(required))

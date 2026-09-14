@@ -7,25 +7,45 @@ import { z } from 'zod'
 import { login } from '../../api/auth'
 import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
+import PasswordField from '../../components/PasswordField'
 import TextField from '../../components/TextField'
 import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 import { useSession } from '../../store/session'
+import AuthAside from './AuthAside'
 import AuthCard from './AuthCard'
+import { correoRule } from '../../services/fieldRules'
 
 const esquema = z.object({
-  email: z.email('Ingresá un correo válido'),
-  password: z.string().min(1, 'Ingresá tu contraseña'),
+  email: correoRule,
+  // Al entrar no se exige la longitud: una cuenta antigua puede tener una
+  // contrasena mas corta, y la respuesta del servidor ya dice si no coincide.
+  password: z.string().min(1, 'Escribe tu contraseña'),
 })
 
 type Formulario = z.infer<typeof esquema>
+
+const PANEL = (
+  <AuthAside
+    title="Todo sobre tu mascota, en un solo lugar"
+    items={[
+      { icon: 'cita', text: 'Reserva y cancela tus citas desde tu cuenta.' },
+      { icon: 'carpeta', text: 'Consulta la historia clínica de cada mascota.' },
+      { icon: 'pago', text: 'Paga tus citas con QR.' },
+    ]}
+    note="Si trabajas en la clínica, entra con la cuenta que te creó la administración."
+  />
+)
+
+const ENLACE = 'font-medium text-primary underline underline-offset-4'
 
 export default function LoginView() {
   const signIn = useSession((state) => state.signIn)
   const navigate = useNavigate()
   const { register, handleSubmit, formState } = useForm<Formulario>({
     resolver: zodResolver(esquema),
+    mode: 'onTouched',
     defaultValues: { email: '', password: '' },
   })
 
@@ -40,11 +60,12 @@ export default function LoginView() {
   return (
     <AuthCard
       title="Iniciar sesión"
+      aside={PANEL}
       footer={
         <p className="m-0 text-muted-foreground">
-          ¿No tenés cuenta?{' '}
-          <Link to="/registro" className="font-medium text-primary underline underline-offset-4">
-            Registrate
+          ¿No tienes cuenta?{' '}
+          <Link to="/registro" className={ENLACE}>
+            Regístrate
           </Link>
         </p>
       }
@@ -62,36 +83,34 @@ export default function LoginView() {
           id="email"
           label="Correo"
           type="email"
+          inputMode="email"
           autoComplete="email"
+          spellCheck={false}
           field={register('email')}
           error={formState.errors.email?.message}
         />
 
         <div className="flex flex-col gap-2">
-          <TextField
+          <PasswordField
             id="password"
             label="Contraseña"
-            type="password"
             autoComplete="current-password"
             field={register('password')}
             error={formState.errors.password?.message}
           />
-          <Link
-            to="/olvide-contrasena"
-            className="self-end text-sm font-medium text-primary underline underline-offset-4"
-          >
+          <Link to="/olvide-contrasena" className={`self-end text-sm ${ENLACE}`}>
             ¿Olvidaste tu contraseña?
           </Link>
         </div>
 
         {acceder.isError ? (
           <FormMessage tone="error">
-            {errorMessage(acceder.error, 'No se pudo iniciar sesión.')}
+            {errorMessage(acceder.error, 'No se pudo iniciar sesión. Inténtalo de nuevo.')}
           </FormMessage>
         ) : null}
 
-        <Button type="submit" size="lg" className="h-10 w-full" disabled={acceder.isPending}>
-          <Icon name="confirmar" size={16} />
+        <Button type="submit" size="lg" className="h-11 w-full" disabled={acceder.isPending}>
+          <Icon name="entrar" size={18} />
           <span>{acceder.isPending ? 'Entrando…' : 'Entrar'}</span>
         </Button>
       </form>

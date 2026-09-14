@@ -5,6 +5,12 @@ import { z } from 'zod'
 
 import { addClinicalEntry, clinicalEntriesQueryKey } from '../../api/medicalRecords'
 import FormMessage from '../../components/FormMessage'
+import {
+  decimalParaApi,
+  decimalRule,
+  textoObligatorio,
+  textoOpcional,
+} from '../../components/formRules'
 import Icon from '../../components/Icon'
 import SelectField from '../../components/SelectField'
 import TextareaField from '../../components/TextareaField'
@@ -25,10 +31,10 @@ const TIPOS = [
 
 const esquema = z.object({
   kind: z.enum(['consultation', 'vaccine', 'surgery', 'follow_up', 'consent_form', 'other']),
-  notes: z.string().min(1, 'Ingresá una nota'),
-  diagnosis: z.string().max(300).optional(),
-  treatment: z.string().max(300).optional(),
-  weight_kg: z.string().optional(),
+  notes: textoObligatorio(2000, 'Escribe una nota'),
+  diagnosis: textoOpcional(300),
+  treatment: textoOpcional(300),
+  weight_kg: decimalRule({ max: 120, decimales: 2, unidad: 'kg' }),
 })
 
 type Formulario = z.infer<typeof esquema>
@@ -60,9 +66,9 @@ export default function ClinicalEntryForm({ petId }: ClinicalEntryFormProps) {
         pet_id: petId,
         kind: valores.kind,
         notes: valores.notes,
-        diagnosis: valores.diagnosis ?? '',
-        treatment: valores.treatment ?? '',
-        weight_kg: valores.weight_kg === '' ? null : valores.weight_kg,
+        diagnosis: valores.diagnosis,
+        treatment: valores.treatment,
+        weight_kg: decimalParaApi(valores.weight_kg),
       }),
     onSuccess: async () => {
       reset(VACIO)
@@ -96,9 +102,10 @@ export default function ClinicalEntryForm({ petId }: ClinicalEntryFormProps) {
           step="0.1"
           min="0"
           field={register('weight_kg')}
+          error={formState.errors.weight_kg?.message}
         />
-        <TextField id={campo('diagnosis')} label="Diagnóstico" field={register('diagnosis')} />
-        <TextField id={campo('treatment')} label="Tratamiento" field={register('treatment')} />
+        <TextField id={campo('diagnosis')} label="Diagnóstico" maxLength={300} field={register('diagnosis')} error={formState.errors.diagnosis?.message} />
+        <TextField id={campo('treatment')} label="Tratamiento" maxLength={300} field={register('treatment')} error={formState.errors.treatment?.message} />
       </div>
       <TextareaField
         id={campo('notes')}

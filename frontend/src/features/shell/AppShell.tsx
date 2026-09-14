@@ -5,11 +5,12 @@ import AppFooter from './AppFooter'
 import Brand from './Brand'
 import GuestHeader from './GuestHeader'
 import MobileMenu from './MobileMenu'
-import { entriesForRole } from './navigation'
+import { entriesFor } from './navigation'
 import NavList from './NavList'
 import SessionActions from './SessionActions'
 import ToastStack from './ToastStack'
 import { useClientAppointmentAlerts } from './useClientAppointmentAlerts'
+import { useRealtimeUpdates } from './useRealtimeUpdates'
 import { useVeterinarianEmergencyAlerts } from './useVeterinarianEmergencyAlerts'
 
 /**
@@ -23,6 +24,7 @@ import { useVeterinarianEmergencyAlerts } from './useVeterinarianEmergencyAlerts
  */
 export default function AppShell() {
   const user = useSession((state) => state.user)
+  useRealtimeUpdates()
   useClientAppointmentAlerts()
   useVeterinarianEmergencyAlerts()
 
@@ -35,7 +37,7 @@ export default function AppShell() {
         tabIndex={-1}
         className={
           invitados
-            ? 'w-full flex-1 px-4 py-6 outline-none sm:px-6'
+            ? 'flex w-full flex-1 flex-col px-4 py-6 outline-none sm:px-6'
             : 'mx-auto w-full max-w-[1100px] flex-1 px-4 py-6 outline-none sm:px-6'
         }
       >
@@ -64,12 +66,14 @@ export default function AppShell() {
     )
   }
 
-  const entries = entriesForRole(user.role)
+  const entries = entriesFor(user.permissions)
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[15rem_1fr]">
       {skipLink}
-      <aside className="hidden border-r bg-card lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:gap-6 lg:p-4">
+      {/* La columna pinta el fondo de punta a punta; adentro, el menú queda fijo al desplazarse. */}
+      <div className="hidden border-r bg-card lg:block">
+      <aside className="sticky top-0 flex h-screen flex-col gap-6 p-4">
         <div className="px-1 pt-1">
           <Brand to="/panel" />
         </div>
@@ -78,6 +82,7 @@ export default function AppShell() {
         </nav>
         <SessionActions firstName={user.first_name} />
       </aside>
+      </div>
 
       <div className="flex min-h-screen min-w-0 flex-col">
         <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b bg-card px-4 py-1.5 lg:hidden">

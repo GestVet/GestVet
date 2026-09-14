@@ -10,15 +10,30 @@ import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 import { useSession } from '../../store/session'
+import AuthAside from './AuthAside'
 import AuthCard from './AuthCard'
 import RegisterFields from './RegisterFields'
 import { type RegisterForm, registerSchema } from './registerSchema'
+
+const PANEL = (
+  <AuthAside
+    title="Con tu cuenta puedes"
+    items={[
+      { icon: 'mascota', text: 'Registrar a tus mascotas una sola vez.' },
+      { icon: 'cita', text: 'Reservar en los horarios libres de cada veterinario.' },
+      { icon: 'emergencia', text: 'Abrir una emergencia a cualquier hora del día.' },
+      { icon: 'carpeta', text: 'Seguir la historia clínica de cada mascota.' },
+    ]}
+    note="Pedimos tu DNI para identificarte cuando llegues a la clínica."
+  />
+)
 
 export default function RegisterView() {
   const signIn = useSession((state) => state.signIn)
   const navigate = useNavigate()
   const { register, handleSubmit, formState } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
+    mode: 'onTouched',
     defaultValues: {
       first_name: '',
       last_name: '',
@@ -31,7 +46,7 @@ export default function RegisterView() {
 
   const crear = useMutation({
     mutationFn: async (valores: RegisterForm) => {
-      await registerClient({ ...valores, phone: valores.phone ?? '' })
+      await registerClient(valores)
       // El alta no devuelve token: se entra con las mismas credenciales.
       return login({ email: valores.email, password: valores.password })
     },
@@ -44,12 +59,13 @@ export default function RegisterView() {
   return (
     <AuthCard
       title="Crear una cuenta"
-      description="El registro crea una cuenta de cliente."
+      description="Para dueños de mascotas. Si trabajas en la clínica, la administración crea tu cuenta."
+      aside={PANEL}
       footer={
         <p className="m-0 text-muted-foreground">
-          ¿Ya tenés cuenta?{' '}
+          ¿Ya tienes cuenta?{' '}
           <Link to="/acceso" className="font-medium text-primary underline underline-offset-4">
-            Iniciá sesión
+            Inicia sesión
           </Link>
         </p>
       }
@@ -67,19 +83,13 @@ export default function RegisterView() {
 
         {crear.isError ? (
           <FormMessage tone="error">
-            {errorMessage(crear.error, 'No se pudo crear la cuenta.')}
+            {errorMessage(crear.error, 'No se pudo crear la cuenta. Inténtalo de nuevo.')}
           </FormMessage>
         ) : null}
 
-        <Button
-          type="submit"
-          variant="success"
-          size="lg"
-          className="h-10 w-full"
-          disabled={crear.isPending}
-        >
-          <Icon name="agregar" size={16} />
-          <span>{crear.isPending ? 'Creando…' : 'Crear cuenta'}</span>
+        <Button type="submit" size="lg" className="h-11 w-full" disabled={crear.isPending}>
+          <Icon name="registrarse" size={18} />
+          <span>{crear.isPending ? 'Creando tu cuenta…' : 'Crear cuenta'}</span>
         </Button>
       </form>
     </AuthCard>

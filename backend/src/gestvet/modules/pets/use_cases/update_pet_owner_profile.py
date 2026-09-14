@@ -8,8 +8,10 @@ alergias) los actualiza el veterinario por `UpdatePetClinicalProfile`.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 
 from gestvet.core.activity import ActivityKind, ActivityRecorder
+from gestvet.modules.pets.domain.catalog import ensure_in_catalog
 from gestvet.modules.pets.domain.entities import Pet, PetSex
 from gestvet.modules.pets.domain.exceptions import PetNotFound
 from gestvet.modules.pets.ports.pet_repository import PetRepository
@@ -23,6 +25,9 @@ class UpdatePetOwnerProfileCommand:
     color: str
     microchip_number: str
     temperament: str
+    species: str | None = None
+    breed: str | None = None
+    birth_date: date | None = None
 
 
 class UpdatePetOwnerProfile:
@@ -35,11 +40,17 @@ class UpdatePetOwnerProfile:
         if pet is None:
             raise PetNotFound(command.pet_id)
 
+        if command.species is not None or command.breed is not None:
+            ensure_in_catalog(command.species or pet.species, command.breed or pet.breed)
+
         pet.update_owner_profile(
             sex=command.sex,
             color=command.color,
             microchip_number=command.microchip_number,
             temperament=command.temperament,
+            species=command.species,
+            breed=command.breed,
+            birth_date=command.birth_date,
         )
         guardada = await self._pets.save(pet)
         await self._activity.record(

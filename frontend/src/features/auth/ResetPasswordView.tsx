@@ -7,18 +7,17 @@ import { z } from 'zod'
 import { resetPassword } from '../../api/auth'
 import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
-import TextField from '../../components/TextField'
+import PasswordField from '../../components/PasswordField'
 import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 import AuthCard from './AuthCard'
+import { MIN_PASSWORD, passwordRule } from '../../services/fieldRules'
 import MissingResetToken from './MissingResetToken'
-
-const MIN_PASSWORD = 10
 
 const esquema = z
   .object({
-    new_password: z.string().min(MIN_PASSWORD, `Usá al menos ${String(MIN_PASSWORD)} caracteres`),
+    new_password: passwordRule,
     confirmacion: z.string(),
   })
   .refine((valores) => valores.new_password === valores.confirmacion, {
@@ -34,6 +33,7 @@ export default function ResetPasswordView() {
   const navigate = useNavigate()
   const { register, handleSubmit, formState } = useForm<Formulario>({
     resolver: zodResolver(esquema),
+    mode: 'onTouched',
     defaultValues: { new_password: '', confirmacion: '' },
   })
 
@@ -67,20 +67,18 @@ export default function ResetPasswordView() {
             }),
           )}
         >
-          <TextField
+          <PasswordField
             id="new_password"
             label="Contraseña nueva"
-            type="password"
             autoComplete="new-password"
             hint={`Al menos ${String(MIN_PASSWORD)} caracteres.`}
             field={register('new_password')}
             error={formState.errors.new_password?.message}
           />
 
-          <TextField
+          <PasswordField
             id="confirmacion"
-            label="Repetí la contraseña"
-            type="password"
+            label="Repite la contraseña"
             autoComplete="new-password"
             field={register('confirmacion')}
             error={formState.errors.confirmacion?.message}
@@ -95,10 +93,10 @@ export default function ResetPasswordView() {
           <Button
             type="submit"
             size="lg"
-            className="h-10 w-full"
+            className="h-11 w-full"
             disabled={restablecer.isPending}
           >
-            <Icon name="confirmar" size={16} />
+            <Icon name="confirmar" size={18} />
             <span>{restablecer.isPending ? 'Guardando…' : 'Guardar contraseña'}</span>
           </Button>
         </form>

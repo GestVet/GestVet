@@ -9,7 +9,7 @@ import {
 import type { AppointmentResponse } from '../../api/types'
 import FormMessage from '../../components/FormMessage'
 import { errorMessage } from '../../services/api'
-import { useIsVeterinarian } from '../../store/session'
+import { useCan } from '../../store/session'
 import AppointmentActionButtons from './AppointmentActionButtons'
 import CancelAppointmentDialog from './CancelAppointmentDialog'
 
@@ -24,7 +24,7 @@ interface AppointmentActionsProps {
  * aplica el servidor. Acá solo evita ofrecer una acción que va a ser rechazada.
  */
 export default function AppointmentActions({ appointment }: AppointmentActionsProps) {
-  const atiende = useIsVeterinarian()
+  const atiende = useCan('appointments.attend')
   const queryClient = useQueryClient()
 
   const refrescar = async () => {

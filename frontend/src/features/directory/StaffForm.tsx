@@ -20,8 +20,7 @@ export default function StaffForm() {
   })
 
   const alta = useMutation({
-    mutationFn: (valores: StaffFormValues) =>
-      registerStaff({ ...valores, phone: valores.phone ?? '' }),
+    mutationFn: registerStaff,
     onSuccess: async () => {
       reset(EMPTY_STAFF_FORM)
       await queryClient.invalidateQueries({ queryKey: staffQueryKey })

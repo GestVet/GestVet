@@ -6,7 +6,7 @@ import DataTable, { type DataColumn } from '../../components/DataTable'
 import PageHeader from '../../components/PageHeader'
 import RowExpandButton from '../../components/RowExpandButton'
 import StatusBadge from '../../components/StatusBadge'
-import { useIsAdmin } from '../../store/session'
+import { useCan } from '../../store/session'
 import ClientDetails from './ClientDetails'
 import { hasPendingContact } from './clientContact'
 import ClientStatusToggle from './ClientStatusToggle'
@@ -65,7 +65,7 @@ const COLUMNAS_ADMIN: readonly DataColumn<UserResponse>[] = [
 
 export default function ClientsView() {
   const clientes = useQuery({ queryKey: clientsQueryKey, queryFn: fetchClients })
-  const esAdmin = useIsAdmin()
+  const esAdmin = useCan('users.change_status')
 
   return (
     <div className="flex flex-col gap-6">

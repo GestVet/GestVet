@@ -10,6 +10,7 @@ al módulo que lo posee.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from decimal import Decimal
@@ -24,6 +25,8 @@ MAX_COLOR_LENGTH = 80
 MAX_MICROCHIP_LENGTH = 40
 MAX_TEMPERAMENT_LENGTH = 120
 MAX_ALLERGIES_LENGTH = 300
+# Un microchip ISO tiene 15 dígitos; los más antiguos, 9 o 10.
+_MICROCHIP_PATTERN = re.compile(r"\d{9,15}")
 
 # Ninguna especie domestica se acerca a esto. Un valor mayor no es una mascota
 # longeva, es una fecha mal tipeada.
@@ -109,13 +112,42 @@ class Pet:
         return self.owner_id == owner_id
 
     def update_owner_profile(
-        self, *, sex: PetSex | None, color: str, microchip_number: str, temperament: str
+        self,
+        *,
+        sex: PetSex | None,
+        color: str,
+        microchip_number: str,
+        temperament: str,
+        species: str | None = None,
+        breed: str | None = None,
+        birth_date: date | None = None,
     ) -> None:
-        """Datos que conoce el dueño, no el consultorio."""
+        """Datos que conoce el dueño, no el consultorio.
+
+        Especie, raza y fecha de nacimiento son opcionales: sin ellas se
+        conservan. Sirven para completar una mascota dada de alta en una
+        emergencia, que queda con la raza sin especificar.
+        """
+        # Se valida todo antes de tocar nada: un dato inválido no deja la ficha
+        # a medio actualizar.
+        nuevo_color = _trim(color, "color", MAX_COLOR_LENGTH)
+        nuevo_microchip = _require_microchip(microchip_number)
+        nuevo_temperamento = _trim(temperament, "temperamento", MAX_TEMPERAMENT_LENGTH)
+        nueva_especie = (
+            self.species
+            if species is None
+            else _require_text(species, "especie", MAX_SPECIES_LENGTH)
+        )
+        nueva_raza = self.breed if breed is None else _require_text(breed, "raza", MAX_BREED_LENGTH)
+        if birth_date is not None:
+            _require_plausible_birth_date(birth_date)
+            self.birth_date = birth_date
+        self.species = nueva_especie
+        self.breed = nueva_raza
         self.sex = sex
-        self.color = _trim(color, "color", MAX_COLOR_LENGTH)
-        self.microchip_number = _trim(microchip_number, "microchip", MAX_MICROCHIP_LENGTH)
-        self.temperament = _trim(temperament, "temperamento", MAX_TEMPERAMENT_LENGTH)
+        self.color = nuevo_color
+        self.microchip_number = nuevo_microchip
+        self.temperament = nuevo_temperamento
 
     def update_clinical_profile(
         self,
@@ -152,6 +184,13 @@ def _trim(raw: str, field_name: str, max_length: int) -> str:
     return value
 
 
+def _require_microchip(raw: str) -> str:
+    value = _trim(raw, "microchip", MAX_MICROCHIP_LENGTH)
+    if value and not _MICROCHIP_PATTERN.fullmatch(value):
+        raise InvalidPetData("El microchip tiene de 9 a 15 dígitos, sin espacios ni letras.")
+    return value
+
+
 def _require_plausible_birth_date(birth_date: date, today: date | None = None) -> None:
     reference = today or datetime.now(UTC).date()
     if birth_date > reference:
@@ -159,7 +198,7 @@ def _require_plausible_birth_date(birth_date: date, today: date | None = None) -
     if reference.year - birth_date.year > MAX_PLAUSIBLE_AGE_YEARS:
         raise InvalidPetData(
             f"La fecha de nacimiento supera los {MAX_PLAUSIBLE_AGE_YEARS} años. "
-            "Revisá el dato antes de guardarlo."
+            "Revisa el dato antes de guardarlo."
         )
 
 
@@ -167,11 +206,11 @@ def _require_plausible_weight(weight_kg: Decimal) -> None:
     if weight_kg <= 0:
         raise InvalidPetData("El peso debe ser positivo.")
     if weight_kg > MAX_PLAUSIBLE_WEIGHT_KG:
-        raise InvalidPetData(f"El peso supera los {MAX_PLAUSIBLE_WEIGHT_KG} kg. Revisá el dato.")
+        raise InvalidPetData(f"El peso supera los {MAX_PLAUSIBLE_WEIGHT_KG} kg. Revisa el dato.")
 
 
 def _require_plausible_height(height_cm: Decimal) -> None:
     if height_cm <= 0:
         raise InvalidPetData("La altura debe ser positiva.")
     if height_cm > MAX_PLAUSIBLE_HEIGHT_CM:
-        raise InvalidPetData(f"La altura supera los {MAX_PLAUSIBLE_HEIGHT_CM} cm. Revisá el dato.")
+        raise InvalidPetData(f"La altura supera los {MAX_PLAUSIBLE_HEIGHT_CM} cm. Revisa el dato.")

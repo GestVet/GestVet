@@ -12,6 +12,8 @@ import {
   Banknote,
   CalendarCheck2,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   ChartColumnIncreasing,
   Check,
   Circle,
@@ -19,19 +21,25 @@ import {
   CircleX,
   Clock,
   Download,
+  Eye,
+  EyeOff,
   FolderHeart,
   HeartPulse,
   House,
+  LogIn,
   LogOut,
   type LucideIcon,
+  Mail,
   MapPin,
   Menu,
   PawPrint,
   Plus,
   Search,
   Settings,
+  ShieldCheck,
   TriangleAlert,
   UserRound,
+  UserRoundPlus,
 } from 'lucide-react'
 
 export const ICONS = {
@@ -57,9 +65,16 @@ export const ICONS = {
   confirmar: Check,
   cancelar: CircleX,
   salir: LogOut,
+  entrar: LogIn,
+  registrarse: UserRoundPlus,
+  correo: Mail,
+  ver: Eye,
+  ocultar: EyeOff,
   buscar: Search,
   pago: Banknote,
   descargar: Download,
+  anterior: ChevronLeft,
+  siguiente: ChevronRight,
 
   // Estado.
   activo: Circle,
@@ -68,6 +83,7 @@ export const ICONS = {
   salud: HeartPulse,
   carpeta: FolderHeart,
   engranaje: Settings,
+  permisos: ShieldCheck,
 } as const satisfies Record<string, LucideIcon>
 
 export type IconName = keyof typeof ICONS

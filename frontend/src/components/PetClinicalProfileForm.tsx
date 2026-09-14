@@ -2,6 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
+import { decimalParaApi, decimalRule, textoOpcional } from './formRules'
+
 import { onSubmit } from '../hooks/formSubmit'
 import { usePetClinicalProfileUpdate } from '../hooks/usePetProfile'
 import FormMessage from './FormMessage'
@@ -13,10 +15,11 @@ import { Button } from './ui/button'
 import { NativeSelectOption } from './ui/native-select'
 
 const esquema = z.object({
-  weight_kg: z.string(),
-  height_cm: z.string(),
+  // Los mismos topes que el servidor: 120 kg y 200 cm cubren de un hámster a un gran danés.
+  weight_kg: decimalRule({ max: 120, decimales: 2, unidad: 'kg' }),
+  height_cm: decimalRule({ max: 200, decimales: 1, unidad: 'cm' }),
   is_sterilized: z.enum(['', 'true', 'false']),
-  allergies: z.string().max(300),
+  allergies: textoOpcional(300),
 })
 
 type Formulario = z.infer<typeof esquema>
@@ -59,8 +62,8 @@ export default function PetClinicalProfileForm(props: PetClinicalProfileFormProp
       onSubmit={onSubmit(
         handleSubmit((valores) => {
           guardar.mutate({
-            weight_kg: valores.weight_kg === '' ? null : valores.weight_kg,
-            height_cm: valores.height_cm === '' ? null : valores.height_cm,
+            weight_kg: decimalParaApi(valores.weight_kg),
+            height_cm: decimalParaApi(valores.height_cm),
             is_sterilized: valores.is_sterilized === '' ? null : valores.is_sterilized === 'true',
             allergies: valores.allergies,
           })

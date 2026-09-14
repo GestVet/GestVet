@@ -1,8 +1,7 @@
 import type { FieldErrors, UseFormRegister } from 'react-hook-form'
 
-import SelectField from '../../components/SelectField'
 import TextField from '../../components/TextField'
-import { NativeSelectOption } from '../../components/ui/native-select'
+import { soloLetras, soloTelefono } from '../../services/fieldRules'
 import type { StaffFormValues } from './staffSchema'
 
 interface StaffFieldsProps {
@@ -16,12 +15,14 @@ export default function StaffFields({ register, errors }: StaffFieldsProps) {
       <TextField
         id="first_name"
         label="Nombre"
+        sanitize={soloLetras}
         field={register('first_name')}
         error={errors.first_name?.message}
       />
       <TextField
         id="last_name"
         label="Apellido"
+        sanitize={soloLetras}
         field={register('last_name')}
         error={errors.last_name?.message}
       />
@@ -32,7 +33,15 @@ export default function StaffFields({ register, errors }: StaffFieldsProps) {
         field={register('email')}
         error={errors.email?.message}
       />
-      <TextField id="phone" label="Teléfono" type="tel" inputMode="tel" field={register('phone')} />
+      <TextField
+        id="phone"
+        label="Teléfono"
+        type="tel"
+        inputMode="tel"
+        sanitize={soloTelefono}
+        field={register('phone')}
+        error={errors.phone?.message}
+      />
       <TextField
         id="password"
         label="Contraseña inicial"
@@ -42,12 +51,6 @@ export default function StaffFields({ register, errors }: StaffFieldsProps) {
         field={register('password')}
         error={errors.password?.message}
       />
-      <SelectField id="role" label="Rol" field={register('role')}>
-        <NativeSelectOption value="veterinarian">Veterinario</NativeSelectOption>
-        <NativeSelectOption value="emergency_veterinarian">
-          Veterinario de guardia
-        </NativeSelectOption>
-      </SelectField>
     </div>
   )
 }

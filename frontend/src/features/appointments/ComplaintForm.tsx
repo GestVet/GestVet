@@ -6,6 +6,7 @@ import { z } from 'zod'
 
 import { fileComplaint } from '../../api/complaints'
 import FormMessage from '../../components/FormMessage'
+import { textoObligatorio } from '../../components/formRules'
 import TextareaField from '../../components/TextareaField'
 import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
@@ -13,7 +14,7 @@ import { errorMessage } from '../../services/api'
 import EvidenceUploader from './EvidenceUploader'
 
 const esquema = z.object({
-  description: z.string().min(1, 'Contanos qué pasó'),
+  description: textoObligatorio(2000, 'Cuéntanos qué pasó'),
 })
 
 type Formulario = z.infer<typeof esquema>

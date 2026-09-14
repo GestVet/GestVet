@@ -75,7 +75,7 @@ export default function QrPaymentPanel({
             }}
           />
           <p id={`${montoId}-ayuda`} className="m-0 text-sm text-muted-foreground">
-            Dejalo vacío para usar el precio de catálogo. En una cita normal admite hasta S/ 5
+            Déjalo vacío para usar el precio de catálogo. En una cita normal admite hasta S/ 5
             de diferencia; en una emergencia no hay límite.
           </p>
         </div>

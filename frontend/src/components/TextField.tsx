@@ -21,7 +21,15 @@ interface TextFieldProps {
   readonly maxLength?: number
   readonly step?: string
   readonly min?: string
+  readonly max?: string
   readonly accept?: string
+  readonly spellCheck?: boolean
+  /**
+   * Limpia lo que se escribe antes de que llegue al formulario: un DNI que
+   * solo acepta digitos, un nombre que no acepta numeros. La regla del esquema
+   * sigue validando, porque un valor pegado o autocompletado tambien pasa.
+   */
+  readonly sanitize?: (valor: string) => string
 }
 
 /**
@@ -38,9 +46,11 @@ export default function TextField({
   type = 'text',
   error,
   hint,
+  sanitize,
   ...inputProps
 }: TextFieldProps) {
   const ids = fieldIds(id, hint, error)
+  const { onChange, ...registro } = field
 
   return (
     <div className="flex flex-col gap-2">
@@ -52,7 +62,13 @@ export default function TextField({
         aria-invalid={error !== undefined}
         aria-describedby={ids.describedBy}
         {...inputProps}
-        {...field}
+        {...registro}
+        onChange={(evento) => {
+          if (sanitize !== undefined) {
+            evento.target.value = sanitize(evento.target.value)
+          }
+          void onChange(evento)
+        }}
       />
       <FieldHint id={ids.hintId} hint={hint} />
       <FieldError id={ids.errorId} message={error} />

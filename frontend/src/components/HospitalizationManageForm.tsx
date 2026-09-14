@@ -6,6 +6,9 @@ import { Button } from './ui/button'
 import { Label } from './ui/label'
 import { Textarea } from './ui/textarea'
 
+const MIN_NOTA = 5
+const MAX_NOTA = 1000
+
 interface HospitalizationManageFormProps {
   readonly hospitalizationId: number
   readonly petId: number
@@ -30,6 +33,7 @@ export default function HospitalizationManageForm({
         <Textarea
           id={notaId}
           rows={2}
+          maxLength={MAX_NOTA}
           value={nota}
           onChange={(evento) => {
             setNota(evento.target.value)
@@ -42,7 +46,7 @@ export default function HospitalizationManageForm({
           type="button"
           variant="outline"
           className="self-start"
-          disabled={agregarNota.isPending || nota.trim() === ''}
+          disabled={agregarNota.isPending || nota.trim().length < MIN_NOTA}
           onClick={() => {
             agregarNota.mutate(
               { hospitalizationId, note: nota },
@@ -63,6 +67,7 @@ export default function HospitalizationManageForm({
         <Textarea
           id={altaId}
           rows={2}
+          maxLength={MAX_NOTA}
           value={notasDeAlta}
           onChange={(evento) => {
             setNotasDeAlta(evento.target.value)

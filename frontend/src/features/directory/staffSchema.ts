@@ -1,16 +1,22 @@
 import { z } from 'zod'
 
-// La longitud mínima la exige también el backend. Repetirla no duplica la
-// regla: avisa antes de gastar un viaje al servidor.
-const MIN_PASSWORD = 10
+import {
+  correoRule,
+  MAX_APELLIDO,
+  MAX_NOMBRE,
+  nombreRule,
+  passwordRule,
+  telefonoRule,
+} from '../../services/fieldRules'
 
 export const staffSchema = z.object({
-  first_name: z.string().min(1, 'Ingresá el nombre'),
-  last_name: z.string().min(1, 'Ingresá el apellido'),
-  email: z.email('Ingresá un correo válido'),
-  phone: z.string().max(32).optional(),
-  password: z.string().min(MIN_PASSWORD, `Usá al menos ${String(MIN_PASSWORD)} caracteres`),
-  role: z.enum(['veterinarian', 'emergency_veterinarian']),
+  first_name: nombreRule('nombre', MAX_NOMBRE, 'el'),
+  last_name: nombreRule('apellido', MAX_APELLIDO, 'el'),
+  email: correoRule,
+  phone: telefonoRule,
+  password: passwordRule,
+  // El alta de personal solo crea veterinarios: la guardia es un turno, no un rol.
+  role: z.literal('veterinarian'),
 })
 
 export type StaffFormValues = z.infer<typeof staffSchema>

@@ -1,16 +1,16 @@
 """Adaptador de entrada HTTP del panel de indicadores.
 
-Todo el módulo es de solo lectura y solo para administración: son señales de
+Todo el módulo es de solo lectura y exige ver indicadores: son señales de
 negocio (ingresos, desempeño de veterinarios) que no le corresponden a un
-cliente, y que tampoco hace falta repartir entre todo el personal.
+cliente. Entre los roles de sistema, solo la administración tiene ese permiso.
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
-from gestvet.core.auth import require_roles
-from gestvet.core.identity import Role
+from gestvet.core.auth import require_permission
+from gestvet.core.permissions import Permission
 from gestvet.modules.insights.adapters.api.dependencies import (
     AppointmentDirectoryDep,
     BillingDirectoryDep,
@@ -32,7 +32,7 @@ from gestvet.modules.insights.use_cases.list_no_show_risks import ListNoShowRisk
 from gestvet.modules.insights.use_cases.list_payment_anomalies import ListPaymentAnomalies
 from gestvet.modules.insights.use_cases.list_veterinarian_alerts import ListVeterinarianAlerts
 
-router = APIRouter(dependencies=[Depends(require_roles(Role.ADMIN))])
+router = APIRouter(dependencies=[Depends(require_permission(Permission.INSIGHTS_READ))])
 
 
 @router.get(

@@ -45,10 +45,8 @@ class ListUsers:
 
 # Conjuntos con nombre, para que ningún endpoint arme el recorte a mano.
 CLIENT_ROLES: frozenset[Role] = frozenset({Role.CLIENT})
-STAFF_LISTING_ROLES: frozenset[Role] = frozenset({Role.VETERINARIAN, Role.EMERGENCY_VETERINARIAN})
+STAFF_LISTING_ROLES: frozenset[Role] = frozenset({Role.VETERINARIAN})
 
-# El de guardia no aparece para elegir en una cita normal: esa exclusividad es
-# HU09, y el original la aplicaba con `WHERE id_rol = 2`. Un respaldo que cubre
-# una emergencia puntual tampoco debe elegirse a mano; queda excluido por la
-# comprobación de `BookAppointment`, no por este listado.
+# Quién atiende a qué hora lo deciden los turnos, no el rol: este listado
+# ofrece a todo veterinario activo y la reserva exige que tenga turno.
 BOOKABLE_VETERINARIAN_ROLES: frozenset[Role] = frozenset({Role.VETERINARIAN})

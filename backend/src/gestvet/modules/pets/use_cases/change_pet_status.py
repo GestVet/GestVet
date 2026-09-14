@@ -36,7 +36,7 @@ class ChangePetStatus:
 
     async def __call__(self, command: ChangePetStatusCommand) -> Pet:
         # Se acota por dueño en la propia consulta. Si la mascota es de otro,
-        # el resultado es "no existe" y no "no podés": responder distinto
+        # el resultado es "no existe" y no "no puedes": responder distinto
         # confirmaría que ese identificador pertenece a alguien.
         pet = await self._pets.get(command.pet_id, owner_id=command.owner_id)
         if pet is None:

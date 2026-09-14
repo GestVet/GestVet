@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { activityQueryKey, fetchActivity } from '../../api/directory'
@@ -15,14 +15,12 @@ const ETIQUETA_DE_ROL: Record<UserRole, string> = {
   admin: 'Administración',
   client: 'Cliente',
   veterinarian: 'Veterinario',
-  emergency_veterinarian: 'Veterinario de guardia',
 }
 
 const FILTROS: readonly { readonly value: string; readonly label: string }[] = [
   { value: '', label: 'Todos los roles' },
   { value: 'client', label: 'Clientes' },
   { value: 'veterinarian', label: 'Veterinarios' },
-  { value: 'emergency_veterinarian', label: 'Veterinarios de guardia' },
   { value: 'admin', label: 'Administración' },
 ]
 
@@ -55,6 +53,8 @@ export default function ActivityView() {
   const movimientos = useQuery({
     queryKey: activityQueryKey(rol),
     queryFn: () => fetchActivity(rol),
+    // Cambiar de rol deja las filas anteriores hasta que llegan las nuevas.
+    placeholderData: keepPreviousData,
   })
 
   return (

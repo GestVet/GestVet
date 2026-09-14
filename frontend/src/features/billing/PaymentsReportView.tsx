@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import {
@@ -9,6 +9,7 @@ import {
 } from '../../api/payments'
 import DataTable, { type DataColumn } from '../../components/DataTable'
 import PageHeader from '../../components/PageHeader'
+import { instanteEnClinica, sumarDias } from '../../services/clinicTime'
 import SectionCard from '../../components/SectionCard'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
@@ -37,22 +38,35 @@ const COLUMNAS: readonly DataColumn<Pago>[] = [
   },
 ]
 
+/** Del inicio de `desde` al final de `hasta`, en la hora de la clínica. */
+function ventanaDeFechas(desde: string, hasta: string) {
+  return {
+    starts_after: desde === '' ? undefined : instanteEnClinica(desde),
+    ends_before: hasta === '' ? undefined : instanteEnClinica(sumarDias(hasta, 1)),
+  }
+}
+
+function limite(fecha: string): string | undefined {
+  return fecha === '' ? undefined : fecha
+}
+
 export default function PaymentsReportView() {
   const [desde, setDesde] = useState('')
   const [hasta, setHasta] = useState('')
 
-  const filtro = {
-    starts_after: desde === '' ? undefined : new Date(desde).toISOString(),
-    ends_before: hasta === '' ? undefined : new Date(hasta).toISOString(),
-  }
+  const filtro = ventanaDeFechas(desde, hasta)
 
+  // Con las fechas cambiando, el resumen y la tabla conservan lo anterior
+  // hasta que llega el rango nuevo, en vez de vaciarse.
   const reporte = useQuery({
     queryKey: paymentReportQueryKey(filtro),
     queryFn: () => fetchPaymentReport(filtro),
+    placeholderData: keepPreviousData,
   })
   const pagos = useQuery({
     queryKey: paymentsQueryKey(filtro),
     queryFn: () => fetchPayments(filtro),
+    placeholderData: keepPreviousData,
   })
 
   return (
@@ -67,6 +81,7 @@ export default function PaymentsReportView() {
               id="reporte-desde"
               type="date"
               className="h-10"
+              max={limite(hasta)}
               value={desde}
               onChange={(evento) => {
                 setDesde(evento.target.value)
@@ -79,6 +94,7 @@ export default function PaymentsReportView() {
               id="reporte-hasta"
               type="date"
               className="h-10"
+              min={limite(desde)}
               value={hasta}
               onChange={(evento) => {
                 setHasta(evento.target.value)

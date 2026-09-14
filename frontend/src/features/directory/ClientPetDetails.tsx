@@ -1,6 +1,6 @@
 import type { PetResponse } from '../../api/types'
 import PetProfilePanel from '../../components/PetProfilePanel'
-import { useIsVeterinarian } from '../../store/session'
+import { useCan } from '../../store/session'
 import ClientPetHistory from './ClientPetHistory'
 import ClientPetHospitalizations from './ClientPetHospitalizations'
 
@@ -10,7 +10,7 @@ interface ClientPetDetailsProps {
 
 /** Ficha, historia e internaciones de una mascota, vistas por el personal. */
 export default function ClientPetDetails({ mascota }: ClientPetDetailsProps) {
-  const esVeterinario = useIsVeterinarian()
+  const esVeterinario = useCan('pets.edit_clinical_profile')
 
   return (
     <div className="flex flex-col gap-8">

@@ -6,7 +6,9 @@ import type { AppointmentResponse, AppointmentStatus } from '../../api/types'
 import { type Toast, useNotifications } from '../../store/notifications'
 import { useSession } from '../../store/session'
 
-const POLL_INTERVAL_MS = 20_000
+// Respaldo: el cambio de estado llega al instante por el canal en tiempo real,
+// que invalida esta consulta. El sondeo solo cubre un corte de ese canal.
+const POLL_INTERVAL_MS = 60_000
 
 const MENSAJE_POR_ESTADO: Partial<Record<AppointmentStatus, string>> = {
   confirmed: 'Tu cita fue confirmada.',

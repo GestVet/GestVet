@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     debug: bool = True
 
+    # Nivel mínimo que se escribe: DEBUG, INFO, WARNING o ERROR.
+    log_level: str = "INFO"
+    # En desarrollo los logs salen en consola con color. En un despliegue van
+    # como una línea JSON por evento, que es lo que un recolector sabe indexar.
+    log_json: bool = False
+
     database_url: str = "sqlite+aiosqlite:///./gestvet.db"
     cors_allowed_origins: list[str] = ["http://localhost:5173"]
     # Con qué origen arma el enlace de recuperación de contraseña que manda
@@ -44,7 +50,7 @@ class Settings(BaseSettings):
         if not self.debug and self.jwt_secret_key == INSECURE_DEFAULT_SECRET:
             raise ValueError(
                 "JWT_SECRET_KEY conserva el valor de desarrollo. "
-                "Definí uno propio antes de desplegar con DEBUG=false."
+                "Define uno propio antes de desplegar con DEBUG=false."
             )
         return self
 

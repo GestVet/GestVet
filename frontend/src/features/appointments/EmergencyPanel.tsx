@@ -32,7 +32,7 @@ export default function EmergencyPanel() {
         </FormMessage>
       ) : null}
       {emergencia.isSuccess ? (
-        <FormMessage tone="ok">Emergencia abierta. Acercate a la clínica.</FormMessage>
+        <FormMessage tone="ok">Emergencia abierta. Acércate a la clínica.</FormMessage>
       ) : null}
 
       <Button

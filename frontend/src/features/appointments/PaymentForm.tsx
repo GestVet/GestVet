@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 import { paymentsQueryKey, registerPayment } from '../../api/payments'
 import FormMessage from '../../components/FormMessage'
+import { decimalParaApi, decimalRule, textoOpcional } from '../../components/formRules'
 import Icon from '../../components/Icon'
 import SectionHeading from '../../components/SectionHeading'
 import SelectField from '../../components/SelectField'
@@ -22,9 +23,9 @@ const METODOS = [
 ] as const
 
 const esquema = z.object({
-  amount: z.string().min(1, 'Ingresá el monto'),
+  amount: decimalRule({ max: 99999.99, decimales: 2, unidad: 'soles', obligatorio: true }),
   method: z.enum(['cash', 'yape', 'bank_transfer', 'other']),
-  reference: z.string().max(120).optional(),
+  reference: textoOpcional(120),
 })
 
 type Formulario = z.infer<typeof esquema>
@@ -48,9 +49,9 @@ export default function PaymentForm({ appointmentId }: PaymentFormProps) {
     mutationFn: (valores: Formulario) =>
       registerPayment({
         appointment_id: appointmentId,
-        amount: valores.amount,
+        amount: decimalParaApi(valores.amount) ?? '0',
         method: valores.method,
-        reference: valores.reference ?? '',
+        reference: valores.reference,
         notes: '',
       }),
     onSuccess: async () => {
@@ -92,7 +93,9 @@ export default function PaymentForm({ appointmentId }: PaymentFormProps) {
           id={campo('reference')}
           label="Referencia (opcional)"
           placeholder="N° de operación"
+          maxLength={120}
           field={register('reference')}
+          error={formState.errors.reference?.message}
         />
       </div>
 

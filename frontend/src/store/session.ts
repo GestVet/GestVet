@@ -1,20 +1,29 @@
 import { create } from 'zustand'
 
 import { setAuthToken } from '../services/api'
-import type { AccessTokenResponse, UserResponse } from '../api/types'
+import { logger } from '../services/logger'
+import type {
+  AccessTokenResponse,
+  CurrentUserResponse,
+  PermissionCode,
+  UserResponse,
+} from '../api/types'
 
-const STORAGE_KEY = 'gestvet.session'
+// La version va en la clave: una sesion guardada antes de existir los permisos
+// no los trae, y leerla como si los tuviera dejaria la interfaz sin menu.
+const STORAGE_KEY = 'gestvet.session.v2'
 
 interface StoredSession {
   token: string
-  user: UserResponse
+  user: CurrentUserResponse
 }
 
 interface SessionState {
   token: string | null
-  user: UserResponse | null
+  user: CurrentUserResponse | null
   signIn: (response: AccessTokenResponse) => void
-  updateUser: (user: UserResponse) => void
+  /** Aplica un perfil nuevo. Si la respuesta no trae permisos, se conservan los que habia. */
+  updateUser: (user: UserResponse | CurrentUserResponse) => void
   signOut: () => void
 }
 
@@ -58,14 +67,17 @@ export const useSession = create<SessionState>((set) => ({
     setAuthToken(response.access_token)
     writeStoredSession({ token: response.access_token, user: response.user })
     set({ token: response.access_token, user: response.user })
+    logger.info({ userId: response.user.id, role: response.user.role }, 'auth.signed_in')
   },
 
   updateUser: (user) => {
     set((state) => {
-      if (state.token !== null) {
-        writeStoredSession({ token: state.token, user })
+      if (state.token === null || state.user === null) {
+        return {}
       }
-      return { user }
+      const merged: CurrentUserResponse = { ...state.user, ...user }
+      writeStoredSession({ token: state.token, user: merged })
+      return { user: merged }
     })
   },
 
@@ -73,23 +85,24 @@ export const useSession = create<SessionState>((set) => ({
     setAuthToken(null)
     writeStoredSession(null)
     set({ token: null, user: null })
+    logger.info('auth.signed_out')
   },
 }))
 
-// Selectores con nombre. Preguntar "es veterinario" en cada pantalla obligaba
-// a repetir la comparacion contra dos roles, y la regla de complejidad lo
-// contaba en cada componente.
-const ROLES_QUE_ATIENDEN = new Set(['veterinarian', 'emergency_veterinarian'])
-const ROLES_DE_PERSONAL = new Set(['admin', 'veterinarian', 'emergency_veterinarian'])
-
-export function useIsVeterinarian(): boolean {
-  return useSession((state) => state.user !== null && ROLES_QUE_ATIENDEN.has(state.user.role))
+export function hasPermission(
+  user: CurrentUserResponse | null,
+  permission: PermissionCode,
+): boolean {
+  return user?.permissions.includes(permission) ?? false
 }
 
-export function useIsAdmin(): boolean {
-  return useSession((state) => state.user?.role === 'admin')
-}
-
-export function useIsStaff(): boolean {
-  return useSession((state) => state.user !== null && ROLES_DE_PERSONAL.has(state.user.role))
+/**
+ * Si la cuenta puede hacer algo, segun los permisos de su rol.
+ *
+ * Ocultar un boton es comodidad, no seguridad: el servidor vuelve a comprobar
+ * el permiso en cada peticion. La interfaz pregunta por permisos y no por
+ * roles para que un rol editado se refleje sin tocar ninguna pantalla.
+ */
+export function useCan(permission: PermissionCode): boolean {
+  return useSession((state) => hasPermission(state.user, permission))
 }

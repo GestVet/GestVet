@@ -1,7 +1,9 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { NavLink } from 'react-router'
 
 import Icon from '../../components/Icon'
 import type { NavEntry } from './navigation'
+import { prefetchRoute } from './routePrefetch'
 
 interface NavListProps {
   readonly entries: readonly NavEntry[]
@@ -23,19 +25,34 @@ function linkClass({ isActive }: { isActive: boolean }): string {
  *
  * La misma lista sirve a la barra lateral y al menu del celular. NavLink marca
  * la pantalla actual con `aria-current`, asi que el lector de pantalla la
- * anuncia sin depender del color.
+ * anuncia sin depender del color. Cada entrada precarga los datos de su
+ * pantalla en cuanto la persona muestra intencion de abrirla.
  */
 export default function NavList({ entries, onNavigate }: NavListProps) {
+  const queryClient = useQueryClient()
+
   return (
     <ul className="m-0 flex list-none flex-col gap-1 p-0">
-      {entries.map((entry) => (
-        <li key={entry.to}>
-          <NavLink to={entry.to} className={linkClass} onClick={onNavigate}>
-            <Icon name={entry.icon} size={18} />
-            <span>{entry.label}</span>
-          </NavLink>
-        </li>
-      ))}
+      {entries.map((entry) => {
+        const precargar = () => {
+          prefetchRoute(queryClient, entry.to)
+        }
+        return (
+          <li key={entry.to}>
+            <NavLink
+              to={entry.to}
+              className={linkClass}
+              onClick={onNavigate}
+              onMouseEnter={precargar}
+              onFocus={precargar}
+              onTouchStart={precargar}
+            >
+              <Icon name={entry.icon} size={18} />
+              <span>{entry.label}</span>
+            </NavLink>
+          </li>
+        )
+      })}
     </ul>
   )
 }

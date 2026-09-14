@@ -17,6 +17,11 @@ from pydantic import BaseModel
 
 from gestvet.core.config import get_settings
 from gestvet.core.database import engine
+from gestvet.core.events_router import router as events_router
+from gestvet.core.logs import configure_logging, get_logger
+from gestvet.core.realtime_broker import get_broker
+from gestvet.core.request_logging import REQUEST_ID_HEADER, RequestLoggingMiddleware
+from gestvet.modules.access.adapters.api.router import router as access_router
 from gestvet.modules.accounts.adapters.api.admin_router import router as admin_router
 from gestvet.modules.accounts.adapters.api.auth_router import router as auth_router
 from gestvet.modules.accounts.adapters.api.router import router as clients_router
@@ -38,6 +43,7 @@ from gestvet.modules.reviews.adapters.api.router import router as reviews_router
 API_PREFIX = "/api/v1"
 
 settings = get_settings()
+logger = get_logger("gestvet.app")
 
 
 class HealthResponse(BaseModel):
@@ -57,11 +63,20 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     # El esquema lo crean las migraciones de Alembic, también en desarrollo.
     # Crearlo al arrancar dejaba que la base local se apartara del historial de
     # migraciones sin que nadie se enterara hasta el despliegue.
+    broker = get_broker()
+    await broker.start()
+    logger.info("app.started", version=settings.app_version, debug=settings.debug)
     yield
+    await broker.stop()
     await engine.dispose()
+    logger.info("app.stopped")
 
 
 def create_app() -> FastAPI:
+    # Se configura acá y no al importar el módulo: uvicorn instala sus propios
+    # handlers antes de cargar la aplicación, y esta llamada los reemplaza.
+    configure_logging(level=settings.log_level, json=settings.log_json)
+
     app = FastAPI(
         title="GestVet API",
         version=settings.app_version,
@@ -80,7 +95,13 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        # Sin exponerla, el navegador no deja leer la cabecera desde otro
+        # origen y el frontend no podría anotar el identificador de un error.
+        expose_headers=[REQUEST_ID_HEADER],
     )
+    # Se agrega al final para quedar por fuera de CORS: así también se
+    # registran las respuestas que CORS corta antes de llegar a un router.
+    app.add_middleware(RequestLoggingMiddleware)
 
     # El directorio puede no existir todavía en un clon nuevo: recién se crea
     # cuando se guarda el primer adjunto. `StaticFiles` exige que exista al
@@ -100,6 +121,8 @@ def create_app() -> FastAPI:
             version=settings.app_version,
         )
 
+    app.include_router(events_router, prefix=f"{API_PREFIX}/events", tags=["system"])
+    app.include_router(access_router, prefix=f"{API_PREFIX}/access", tags=["access"])
     app.include_router(auth_router, prefix=f"{API_PREFIX}/auth", tags=["auth"])
     app.include_router(clients_router, prefix=f"{API_PREFIX}/clients", tags=["clients"])
     app.include_router(admin_router, prefix=API_PREFIX, tags=["admin"])

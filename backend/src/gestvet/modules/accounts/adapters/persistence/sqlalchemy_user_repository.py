@@ -64,7 +64,6 @@ class SqlAlchemyUserRepository:
         row.document_id = user.document_id
         row.role = user.role.value
         row.is_active = user.is_active
-        row.can_cover_emergencies = user.can_cover_emergencies
         row.password_hash = user.password_hash
         try:
             await self._session.flush()

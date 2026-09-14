@@ -1,35 +1,32 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 
 import { onSubmit } from '../hooks/formSubmit'
 import { usePetOwnerProfileUpdate } from '../hooks/usePetProfile'
 import FormMessage from './FormMessage'
 import Icon from './Icon'
-import SelectField from './SelectField'
-import TextField from './TextField'
+import PetOwnerProfileFields from './PetOwnerProfileFields'
+import { petOwnerProfileSchema, type PetOwnerProfileValues } from './petOwnerProfileSchema'
 import { Button } from './ui/button'
-import { NativeSelectOption } from './ui/native-select'
-
-const esquema = z.object({
-  sex: z.enum(['', 'male', 'female']),
-  color: z.string().max(80),
-  microchip_number: z.string().max(40),
-  temperament: z.string().max(120),
-})
-
-type Formulario = z.infer<typeof esquema>
 
 interface PetOwnerProfileFormProps {
   readonly petId: number
+  readonly species: string
+  readonly breed: string
+  readonly birthDate: string
   readonly sex: 'male' | 'female' | null
   readonly color: string
   readonly microchipNumber: string
   readonly temperament: string
 }
 
-function valoresIniciales(props: PetOwnerProfileFormProps): Formulario {
+type Cuerpo = Parameters<ReturnType<typeof usePetOwnerProfileUpdate>['mutate']>[0]
+
+function valoresIniciales(props: PetOwnerProfileFormProps): PetOwnerProfileValues {
   return {
+    species: props.species,
+    breed: props.breed,
+    birth_date: props.birthDate,
     sex: props.sex ?? '',
     color: props.color,
     microchip_number: props.microchipNumber,
@@ -37,49 +34,45 @@ function valoresIniciales(props: PetOwnerProfileFormProps): Formulario {
   }
 }
 
-/** Datos que conoce el dueño: sexo, color, microchip y temperamento. */
+/**
+ * Lo que se manda: especie, raza y fecha solo si cambiaron.
+ *
+ * Una mascota cargada antes del catálogo puede tener una especie escrita a
+ * mano. Si el dueño solo corrige el color, no hace falta obligarlo a elegir la
+ * especie de la lista.
+ */
+function cuerpo(valores: PetOwnerProfileValues, props: PetOwnerProfileFormProps): Cuerpo {
+  const cambiaEspecie = valores.species !== props.species || valores.breed !== props.breed
+  return {
+    sex: valores.sex === '' ? null : valores.sex,
+    color: valores.color,
+    microchip_number: valores.microchip_number,
+    temperament: valores.temperament,
+    species: cambiaEspecie ? valores.species : null,
+    breed: cambiaEspecie ? valores.breed : null,
+    birth_date: valores.birth_date === props.birthDate ? null : valores.birth_date,
+  }
+}
+
+/** Datos que conoce el dueño: especie, raza, nacimiento, sexo, color, microchip y temperamento. */
 export default function PetOwnerProfileForm(props: PetOwnerProfileFormProps) {
-  const { register, handleSubmit, formState } = useForm<Formulario>({
-    resolver: zodResolver(esquema),
+  const formulario = useForm<PetOwnerProfileValues>({
+    resolver: zodResolver(petOwnerProfileSchema),
     defaultValues: valoresIniciales(props),
   })
   const guardar = usePetOwnerProfileUpdate(props.petId)
-  const errores = formState.errors
 
   return (
     <form
       noValidate
       className="flex flex-col gap-5"
       onSubmit={onSubmit(
-        handleSubmit((valores) => {
-          guardar.mutate({
-            sex: valores.sex === '' ? null : valores.sex,
-            color: valores.color,
-            microchip_number: valores.microchip_number,
-            temperament: valores.temperament,
-          })
+        formulario.handleSubmit((valores) => {
+          guardar.mutate(cuerpo(valores, props))
         }),
       )}
     >
-      <div className="grid gap-5 sm:grid-cols-2">
-        <SelectField id="sex" label="Sexo" field={register('sex')} placeholder="No especificado">
-          <NativeSelectOption value="male">Macho</NativeSelectOption>
-          <NativeSelectOption value="female">Hembra</NativeSelectOption>
-        </SelectField>
-        <TextField id="color" label="Color" field={register('color')} error={errores.color?.message} />
-        <TextField
-          id="microchip_number"
-          label="Microchip"
-          field={register('microchip_number')}
-          error={errores.microchip_number?.message}
-        />
-        <TextField
-          id="temperament"
-          label="Temperamento"
-          field={register('temperament')}
-          error={errores.temperament?.message}
-        />
-      </div>
+      <PetOwnerProfileFields formulario={formulario} petId={props.petId} />
 
       {guardar.isError ? <FormMessage tone="error">{guardar.errorMessage}</FormMessage> : null}
 
