@@ -39,7 +39,9 @@ from tests.conftest import (
 )
 
 URL = "/api/v1/appointments"
-JORNADA = datetime(2026, 9, 14, 9, 0, tzinfo=UTC)
+# Mañana a las 9 UTC: una fecha fija del calendario vuelve pasada la cita en
+# cuanto llega ese día, y la inasistencia se calcula sola contra el reloj real.
+JORNADA = (datetime.now(UTC) + timedelta(days=1)).replace(hour=9, minute=0, second=0, microsecond=0)
 HORA = JORNADA + timedelta(hours=1)
 
 
