@@ -79,6 +79,11 @@ class IdentityCheckConsentRequired(AccountsError):
         super().__init__("Necesitamos tu autorización para verificar tu DNI.")
 
 
+class TermsNotAccepted(AccountsError):
+    def __init__(self) -> None:
+        super().__init__("Debes aceptar los términos y condiciones para registrarte.")
+
+
 class DocumentNotFoundInRegistry(AccountsError):
     def __init__(self) -> None:
         super().__init__("No encontramos ese DNI. Revisa el número.")

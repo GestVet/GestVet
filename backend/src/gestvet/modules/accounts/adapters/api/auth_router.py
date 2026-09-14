@@ -53,6 +53,7 @@ from gestvet.modules.accounts.domain.exceptions import (
     InvalidDocumentId,
     InvalidEmail,
     InvalidResetToken,
+    TermsNotAccepted,
     UserNotFound,
 )
 from gestvet.modules.accounts.use_cases.authenticate_user import (
@@ -100,6 +101,7 @@ async def register_client(
                 document_id=payload.document_id,
                 phone=payload.phone,
                 accepts_identity_check=payload.accepts_identity_check,
+                accepts_terms=payload.accepts_terms,
             )
         )
     except EmailAlreadyRegistered as error:
@@ -109,6 +111,7 @@ async def register_client(
         InvalidEmail,
         InvalidDocumentId,
         DocumentIdRequired,
+        TermsNotAccepted,
         IdentityCheckConsentRequired,
         DocumentNotFoundInRegistry,
         IdentityMismatch,

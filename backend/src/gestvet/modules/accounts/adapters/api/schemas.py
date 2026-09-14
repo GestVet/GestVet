@@ -31,6 +31,8 @@ class RegisterClientRequest(BaseModel):
     phone: str = Field(default="", max_length=32)
     # La persona autorizó verificar su DNI; el formulario no deja enviarlo sin marcarlo.
     accepts_identity_check: Literal[True]
+    # La persona aceptó los términos y condiciones; el formulario no deja enviarlo sin marcarlo.
+    accepts_terms: Literal[True]
 
 
 class RegisterStaffRequest(BaseModel):

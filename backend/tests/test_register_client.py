@@ -78,6 +78,7 @@ async def test_registro_crea_un_cliente_y_nunca_otro_rol() -> None:
     created = await register(
         RegisterClientCommand(
             accepts_identity_check=True,
+            accepts_terms=True,
             email="Ana.Quispe@Example.com",
             password="contrasena-larga",
             first_name="Ana",
@@ -97,6 +98,7 @@ async def test_registro_rechaza_un_correo_repetido() -> None:
     register = RegisterClient(users, FakeHasher(), RecordingActivity(), DisabledIdentityRegistry())
     command = RegisterClientCommand(
         accepts_identity_check=True,
+        accepts_terms=True,
         email="ana@example.com",
         password="contrasena-larga",
         first_name="Ana",
@@ -114,6 +116,7 @@ async def test_registro_exige_dni() -> None:
     register = RegisterClient(users, FakeHasher(), RecordingActivity(), DisabledIdentityRegistry())
     command = RegisterClientCommand(
         accepts_identity_check=True,
+        accepts_terms=True,
         email="ana@example.com",
         password="contrasena-larga",
         first_name="Ana",
@@ -130,6 +133,7 @@ async def test_registro_rechaza_un_dni_con_formato_invalido() -> None:
     register = RegisterClient(users, FakeHasher(), RecordingActivity(), DisabledIdentityRegistry())
     command = RegisterClientCommand(
         accepts_identity_check=True,
+        accepts_terms=True,
         email="ana@example.com",
         password="contrasena-larga",
         first_name="Ana",

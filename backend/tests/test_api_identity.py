@@ -28,6 +28,7 @@ REGISTRO = {
     "last_name": "Quispe Rojas",
     "document_id": DNI,
     "accepts_identity_check": True,
+    "accepts_terms": True,
 }
 
 

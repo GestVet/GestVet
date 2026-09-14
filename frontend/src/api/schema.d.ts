@@ -2373,6 +2373,11 @@ export interface components {
              * @constant
              */
             accepts_identity_check: true;
+            /**
+             * Accepts Terms
+             * @constant
+             */
+            accepts_terms: true;
             /** Document Id */
             document_id: string;
             /**

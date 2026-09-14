@@ -13,6 +13,7 @@ import {
 } from '../../services/fieldRules'
 import IdentityConsentField from './IdentityConsentField'
 import type { RegisterForm } from './registerSchema'
+import TermsConsentField from './TermsConsentField'
 
 interface RegisterFieldsProps {
   readonly register: UseFormRegister<RegisterForm>
@@ -101,6 +102,7 @@ export default function RegisterFields({ register, control, errors }: RegisterFi
         error={errors.password?.message}
       />
 
+      <TermsConsentField control={control} error={errors.accepts_terms?.message} />
       <IdentityConsentField control={control} error={errors.accepts_identity_check?.message} />
     </>
   )

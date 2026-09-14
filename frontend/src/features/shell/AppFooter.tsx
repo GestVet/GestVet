@@ -63,6 +63,11 @@ export default function AppFooter({ invitados }: AppFooterProps) {
               </li>
             ))}
             <li>
+              <Link className={`${ENLACE} text-foreground hover:text-primary`} to="/terminos">
+                Términos y condiciones
+              </Link>
+            </li>
+            <li>
               <a
                 className={`${ENLACE} text-primary underline-offset-4 hover:underline`}
                 href={MAPA}

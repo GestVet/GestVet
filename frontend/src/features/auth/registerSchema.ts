@@ -20,6 +20,9 @@ export const registerSchema = z.object({
   accepts_identity_check: z
     .boolean()
     .refine((autorizado) => autorizado, 'Necesitamos tu autorización para verificar tu DNI'),
+  accepts_terms: z
+    .boolean()
+    .refine((aceptados) => aceptados, 'Debes aceptar los términos y condiciones'),
 })
 
 export type RegisterForm = z.infer<typeof registerSchema>

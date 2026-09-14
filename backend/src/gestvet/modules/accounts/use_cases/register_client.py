@@ -11,6 +11,7 @@ from gestvet.modules.accounts.domain.exceptions import (
     EmailAlreadyRegistered,
     IdentityCheckConsentRequired,
     IdentityMismatch,
+    TermsNotAccepted,
 )
 from gestvet.modules.accounts.domain.identity_match import names_match
 from gestvet.modules.accounts.ports.user_repository import PasswordHasher, UserRepository
@@ -26,6 +27,8 @@ class RegisterClientCommand:
     phone: str = ""
     # La persona autorizó verificar su DNI. Sin eso no se consulta ni se registra.
     accepts_identity_check: bool = False
+    # La persona aceptó los términos y condiciones. Sin eso no se crea la cuenta.
+    accepts_terms: bool = False
 
 
 class RegisterClient:
@@ -48,6 +51,8 @@ class RegisterClient:
 
         if not command.document_id.strip():
             raise DocumentIdRequired()
+        if not command.accepts_terms:
+            raise TermsNotAccepted()
         if not command.accepts_identity_check:
             raise IdentityCheckConsentRequired()
 
