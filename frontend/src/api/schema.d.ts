@@ -1744,6 +1744,16 @@ export interface components {
             veterinarian_id: number;
             /** Appointment Id */
             appointment_id: number;
+            /** Client Name */
+            client_name: string;
+            /** Veterinarian Name */
+            veterinarian_name: string;
+            /** Pet Name */
+            pet_name: string;
+            /** Appointment Type */
+            appointment_type: string;
+            /** Appointment At */
+            appointment_at: string | null;
             /** Description */
             description: string;
             /**

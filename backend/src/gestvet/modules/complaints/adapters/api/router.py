@@ -72,7 +72,8 @@ async def file_complaint(
         )
     except AppointmentNotFound as error:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
-    return ComplaintResponse.from_entity(complaint)
+    contexts = await appointments.contexts_for([complaint.appointment_id])
+    return ComplaintResponse.from_entity(complaint, context=contexts.get(complaint.appointment_id))
 
 
 @router.get("", response_model=ComplaintPageResponse, summary="Listar reclamos")
@@ -80,6 +81,7 @@ async def list_complaints(
     principal: ComplaintsReaderDep,
     complaints: ComplaintRepositoryDep,
     evidence: EvidenceRepositoryDep,
+    appointments: AppointmentDirectoryDep,
     veterinarian_id: Annotated[int | None, Query(ge=1)] = None,
     limit: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = DEFAULT_PAGE_SIZE,
     offset: Annotated[int, Query(ge=0)] = 0,
@@ -89,9 +91,14 @@ async def list_complaints(
         ComplaintQuery(veterinarian_id=veterinarian_id, limit=limit, offset=offset),
     )
     page = await ListComplaints(complaints)(query)
+    contexts = await appointments.contexts_for([item.appointment_id for item in page.items])
     return ComplaintPageResponse(
         items=[
-            ComplaintResponse.from_entity(item, await evidence.list_for_complaint(item.id or 0))
+            ComplaintResponse.from_entity(
+                item,
+                await evidence.list_for_complaint(item.id or 0),
+                contexts.get(item.appointment_id),
+            )
             for item in page.items
         ],
         total=page.total,
