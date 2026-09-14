@@ -1,6 +1,18 @@
+import { useState } from 'react'
+
+import CountryCodeOptions from './CountryCodeOptions'
 import CountryFlag from './CountryFlag'
-import { type CodigoDePais, PAISES, paisPorIso } from './phoneCountries'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
+import Icon from './Icon'
+import {
+  type CodigoDePais,
+  PAISES,
+  PAISES_FRECUENTES,
+  paisPorIso,
+  sinTildes,
+} from './phoneCountries'
+import { Button } from './ui/button'
+import { Command, CommandEmpty, CommandInput, CommandList, CommandSeparator } from './ui/command'
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 
 interface CountryCodeSelectProps {
   readonly value: CodigoDePais
@@ -9,13 +21,19 @@ interface CountryCodeSelectProps {
   readonly describedBy?: string
 }
 
+// Compara contra el nombre y el código, no contra el identificador interno:
+// escribir "pe" encuentra Perú, y "51" o "+51" también.
+function coincide(_valor: string, busqueda: string, palabras?: string[]): number {
+  const buscado = sinTildes(busqueda)
+  return palabras?.some((palabra) => sinTildes(palabra).includes(buscado)) === true ? 1 : 0
+}
+
 /**
- * El código de país de un teléfono, con su bandera.
+ * El código de país de un teléfono, con su bandera y un buscador.
  *
- * Una lista nativa no puede dibujar banderas, así que usa la de Radix: se abre
- * con teclado, se busca escribiendo el nombre y el lector de pantalla la
- * anuncia como lista. Cerrada muestra solo bandera y código para no robarle
- * ancho al número.
+ * Son 245 países, así que la lista se filtra escribiendo el nombre o el código.
+ * Sin búsqueda muestra primero los frecuentes. Cerrada muestra solo bandera y
+ * código para no robarle ancho al número.
  */
 export default function CountryCodeSelect({
   value,
@@ -23,36 +41,64 @@ export default function CountryCodeSelect({
   invalid,
   describedBy,
 }: CountryCodeSelectProps) {
+  const [abierto, setAbierto] = useState(false)
+  const [busqueda, setBusqueda] = useState('')
   const elegido = paisPorIso(value)
+  const elegir = (iso: CodigoDePais) => {
+    onChange(iso)
+    setAbierto(false)
+    setBusqueda('')
+  }
 
   return (
-    <Select
-      value={value}
-      onValueChange={(iso) => {
-        onChange(paisPorIso(iso).iso)
-      }}
-    >
-      <SelectTrigger
-        aria-label={`Código de país: ${elegido.nombre} ${elegido.prefijo}`}
-        aria-invalid={invalid}
-        aria-describedby={describedBy}
-        className="h-10! shrink-0 gap-2 rounded-r-none px-3"
-      >
-        <SelectValue>
+    <Popover open={abierto} onOpenChange={setAbierto}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={abierto}
+          aria-label={`Código de país: ${elegido.nombre} ${elegido.prefijo}`}
+          aria-invalid={invalid}
+          aria-describedby={describedBy}
+          className="h-10 shrink-0 gap-2 rounded-r-none px-3 font-normal"
+        >
           <CountryFlag iso={elegido.iso} />
           <span className="tabular-nums">{elegido.prefijo}</span>
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent position="popper" align="start" className="max-h-72">
-        {PAISES.map((pais) => (
-          <SelectItem key={pais.iso} value={pais.iso} textValue={pais.nombre}>
-            <CountryFlag iso={pais.iso} />
-            {/* Ancho fijo para el nombre: así los códigos quedan en columna. */}
-            <span className="w-28">{pais.nombre}</span>
-            <span className="text-muted-foreground tabular-nums">{pais.prefijo}</span>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+          <Icon name="desplegar" size={14} />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-80 p-0">
+        <Command filter={coincide}>
+          <CommandInput
+            placeholder="Busca un país o código"
+            value={busqueda}
+            onValueChange={setBusqueda}
+          />
+          <CommandList className="max-h-72">
+            <CommandEmpty>No hay un país con ese nombre o código.</CommandEmpty>
+            {busqueda === '' ? (
+              <>
+                <CountryCodeOptions
+                  titulo="Frecuentes"
+                  grupo="frecuentes"
+                  paises={PAISES_FRECUENTES}
+                  elegido={elegido.iso}
+                  onElegir={elegir}
+                />
+                <CommandSeparator />
+              </>
+            ) : null}
+            <CountryCodeOptions
+              titulo="Todos los países"
+              grupo="todos"
+              paises={PAISES}
+              elegido={elegido.iso}
+              onElegir={elegir}
+            />
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   )
 }

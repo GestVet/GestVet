@@ -1,13 +1,17 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { type Control, type FieldPathByValue, type FieldValues, useController } from 'react-hook-form'
 
-import CountryCodeSelect from './CountryCodeSelect'
+import CountryCodePlaceholder from './CountryCodePlaceholder'
 import FieldError from './FieldError'
 import FieldHint from './FieldHint'
 import { fieldIds } from './fieldIds'
 import { paisPorIso, separarTelefono, soloNumeroNacional, unirTelefono } from './phoneCountries'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
+
+// Las banderas de 245 países pesan: el selector se baja aparte, así no
+// engordan la carga de las páginas que no piden un teléfono.
+const CountryCodeSelect = lazy(() => import('./CountryCodeSelect'))
 
 // Quince dígitos es el tope de un número internacional, más los espacios.
 const MAX_NUMERO = 18
@@ -41,8 +45,8 @@ export default function PhoneField<TForm extends FieldValues>({
     field: { value, onChange, onBlur, ref },
   } = useController({ control, name })
   const valor: string = value
-  const partes = separarTelefono(valor)
-  const [paisElegido, setPaisElegido] = useState(partes.iso)
+  const [paisElegido, setPaisElegido] = useState(() => separarTelefono(valor).iso)
+  const partes = separarTelefono(valor, paisElegido)
   const iso = valor === '' ? paisElegido : partes.iso
   const ids = fieldIds(id, hint, error)
 
@@ -50,15 +54,17 @@ export default function PhoneField<TForm extends FieldValues>({
     <div className="flex flex-col gap-2">
       <Label htmlFor={id}>{label}</Label>
       <div className="flex">
-        <CountryCodeSelect
-          value={iso}
-          invalid={error !== undefined}
-          describedBy={ids.describedBy}
-          onChange={(nuevo) => {
-            setPaisElegido(nuevo)
-            onChange(unirTelefono(nuevo, partes.numero))
-          }}
-        />
+        <Suspense fallback={<CountryCodePlaceholder iso={iso} />}>
+          <CountryCodeSelect
+            value={iso}
+            invalid={error !== undefined}
+            describedBy={ids.describedBy}
+            onChange={(nuevo) => {
+              setPaisElegido(nuevo)
+              onChange(unirTelefono(nuevo, partes.numero))
+            }}
+          />
+        </Suspense>
         <Input
           id={id}
           ref={ref}
