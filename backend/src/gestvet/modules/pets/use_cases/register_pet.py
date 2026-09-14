@@ -4,9 +4,10 @@ from dataclasses import dataclass
 from datetime import date
 
 from gestvet.core.activity import ActivityKind, ActivityRecorder
-from gestvet.modules.pets.domain.catalog import ensure_in_catalog
 from gestvet.modules.pets.domain.entities import Pet
+from gestvet.modules.pets.ports.catalog_repository import PetCatalogRepository
 from gestvet.modules.pets.ports.pet_repository import PetRepository
+from gestvet.modules.pets.use_cases.manage_catalog import ensure_offered
 
 
 @dataclass(frozen=True, slots=True)
@@ -19,14 +20,17 @@ class RegisterPetCommand:
 
 
 class RegisterPet:
-    def __init__(self, pets: PetRepository, activity: ActivityRecorder) -> None:
+    def __init__(
+        self, pets: PetRepository, catalog: PetCatalogRepository, activity: ActivityRecorder
+    ) -> None:
         self._pets = pets
+        self._catalog = catalog
         self._activity = activity
 
     async def __call__(self, command: RegisterPetCommand) -> Pet:
         # Especie y raza salen del catálogo: el texto libre partía una misma
         # especie en varias escrituras.
-        ensure_in_catalog(command.species, command.breed)
+        await ensure_offered(self._catalog, command.species, command.breed)
 
         # El dueño lo fija el servidor a partir de la credencial, nunca el
         # cuerpo de la petición. Es la misma regla que protege al rol.

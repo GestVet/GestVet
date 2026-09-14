@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { appointmentsQueryKey } from '../../api/appointments'
 import { availabilityQueryKey } from '../../api/availability'
 import { fetchCurrentUser } from '../../api/auth'
+import { petCatalogQueryKey } from '../../api/pets'
 import { api } from '../../services/api'
 import { EventStreamError, readEventStream } from '../../services/eventStream'
 import { logger } from '../../services/logger'
@@ -22,6 +23,7 @@ const realtimeLogger = logger.child({ module: 'realtime' })
 const CONSULTAS_POR_TEMA: Readonly<Partial<Record<string, QueryKey>>> = {
   appointments: appointmentsQueryKey,
   schedule: availabilityQueryKey,
+  'pet-catalog': petCatalogQueryKey,
 }
 
 function invalidarTodo(queryClient: QueryClient): void {
@@ -98,6 +100,9 @@ async function mantenerConexion(
       }
       if (error instanceof EventStreamError && error.status === NO_AUTORIZADO) {
         realtimeLogger.warn('realtime.unauthorized')
+        // El canal usa `fetch` y no pasa por el cliente de la API: la sesión
+        // vencida se cierra acá también.
+        useSession.getState().expire()
         return
       }
       realtimeLogger.warn({ err: error, retryInMs: estado.espera }, 'realtime.disconnected')

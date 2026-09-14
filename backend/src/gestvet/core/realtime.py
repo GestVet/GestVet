@@ -21,6 +21,8 @@ APPOINTMENTS_TOPIC = "appointments"
 PERMISSIONS_TOPIC = "permissions"
 # Cambiaron turnos o pedidos de cambio: la agenda se vuelve a pedir.
 SCHEDULE_TOPIC = "schedule"
+# Cambió el catálogo de especies y razas: los formularios vuelven a pedirlo.
+PET_CATALOG_TOPIC = "pet-catalog"
 
 
 @dataclass(frozen=True, slots=True)

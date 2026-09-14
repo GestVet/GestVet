@@ -31,6 +31,12 @@ export const NAV_ENTRIES: readonly NavEntry[] = [
   },
   { to: '/personal', label: 'Personal', icon: 'personal', permission: 'staff.read' },
   { to: '/turnos', label: 'Turnos y guardias', icon: 'horario', permission: 'schedule.manage' },
+  {
+    to: '/especies-y-razas',
+    label: 'Especies y razas',
+    icon: 'raza',
+    permission: 'pets.manage_catalog',
+  },
   { to: '/roles', label: 'Roles y permisos', icon: 'permisos', permission: 'roles.manage' },
   { to: '/pagos', label: 'Pagos', icon: 'pago', permission: 'payments.report' },
   { to: '/reclamos', label: 'Reclamos', icon: 'alerta', permission: 'complaints.read' },

@@ -28,6 +28,7 @@ class Permission(StrEnum):
     PETS_READ_ANY = "pets.read_any"
     PETS_CORRECT_STATUS = "pets.correct_status"
     PETS_EDIT_CLINICAL_PROFILE = "pets.edit_clinical_profile"
+    PETS_MANAGE_CATALOG = "pets.manage_catalog"
     APPOINTMENTS_READ = "appointments.read"
     APPOINTMENTS_BOOK = "appointments.book"
     APPOINTMENTS_ATTEND = "appointments.attend"
@@ -110,6 +111,9 @@ CATALOG: dict[Permission, PermissionInfo] = {
     ),
     Permission.PETS_EDIT_CLINICAL_PROFILE: PermissionInfo(
         "Editar los datos clínicos de una mascota", _MASCOTAS, VETERINARIAN_ROLES
+    ),
+    Permission.PETS_MANAGE_CATALOG: PermissionInfo(
+        "Agregar y corregir especies y razas", _MASCOTAS, STAFF_ROLES
     ),
     Permission.APPOINTMENTS_READ: PermissionInfo("Ver citas", _CITAS, ALL_KINDS),
     Permission.APPOINTMENTS_BOOK: PermissionInfo("Reservar citas", _CITAS, CLIENT_KIND),
@@ -246,6 +250,7 @@ SYSTEM_ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
         Permission.ACTIVITY_READ,
         Permission.INSIGHTS_READ,
         Permission.ROLES_MANAGE,
+        Permission.PETS_MANAGE_CATALOG,
     },
 }
 

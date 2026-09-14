@@ -1,11 +1,15 @@
 import { api } from '../services/api'
 import type {
+  CatalogBreedResponse,
+  CatalogSpeciesResponse,
+  ManagedCatalogResponse,
   PetCatalogResponse,
   PetPageResponse,
   PetResponse,
   RegisterPetForOwnerRequest,
   RegisterPetRequest,
   UpdatePetClinicalProfileRequest,
+  UpdateCatalogEntryRequest,
   UpdatePetOwnerProfileRequest,
 } from './types'
 
@@ -77,6 +81,49 @@ export async function updatePetClinicalProfile(
 ): Promise<PetResponse> {
   const { data } = await api.patch<PetResponse>(
     `/pets/${String(petId)}/clinical-profile`,
+    payload,
+  )
+  return data
+}
+
+// Debajo del catálogo: invalidar el catálogo refresca también la vista de administración.
+export const managedCatalogQueryKey = [...petCatalogQueryKey, 'manage'] as const
+
+export async function fetchManagedCatalog(): Promise<ManagedCatalogResponse> {
+  const { data } = await api.get<ManagedCatalogResponse>('/pets/catalog/manage')
+  return data
+}
+
+export async function addSpecies(name: string): Promise<CatalogSpeciesResponse> {
+  const { data } = await api.post<CatalogSpeciesResponse>('/pets/catalog/species', { name })
+  return data
+}
+
+export async function updateSpecies(
+  speciesId: number,
+  payload: UpdateCatalogEntryRequest,
+): Promise<CatalogSpeciesResponse> {
+  const { data } = await api.patch<CatalogSpeciesResponse>(
+    `/pets/catalog/species/${String(speciesId)}`,
+    payload,
+  )
+  return data
+}
+
+export async function addBreed(speciesId: number, name: string): Promise<CatalogBreedResponse> {
+  const { data } = await api.post<CatalogBreedResponse>(
+    `/pets/catalog/species/${String(speciesId)}/breeds`,
+    { name },
+  )
+  return data
+}
+
+export async function updateBreed(
+  breedId: number,
+  payload: UpdateCatalogEntryRequest,
+): Promise<CatalogBreedResponse> {
+  const { data } = await api.patch<CatalogBreedResponse>(
+    `/pets/catalog/breeds/${String(breedId)}`,
     payload,
   )
   return data

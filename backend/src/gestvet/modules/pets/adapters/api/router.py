@@ -15,15 +15,17 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from gestvet.core.activity_log import ActivityRecorderDep
-from gestvet.core.auth import get_principal, require_permission
+from gestvet.core.auth import require_permission
 from gestvet.core.identity import Principal
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from gestvet.core.permissions import Permission
-from gestvet.modules.pets.adapters.api.dependencies import PetRepositoryDep
+from gestvet.modules.pets.adapters.api.dependencies import (
+    PetCatalogRepositoryDep,
+    PetRepositoryDep,
+)
 from gestvet.modules.pets.adapters.api.schemas import (
     ChangePetStatusRequest,
     CorrectPetStatusRequest,
-    PetCatalogResponse,
     PetPageResponse,
     PetResponse,
     RegisterPetForOwnerRequest,
@@ -65,16 +67,6 @@ ClinicalProfileEditorDep = Annotated[
 ]
 
 
-@router.get(
-    "/catalog",
-    response_model=PetCatalogResponse,
-    dependencies=[Depends(get_principal)],
-    summary="Especies y razas aceptadas",
-)
-async def read_pet_catalog() -> PetCatalogResponse:
-    return PetCatalogResponse.build()
-
-
 @router.post(
     "",
     response_model=PetResponse,
@@ -85,10 +77,11 @@ async def register_pet(
     payload: RegisterPetRequest,
     client: OwnerDep,
     pets: PetRepositoryDep,
+    catalog: PetCatalogRepositoryDep,
     activity: ActivityRecorderDep,
 ) -> PetResponse:
     try:
-        pet = await RegisterPet(pets, activity)(
+        pet = await RegisterPet(pets, catalog, activity)(
             RegisterPetCommand(
                 name=payload.name,
                 species=payload.species,
@@ -112,10 +105,11 @@ async def register_pet_for_owner(
     payload: RegisterPetForOwnerRequest,
     staff: PetRegistrarDep,
     pets: PetRepositoryDep,
+    catalog: PetCatalogRepositoryDep,
     activity: ActivityRecorderDep,
 ) -> PetResponse:
     try:
-        pet = await RegisterPet(pets, activity)(
+        pet = await RegisterPet(pets, catalog, activity)(
             RegisterPetCommand(
                 name=payload.name,
                 species=payload.species,
@@ -234,10 +228,11 @@ async def update_pet_owner_profile(
     payload: UpdatePetOwnerProfileRequest,
     client: OwnerDep,
     pets: PetRepositoryDep,
+    catalog: PetCatalogRepositoryDep,
     activity: ActivityRecorderDep,
 ) -> PetResponse:
     try:
-        pet = await UpdatePetOwnerProfile(pets, activity)(
+        pet = await UpdatePetOwnerProfile(pets, catalog, activity)(
             UpdatePetOwnerProfileCommand(
                 pet_id=pet_id,
                 owner_id=client.user_id,

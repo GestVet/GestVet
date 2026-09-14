@@ -2,6 +2,7 @@ import type { ComponentProps, ComponentType } from 'react'
 import { createBrowserRouter, type RouteObject } from 'react-router'
 
 import RolesView from '../features/access/RolesView'
+import VerifyCardView from '../features/card-verification/VerifyCardView'
 import AppointmentsView from '../features/appointments/AppointmentsView'
 import BookingView from '../features/appointments/BookingView'
 import ForgotPasswordView from '../features/auth/ForgotPasswordView'
@@ -20,6 +21,7 @@ import WalkInEmergencyView from '../features/emergency-intake/WalkInEmergencyVie
 import HomeView from '../features/home/HomeView'
 import InsightsView from '../features/insights/InsightsView'
 import DashboardView from '../features/panel/DashboardView'
+import PetCatalogView from '../features/pet-catalog/PetCatalogView'
 import PetsView from '../features/pets/PetsView'
 import AppShell from '../features/shell/AppShell'
 import RequireSession from '../features/shell/RequireSession'
@@ -53,6 +55,8 @@ const router = createBrowserRouter(
         { path: 'registro', Component: RegisterView },
         { path: 'olvide-contrasena', Component: ForgotPasswordView },
         { path: 'restablecer-contrasena', Component: ResetPasswordView },
+        // Pública: la abre quien escanea el QR del carnet de vacunas.
+        { path: 'carnet/:token', Component: VerifyCardView },
         {
           element: <RequireSession />,
           children: [
@@ -69,6 +73,7 @@ const router = createBrowserRouter(
         conPermiso('personal', StaffView, 'staff.read'),
         conPermiso('turnos', RosterView, 'schedule.manage'),
         conPermiso('roles', RolesView, 'roles.manage'),
+        conPermiso('especies-y-razas', PetCatalogView, 'pets.manage_catalog'),
         conPermiso('pagos', PaymentsReportView, 'payments.report'),
         conPermiso('reclamos', ComplaintsView, 'complaints.read'),
         conPermiso('indicadores', InsightsView, 'insights.read'),

@@ -25,8 +25,9 @@ MAX_COLOR_LENGTH = 80
 MAX_MICROCHIP_LENGTH = 40
 MAX_TEMPERAMENT_LENGTH = 120
 MAX_ALLERGIES_LENGTH = 300
-# Un microchip ISO tiene 15 dígitos; los más antiguos, 9 o 10.
-_MICROCHIP_PATTERN = re.compile(r"\d{9,15}")
+# ISO 11784/11785: 15 dígitos, los tres primeros son el país (604 es Perú) o
+# el fabricante. Es el que lee cualquier lector y el que registra RENIAN.
+_MICROCHIP_PATTERN = re.compile(r"\d{15}")
 
 # Ninguna especie domestica se acerca a esto. Un valor mayor no es una mascota
 # longeva, es una fecha mal tipeada.
@@ -131,7 +132,7 @@ class Pet:
         # Se valida todo antes de tocar nada: un dato inválido no deja la ficha
         # a medio actualizar.
         nuevo_color = _trim(color, "color", MAX_COLOR_LENGTH)
-        nuevo_microchip = _require_microchip(microchip_number)
+        nuevo_microchip = _require_microchip(microchip_number, self.microchip_number)
         nuevo_temperamento = _trim(temperament, "temperamento", MAX_TEMPERAMENT_LENGTH)
         nueva_especie = (
             self.species
@@ -194,10 +195,14 @@ def _trim(raw: str, field_name: str, max_length: int) -> str:
     return value
 
 
-def _require_microchip(raw: str) -> str:
+def _require_microchip(raw: str, current: str = "") -> str:
     value = _trim(raw, "microchip", MAX_MICROCHIP_LENGTH)
-    if value and not _MICROCHIP_PATTERN.fullmatch(value):
-        raise InvalidPetData("El microchip tiene de 9 a 15 dígitos, sin espacios ni letras.")
+    # Un chip antiguo de 9 o 10 dígitos, cargado antes de exigir el ISO, sigue
+    # valiendo mientras no se cambie: no puede impedir corregir el color.
+    if value and value != current and not _MICROCHIP_PATTERN.fullmatch(value):
+        raise InvalidPetData(
+            "El microchip tiene 15 dígitos (estándar ISO), sin espacios ni letras."
+        )
     return value
 
 

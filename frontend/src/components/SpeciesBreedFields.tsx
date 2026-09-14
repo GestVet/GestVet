@@ -35,7 +35,10 @@ export default function SpeciesBreedFields({
 
   return (
     <>
+      {/* Se vuelve a montar cuando llega el catálogo: un select nativo dibujado
+          sin opciones pierde el valor guardado y mostraría "Elige una". */}
       <SelectField
+        key={`especies-${String(especies.length)}`}
         id={`${idPrefix}-species`}
         label="Especie"
         icon="mascota"
@@ -51,6 +54,7 @@ export default function SpeciesBreedFields({
       </SelectField>
       {breedField === undefined ? null : (
         <SelectField
+          key={`razas-${species}-${String(razas.length)}`}
           id={`${idPrefix}-breed`}
           label="Raza"
           icon="raza"

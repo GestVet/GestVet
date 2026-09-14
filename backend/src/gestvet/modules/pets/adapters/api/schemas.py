@@ -11,7 +11,6 @@ from decimal import Decimal
 
 from pydantic import BaseModel, Field
 
-from gestvet.modules.pets.domain.catalog import SPECIES_CATALOG
 from gestvet.modules.pets.domain.entities import (
     MAX_ALLERGIES_LENGTH,
     MAX_BREED_LENGTH,
@@ -52,24 +51,6 @@ class ChangePetStatusRequest(BaseModel):
 class CorrectPetStatusRequest(BaseModel):
     is_active: bool
     reason: str = Field(min_length=1, max_length=300)
-
-
-class SpeciesResponse(BaseModel):
-    name: str
-    breeds: list[str]
-
-
-class PetCatalogResponse(BaseModel):
-    species: list[SpeciesResponse]
-
-    @classmethod
-    def build(cls) -> PetCatalogResponse:
-        return cls(
-            species=[
-                SpeciesResponse(name=name, breeds=list(breeds))
-                for name, breeds in SPECIES_CATALOG.items()
-            ]
-        )
 
 
 class UpdatePetOwnerProfileRequest(BaseModel):
