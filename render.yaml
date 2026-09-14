@@ -28,7 +28,7 @@ services:
   - type: web
     name: gestvet-api
     runtime: python
-    region: oregon
+    region: virginia
     plan: starter
     rootDir: backend
     buildCommand: pip install uv && uv sync --frozen --no-dev
