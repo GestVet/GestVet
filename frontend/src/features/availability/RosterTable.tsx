@@ -1,7 +1,6 @@
 import { cn } from 'cn'
 
 import type { SlotResponse, UserResponse } from '../../api/types'
-import EmptyState from '../../components/EmptyState'
 import {
   Table,
   TableBody,
@@ -11,8 +10,7 @@ import {
   TableRow,
 } from '../../components/ui/table'
 import { claveDeInstante, hoyEnClinica, partesDelDia } from '../../services/clinicTime'
-import RemoveShiftButton from './RemoveShiftButton'
-import ShiftChip from './ShiftChip'
+import RosterCell from './RosterCell'
 import { agruparTurnos } from './shiftKinds'
 
 interface RosterTableProps {
@@ -20,6 +18,7 @@ interface RosterTableProps {
   readonly veterinarios: readonly UserResponse[]
   readonly turnos: readonly SlotResponse[]
   readonly isLoading: boolean
+  readonly onAsignar: (veterinarioId: number, dia: string) => void
 }
 
 function celda(veterinarioId: number, dia: string): string {
@@ -30,25 +29,24 @@ function celda(veterinarioId: number, dia: string): string {
  * El cuadro de la semana: una fila por veterinario y una columna por día.
  *
  * Es la vista con la que una clínica arma la rotación: de un vistazo se ve qué
- * día nadie está de guardia o quién atiende toda la semana sin descanso.
+ * día nadie está de guardia o quién atiende toda la semana sin descanso. Solo
+ * se muestra desde pantallas anchas; en el celular la semana va por días.
  */
-export default function RosterTable({ dias, veterinarios, turnos, isLoading }: RosterTableProps) {
-  if (!isLoading && veterinarios.length === 0) {
-    return (
-      <EmptyState
-        title="Todavía no hay veterinarios"
-        description="Dalos de alta en Personal para asignarles turnos."
-      />
-    )
-  }
+export default function RosterTable({
+  dias,
+  veterinarios,
+  turnos,
+  isLoading,
+  onAsignar,
+}: RosterTableProps) {
   const hoy = hoyEnClinica()
   const porCelda = agruparTurnos(turnos, (turno) =>
     celda(turno.veterinarian_id, claveDeInstante(turno.starts_at)),
   )
 
   return (
-    <div className="overflow-x-auto rounded-lg border" aria-busy={isLoading}>
-      <Table className="min-w-4xl table-fixed">
+    <div className="hidden rounded-lg border lg:block" aria-busy={isLoading}>
+      <Table className="min-w-4xl table-fixed" aria-label="Turnos de la semana por veterinario">
         <TableHeader>
           <TableRow>
             <TableHead className="w-40">Veterinario</TableHead>
@@ -66,17 +64,19 @@ export default function RosterTable({ dias, veterinarios, turnos, isLoading }: R
           {veterinarios.map((veterinario) => {
             const nombre = `${veterinario.first_name} ${veterinario.last_name}`
             return (
-              <TableRow key={veterinario.id}>
+              <TableRow key={veterinario.id} className="group">
                 <TableCell className="align-top font-medium whitespace-normal">{nombre}</TableCell>
                 {dias.map((dia) => (
                   <TableCell key={dia} className="align-top whitespace-normal">
-                    <div className="flex flex-col gap-1.5">
-                      {(porCelda.get(celda(veterinario.id, dia)) ?? []).map((turno) => (
-                        <ShiftChip key={turno.id} turno={turno}>
-                          <RemoveShiftButton turno={turno} nombre={nombre} />
-                        </ShiftChip>
-                      ))}
-                    </div>
+                    <RosterCell
+                      turnos={porCelda.get(celda(veterinario.id, dia)) ?? []}
+                      nombre={nombre}
+                      dia={dia}
+                      puedeAsignar={dia >= hoy}
+                      onAsignar={() => {
+                        onAsignar(veterinario.id, dia)
+                      }}
+                    />
                   </TableCell>
                 ))}
               </TableRow>

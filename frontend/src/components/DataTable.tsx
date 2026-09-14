@@ -10,7 +10,9 @@ import {
 } from '@tanstack/react-table'
 import { Fragment, type ReactNode, useMemo } from 'react'
 
+import { usePagination } from '../hooks/usePagination'
 import EmptyState from './EmptyState'
+import TablePagination from './TablePagination'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
 
 /** Lo que una celda sabe de su fila, ademas del dato. */
@@ -66,6 +68,8 @@ interface DataTableProps<TData extends RowData> {
   readonly getRowId: (row: TData, index: number) => string
   /** Contenido que se despliega debajo de una fila. Sin el, ninguna se abre. */
   readonly renderExpanded?: (row: TData) => ReactNode
+  /** Filas por página. Sin él, la tabla muestra todas las filas juntas. */
+  readonly pageSize?: number
 }
 
 /**
@@ -84,8 +88,10 @@ export default function DataTable<TData extends RowData>({
   emptyMessage,
   getRowId,
   renderExpanded,
+  pageSize,
 }: DataTableProps<TData>) {
-  const rows = useMemo(() => [...data], [data])
+  const pagina = usePagination(data, pageSize)
+  const rows = useMemo(() => [...pagina.visibles], [pagina.visibles])
   const columnDefs = useMemo(() => columns.map(toColumnDef), [columns])
   const cellClasses = useMemo(
     () => new Map(columns.map((column) => [column.id, column.className ?? ''])),
@@ -108,6 +114,7 @@ export default function DataTable<TData extends RowData>({
   }
 
   return (
+    <div className="flex flex-col gap-3">
     <div className="rounded-xl bg-card ring-1 ring-foreground/10">
       <Table>
         <TableHeader>
@@ -148,6 +155,10 @@ export default function DataTable<TData extends RowData>({
           ))}
         </TableBody>
       </Table>
+    </div>
+    {pagina.total > 1 ? (
+      <TablePagination actual={pagina.actual} total={pagina.total} onChange={pagina.irA} />
+    ) : null}
     </div>
   )
 }

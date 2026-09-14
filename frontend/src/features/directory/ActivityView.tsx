@@ -92,6 +92,7 @@ export default function ActivityView() {
         isLoading={movimientos.isPending}
         emptyMessage="Todavía no hay movimientos registrados."
         getRowId={(m) => String(m.id)}
+        pageSize={25}
       />
     </div>
   )

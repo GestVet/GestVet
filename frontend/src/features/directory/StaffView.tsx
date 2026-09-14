@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 
 import {
   accessRolesQueryKey,
@@ -9,9 +10,12 @@ import {
 import { fetchStaff, staffQueryKey } from '../../api/directory'
 import type { AccessRoleResponse, UserResponse, UserRole } from '../../api/types'
 import DataTable, { type DataColumn } from '../../components/DataTable'
+import FormDialog from '../../components/FormDialog'
+import Icon from '../../components/Icon'
 import PageHeader from '../../components/PageHeader'
 import SectionCard from '../../components/SectionCard'
 import StatusBadge from '../../components/StatusBadge'
+import { Button } from '../../components/ui/button'
 import { useCan } from '../../store/session'
 import StaffAccessRole from './StaffAccessRole'
 import StaffForm from './StaffForm'
@@ -89,12 +93,41 @@ function useAccesos(): Accesos | null {
 export default function StaffView() {
   const personal = useQuery({ queryKey: staffQueryKey, queryFn: fetchStaff })
   const accesos = useAccesos()
+  const [dandoDeAlta, setDandoDeAlta] = useState(false)
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Personal" />
+      <PageHeader
+        title="Personal"
+        description="Los veterinarios de la clínica, su rol y si su cuenta está activa."
+        actions={
+          <Button
+            type="button"
+            size="lg"
+            className="h-10 px-4"
+            onClick={() => {
+              setDandoDeAlta(true)
+            }}
+          >
+            <Icon name="agregar" size={16} />
+            <span>Dar de alta</span>
+          </Button>
+        }
+      />
 
-      <StaffForm />
+      <FormDialog
+        open={dandoDeAlta}
+        onOpenChange={setDandoDeAlta}
+        title="Dar de alta un veterinario"
+        description="La cuenta queda activa con la contraseña inicial. Pídele que la cambie al entrar."
+        size="lg"
+      >
+        <StaffForm
+          onDone={() => {
+            setDandoDeAlta(false)
+          }}
+        />
+      </FormDialog>
 
       <SectionCard title="Equipo">
         <DataTable

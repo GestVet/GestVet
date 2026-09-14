@@ -4,39 +4,26 @@ import { useForm } from 'react-hook-form'
 
 import { applyWeeklyPlan, availabilityQueryKey } from '../../api/availability'
 import type { UserResponse } from '../../api/types'
+import DialogFormActions from '../../components/DialogFormActions'
 import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
-import SectionCard from '../../components/SectionCard'
-import SelectField from '../../components/SelectField'
-import TextField from '../../components/TextField'
 import { Button } from '../../components/ui/button'
-import { NativeSelectOption } from '../../components/ui/native-select'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
-import ShiftKindSelect from './ShiftKindSelect'
-import { limitesDeFecha } from './shiftSchema'
-import VeterinarianSelect from './VeterinarianSelect'
-import WeekdayPicker from './WeekdayPicker'
-import {
-  horarioVacio,
-  MAX_SEMANAS,
-  type WeeklyPlanFormValues,
-  weeklyPlanSchema,
-} from './weeklyPlanSchema'
-
-const SEMANAS = Array.from({ length: MAX_SEMANAS }, (_, indice) => indice + 1)
+import WeeklyPlanFields from './WeeklyPlanFields'
+import { horarioVacio, type WeeklyPlanFormValues, weeklyPlanSchema } from './weeklyPlanSchema'
 
 interface WeeklyPlanFormProps {
   readonly veterinarios: readonly UserResponse[]
+  readonly onDone: () => void
 }
 
-export default function WeeklyPlanForm({ veterinarios }: WeeklyPlanFormProps) {
+export default function WeeklyPlanForm({ veterinarios, onDone }: WeeklyPlanFormProps) {
   const queryClient = useQueryClient()
-  const { register, handleSubmit, control, formState } = useForm<WeeklyPlanFormValues>({
+  const form = useForm<WeeklyPlanFormValues>({
     resolver: zodResolver(weeklyPlanSchema),
     defaultValues: horarioVacio(),
   })
-  const limites = limitesDeFecha()
 
   const horario = useMutation({
     mutationFn: (valores: WeeklyPlanFormValues) =>
@@ -57,45 +44,44 @@ export default function WeeklyPlanForm({ veterinarios }: WeeklyPlanFormProps) {
   })
 
   return (
-    <SectionCard
-      title="Horario semanal"
-      description="Repite el mismo horario varias semanas. Si algún día choca con otro turno, no se asigna ninguno."
+    <form
+      noValidate
+      className="flex flex-col gap-5"
+      onSubmit={onSubmit(
+        form.handleSubmit((valores) => {
+          horario.mutate(valores)
+        }),
+      )}
     >
-      <form
-        noValidate
-        className="flex flex-col gap-5"
-        onSubmit={onSubmit(handleSubmit((valores) => { horario.mutate(valores) }))}
-      >
-        <div className="grid gap-5 sm:grid-cols-2">
-          <VeterinarianSelect id="plan-veterinario" veterinarios={veterinarios} field={register('veterinarian_id')} error={formState.errors.veterinarian_id?.message} />
-          <TextField id="plan-desde-dia" label="Desde el" type="date" min={limites.min} max={limites.max} field={register('first_day')} error={formState.errors.first_day?.message} />
-          <SelectField id="plan-semanas" label="Durante" icon="repetir" field={register('weeks')} error={formState.errors.weeks?.message}>
-            {SEMANAS.map((semanas) => (
-              <NativeSelectOption key={semanas} value={String(semanas)}>
-                {semanas === 1 ? '1 semana' : `${String(semanas)} semanas`}
-              </NativeSelectOption>
-            ))}
-          </SelectField>
-          <ShiftKindSelect id="plan-tipo" field={register('kind')} />
-          <WeekdayPicker control={control} />
-          <TextField id="plan-desde" label="Desde" type="time" step="900" field={register('desde')} error={formState.errors.desde?.message} />
-          <TextField id="plan-hasta" label="Hasta" type="time" step="900" field={register('hasta')} error={formState.errors.hasta?.message} />
-        </div>
+      <WeeklyPlanFields form={form} veterinarios={veterinarios} />
 
-        {horario.isError ? (
-          <FormMessage tone="error">{errorMessage(horario.error, 'No se pudo aplicar el horario.')}</FormMessage>
-        ) : null}
-        {horario.isSuccess ? (
-          <p role="status" className="m-0 text-sm font-medium text-success">
-            {`Se asignaron ${String(horario.data.total)} turnos.`}
-          </p>
-        ) : null}
+      {horario.isError ? (
+        <FormMessage tone="error">
+          {errorMessage(horario.error, 'No se pudo aplicar el horario.')}
+        </FormMessage>
+      ) : null}
+      {horario.isSuccess ? (
+        // Queda abierto a propósito: suele cargarse un horario por veterinario.
+        <FormMessage tone="ok">
+          {`Se asignaron ${String(horario.data.total)} turnos. Puedes aplicar otro horario o cerrar.`}
+        </FormMessage>
+      ) : null}
 
-        <Button type="submit" variant="success" size="lg" className="h-10 self-start px-4" disabled={horario.isPending}>
+      <DialogFormActions>
+        <Button type="button" variant="outline" size="lg" className="h-10 px-4" onClick={onDone}>
+          {horario.isSuccess ? 'Cerrar' : 'Cancelar'}
+        </Button>
+        <Button
+          type="submit"
+          variant="success"
+          size="lg"
+          className="h-10 px-4"
+          disabled={horario.isPending}
+        >
           <Icon name="agenda" size={16} />
           <span>{horario.isPending ? 'Aplicando…' : 'Aplicar horario'}</span>
         </Button>
-      </form>
-    </SectionCard>
+      </DialogFormActions>
+    </form>
   )
 }

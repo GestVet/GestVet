@@ -9,6 +9,7 @@ import {
 } from '../../api/access'
 import type { AccessRoleResponse } from '../../api/types'
 import DataTable, { type DataColumn } from '../../components/DataTable'
+import FormDialog from '../../components/FormDialog'
 import Icon from '../../components/Icon'
 import PageHeader from '../../components/PageHeader'
 import SectionCard from '../../components/SectionCard'
@@ -91,8 +92,18 @@ export default function RolesView() {
         }
       />
 
-      {edicion === null || catalogo.data === undefined ? null : (
-        <SectionCard title={tituloDe(edicion)}>
+      <FormDialog
+        open={edicion !== null && catalogo.data !== undefined}
+        onOpenChange={(abierto) => {
+          if (!abierto) {
+            setEdicion(null)
+          }
+        }}
+        title={edicion === null ? 'Rol' : tituloDe(edicion)}
+        description="Marca lo que puede hacer una cuenta con este rol. Los cambios llegan al instante a quienes lo tienen."
+        size="lg"
+      >
+        {edicion === null || catalogo.data === undefined ? null : (
           <RoleEditor
             key={edicion === 'nuevo' ? 'nuevo' : edicion.id}
             catalog={catalogo.data}
@@ -101,8 +112,8 @@ export default function RolesView() {
               setEdicion(null)
             }}
           />
-        </SectionCard>
-      )}
+        )}
+      </FormDialog>
 
       <SectionCard title="Roles">
         <DataTable

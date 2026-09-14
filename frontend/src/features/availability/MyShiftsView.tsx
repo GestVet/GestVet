@@ -7,8 +7,11 @@ import {
   myChangeRequestsQueryKey,
   mySlotsQueryKey,
 } from '../../api/availability'
+import FormDialog from '../../components/FormDialog'
+import Icon from '../../components/Icon'
 import PageHeader from '../../components/PageHeader'
 import SectionCard from '../../components/SectionCard'
+import { Button } from '../../components/ui/button'
 import {
   diasDeLaSemana,
   hoyEnClinica,
@@ -30,6 +33,7 @@ import WeekSchedule from './WeekSchedule'
 export default function MyShiftsView() {
   const [lunes, setLunes] = useState(() => lunesDe(hoyEnClinica()))
   const puedePedir = useCan('schedule.request_change')
+  const [pidiendo, setPidiendo] = useState(false)
   const ventana = ventanaDeSemana(lunes)
 
   const turnos = useQuery({
@@ -58,10 +62,20 @@ export default function MyShiftsView() {
 
       {puedePedir ? (
         <SectionCard
-          title="Pedir un cambio"
-          description="La administración lo revisa y te responde acá. Si lo acepta, reasigna el turno."
+          title="Pedidos de cambio"
+          description="La administración los revisa y te responde acá. Si acepta uno, reasigna el turno."
+          actions={
+            <Button
+              type="button"
+              onClick={() => {
+                setPidiendo(true)
+              }}
+            >
+              <Icon name="correo" size={16} />
+              <span>Pedir un cambio</span>
+            </Button>
+          }
         >
-          <ChangeRequestForm turnos={deLaSemana} />
           <ChangeRequestList
             pedidos={pedidos.data?.items ?? []}
             isLoading={pedidos.isPending}
@@ -69,6 +83,20 @@ export default function MyShiftsView() {
           />
         </SectionCard>
       ) : null}
+
+      <FormDialog
+        open={pidiendo}
+        onOpenChange={setPidiendo}
+        title="Pedir un cambio de turno"
+        description="Cuenta qué necesitas. La administración lo revisa y te responde en esta pantalla."
+      >
+        <ChangeRequestForm
+          turnos={deLaSemana}
+          onDone={() => {
+            setPidiendo(false)
+          }}
+        />
+      </FormDialog>
     </div>
   )
 }

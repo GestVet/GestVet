@@ -6,6 +6,7 @@ import { z } from 'zod'
 
 import { availabilityQueryKey, createChangeRequest } from '../../api/availability'
 import type { SlotResponse } from '../../api/types'
+import DialogFormActions from '../../components/DialogFormActions'
 import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
 import SelectField from '../../components/SelectField'
@@ -37,11 +38,13 @@ const VACIO: Formulario = { slot_id: '', message: '' }
 interface ChangeRequestFormProps {
   /** Los turnos que se ven en pantalla. Solo se ofrecen los que no terminaron. */
   readonly turnos: readonly SlotResponse[]
+  /** Se llama al enviarlo o al cancelar: cierra la ventana. */
+  readonly onDone: () => void
 }
 
-export default function ChangeRequestForm({ turnos }: ChangeRequestFormProps) {
+export default function ChangeRequestForm({ turnos, onDone }: ChangeRequestFormProps) {
   const queryClient = useQueryClient()
-  const { register, handleSubmit, reset, formState } = useForm<Formulario>({
+  const { register, handleSubmit, formState } = useForm<Formulario>({
     resolver: zodResolver(esquema),
     defaultValues: VACIO,
   })
@@ -56,8 +59,8 @@ export default function ChangeRequestForm({ turnos }: ChangeRequestFormProps) {
         slot_id: valores.slot_id === '' ? null : Number(valores.slot_id),
       }),
     onSuccess: async () => {
-      reset(VACIO)
       await queryClient.invalidateQueries({ queryKey: availabilityQueryKey })
+      onDone()
     },
   })
 
@@ -98,15 +101,15 @@ export default function ChangeRequestForm({ turnos }: ChangeRequestFormProps) {
         <FormMessage tone="error">{errorMessage(pedido.error, 'No se pudo enviar el pedido.')}</FormMessage>
       ) : null}
 
-      <Button
-        type="submit"
-        size="lg"
-        className="h-10 self-start px-4"
-        disabled={pedido.isPending}
-      >
-        <Icon name="correo" size={16} />
-        <span>{pedido.isPending ? 'Enviando…' : 'Enviar pedido'}</span>
-      </Button>
+      <DialogFormActions>
+        <Button type="button" variant="outline" size="lg" className="h-10 px-4" onClick={onDone}>
+          Cancelar
+        </Button>
+        <Button type="submit" size="lg" className="h-10 px-4" disabled={pedido.isPending}>
+          <Icon name="correo" size={16} />
+          <span>{pedido.isPending ? 'Enviando…' : 'Enviar pedido'}</span>
+        </Button>
+      </DialogFormActions>
     </form>
   )
 }
