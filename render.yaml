@@ -67,8 +67,12 @@ services:
       - key: API_BASE_URL
         value: https://gestvet-api.onrender.com
 
+      # Sin disco persistente, tiene que ser una ruta escribible dentro del
+      # propio directorio del proyecto (no /data: ese path no existe y el
+      # proceso no tiene permiso para crearlo). Efímera: se pierde en cada
+      # deploy o reinicio, ver advertencia arriba.
       - key: ATTACHMENTS_STORAGE_DIR
-        value: /data/attachments
+        value: ./var/attachments
 
       - key: JWT_SECRET_KEY
         generateValue: true
