@@ -42,12 +42,13 @@ export default function RegisterView() {
       document_id: '',
       password: '',
       accepts_identity_check: false,
+      accepts_terms: false,
     },
   })
 
   const crear = useMutation({
     mutationFn: async (valores: RegisterForm) => {
-      await registerClient({ ...valores, accepts_identity_check: true })
+      await registerClient({ ...valores, accepts_identity_check: true, accepts_terms: true })
       // El alta no devuelve token: se entra con las mismas credenciales.
       return login({ email: valores.email, password: valores.password })
     },

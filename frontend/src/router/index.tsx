@@ -20,6 +20,7 @@ import StaffView from '../features/directory/StaffView'
 import WalkInEmergencyView from '../features/emergency-intake/WalkInEmergencyView'
 import HomeView from '../features/home/HomeView'
 import InsightsView from '../features/insights/InsightsView'
+import TermsView from '../features/legal/TermsView'
 import DashboardView from '../features/panel/DashboardView'
 import PetCatalogView from '../features/pet-catalog/PetCatalogView'
 import PetsView from '../features/pets/PetsView'
@@ -55,6 +56,7 @@ const router = createBrowserRouter(
         { path: 'registro', Component: RegisterView },
         { path: 'olvide-contrasena', Component: ForgotPasswordView },
         { path: 'restablecer-contrasena', Component: ResetPasswordView },
+        { path: 'terminos', Component: TermsView },
         // Pública: la abre quien escanea el QR del carnet de vacunas.
         { path: 'carnet/:token', Component: VerifyCardView },
         {

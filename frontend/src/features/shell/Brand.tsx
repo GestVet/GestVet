@@ -10,12 +10,14 @@ export default function Brand({ to }: BrandProps) {
   return (
     <Link
       to={to}
-      className="inline-flex items-center gap-2 rounded-lg font-heading text-xl font-bold text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      className="inline-flex items-center gap-2.5 rounded-lg font-heading text-xl font-bold text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
     >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary/60">
-        <GestVetMark size={26} />
+      <GestVetMark size={34} />
+      <span className="flex items-center tracking-tight text-xl font-black">
+        <span className="text-foreground">Gest</span>
+        <span className="text-primary">Vet</span>
       </span>
-      <span>GestVet</span>
     </Link>
   )
 }
+
