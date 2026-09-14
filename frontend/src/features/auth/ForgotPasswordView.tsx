@@ -54,6 +54,7 @@ export default function ForgotPasswordView() {
           <TextField
             id="email"
             label="Correo"
+            placeholder="nombre@correo.com"
             type="email"
             inputMode="email"
             autoComplete="email"

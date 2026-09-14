@@ -75,6 +75,7 @@ export default function PaymentForm({ appointmentId }: PaymentFormProps) {
         <TextField
           id={campo('amount')}
           label="Monto (S/)"
+          placeholder="0.00"
           icon="pago"
           type="number"
           inputMode="decimal"

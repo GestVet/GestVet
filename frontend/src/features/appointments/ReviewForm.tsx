@@ -71,6 +71,7 @@ export default function ReviewForm({ appointmentId, veterinarianId }: ReviewForm
       <TextareaField
         id={campo('comment')}
         label="Comentario"
+        placeholder="Cuéntanos cómo te atendieron"
         icon="mensaje"
         rows={2}
         field={register('comment')}

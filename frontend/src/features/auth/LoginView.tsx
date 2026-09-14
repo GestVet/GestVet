@@ -82,6 +82,7 @@ export default function LoginView() {
         <TextField
           id="email"
           label="Correo"
+          placeholder="nombre@correo.com"
           type="email"
           inputMode="email"
           autoComplete="email"
@@ -94,6 +95,7 @@ export default function LoginView() {
           <PasswordField
             id="password"
             label="Contraseña"
+            placeholder="Tu contraseña"
             autoComplete="current-password"
             field={register('password')}
             error={formState.errors.password?.message}

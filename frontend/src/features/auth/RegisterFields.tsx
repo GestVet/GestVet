@@ -1,21 +1,21 @@
-import type { FieldErrors, UseFormRegister } from 'react-hook-form'
+import type { Control, FieldErrors, UseFormRegister } from 'react-hook-form'
 
 import PasswordField from '../../components/PasswordField'
+import PhoneField from '../../components/PhoneField'
 import TextField from '../../components/TextField'
 import {
   LARGO_DNI,
   MAX_APELLIDO,
   MAX_NOMBRE,
-  MAX_TELEFONO,
   MIN_PASSWORD,
   soloDigitos,
   soloLetras,
-  soloTelefono,
 } from '../../services/fieldRules'
 import type { RegisterForm } from './registerSchema'
 
 interface RegisterFieldsProps {
   readonly register: UseFormRegister<RegisterForm>
+  readonly control: Control<RegisterForm>
   readonly errors: FieldErrors<RegisterForm>
 }
 
@@ -27,13 +27,14 @@ interface RegisterFieldsProps {
  * Nombre, DNI y telefono se limpian mientras se escribe, asi un numero en el
  * nombre o una letra en el DNI no llegan a mostrarse como error.
  */
-export default function RegisterFields({ register, errors }: RegisterFieldsProps) {
+export default function RegisterFields({ register, control, errors }: RegisterFieldsProps) {
   return (
     <>
       <div className="grid gap-5 sm:grid-cols-2">
         <TextField
           id="first_name"
           label="Nombre"
+          placeholder="Por ejemplo: María"
           icon="perfil"
           autoComplete="given-name"
           maxLength={MAX_NOMBRE}
@@ -44,6 +45,7 @@ export default function RegisterFields({ register, errors }: RegisterFieldsProps
         <TextField
           id="last_name"
           label="Apellido"
+          placeholder="Por ejemplo: Quispe Rojas"
           icon="perfil"
           autoComplete="family-name"
           maxLength={MAX_APELLIDO}
@@ -56,6 +58,7 @@ export default function RegisterFields({ register, errors }: RegisterFieldsProps
       <TextField
         id="email"
         label="Correo"
+        placeholder="nombre@correo.com"
         type="email"
         inputMode="email"
         autoComplete="email"
@@ -68,6 +71,7 @@ export default function RegisterFields({ register, errors }: RegisterFieldsProps
         <TextField
           id="document_id"
           label="DNI"
+          placeholder="12345678"
           icon="documento"
           inputMode="numeric"
           autoComplete="off"
@@ -77,16 +81,11 @@ export default function RegisterFields({ register, errors }: RegisterFieldsProps
           field={register('document_id')}
           error={errors.document_id?.message}
         />
-        <TextField
+        <PhoneField
           id="phone"
           label="Teléfono (opcional)"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          maxLength={MAX_TELEFONO}
-          hint="Por ejemplo, 987 654 321."
-          sanitize={soloTelefono}
-          field={register('phone')}
+          control={control}
+          name="phone"
           error={errors.phone?.message}
         />
       </div>
@@ -94,6 +93,7 @@ export default function RegisterFields({ register, errors }: RegisterFieldsProps
       <PasswordField
         id="password"
         label="Contraseña"
+        placeholder="Mínimo 10 caracteres"
         autoComplete="new-password"
         hint={`Al menos ${String(MIN_PASSWORD)} caracteres.`}
         field={register('password')}

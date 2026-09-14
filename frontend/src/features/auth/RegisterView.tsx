@@ -31,7 +31,7 @@ const PANEL = (
 export default function RegisterView() {
   const signIn = useSession((state) => state.signIn)
   const navigate = useNavigate()
-  const { register, handleSubmit, formState } = useForm<RegisterForm>({
+  const { register, handleSubmit, formState, control } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
     mode: 'onTouched',
     defaultValues: {
@@ -79,7 +79,7 @@ export default function RegisterView() {
           }),
         )}
       >
-        <RegisterFields register={register} errors={formState.errors} />
+        <RegisterFields register={register} control={control} errors={formState.errors} />
 
         {crear.isError ? (
           <FormMessage tone="error">

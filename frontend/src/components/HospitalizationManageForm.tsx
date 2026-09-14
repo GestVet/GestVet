@@ -1,14 +1,5 @@
-import { useState } from 'react'
-
-import { useAddHospitalizationNote, useDischargeHospitalization } from '../hooks/useHospitalizations'
-import FieldIcon from './FieldIcon'
-import FormMessage from './FormMessage'
-import { Button } from './ui/button'
-import { Label } from './ui/label'
-import { Textarea } from './ui/textarea'
-
-const MIN_NOTA = 5
-const MAX_NOTA = 1000
+import HospitalizationDischargeForm from './HospitalizationDischargeForm'
+import HospitalizationNoteForm from './HospitalizationNoteForm'
 
 interface HospitalizationManageFormProps {
   readonly hospitalizationId: number
@@ -20,79 +11,10 @@ export default function HospitalizationManageForm({
   hospitalizationId,
   petId,
 }: HospitalizationManageFormProps) {
-  const [nota, setNota] = useState('')
-  const [notasDeAlta, setNotasDeAlta] = useState('')
-  const agregarNota = useAddHospitalizationNote(petId)
-  const darDeAlta = useDischargeHospitalization(petId)
-  const notaId = `nota-${String(hospitalizationId)}`
-  const altaId = `alta-${String(hospitalizationId)}`
-
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={notaId}>Nota de seguimiento</Label>
-        <FieldIcon icon="nota" multiline>
-        <Textarea
-          id={notaId}
-          rows={2}
-          maxLength={MAX_NOTA}
-          value={nota}
-          onChange={(evento) => {
-            setNota(evento.target.value)
-          }}
-        />
-        </FieldIcon>
-        {agregarNota.isError ? (
-          <FormMessage tone="error">{agregarNota.errorMessage}</FormMessage>
-        ) : null}
-        <Button
-          type="button"
-          variant="outline"
-          className="self-start"
-          disabled={agregarNota.isPending || nota.trim().length < MIN_NOTA}
-          onClick={() => {
-            agregarNota.mutate(
-              { hospitalizationId, note: nota },
-              {
-                onSuccess: () => {
-                  setNota('')
-                },
-              },
-            )
-          }}
-        >
-          {agregarNota.isPending ? 'Agregando…' : 'Agregar nota'}
-        </Button>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={altaId}>Notas de alta (opcional)</Label>
-        <FieldIcon icon="nota" multiline>
-        <Textarea
-          id={altaId}
-          rows={2}
-          maxLength={MAX_NOTA}
-          value={notasDeAlta}
-          onChange={(evento) => {
-            setNotasDeAlta(evento.target.value)
-          }}
-        />
-        </FieldIcon>
-        {darDeAlta.isError ? (
-          <FormMessage tone="error">{darDeAlta.errorMessage}</FormMessage>
-        ) : null}
-        <Button
-          type="button"
-          variant="success"
-          className="self-start"
-          disabled={darDeAlta.isPending}
-          onClick={() => {
-            darDeAlta.mutate({ hospitalizationId, dischargeNotes: notasDeAlta })
-          }}
-        >
-          {darDeAlta.isPending ? 'Dando de alta…' : 'Dar de alta'}
-        </Button>
-      </div>
+      <HospitalizationNoteForm hospitalizationId={hospitalizationId} petId={petId} />
+      <HospitalizationDischargeForm hospitalizationId={hospitalizationId} petId={petId} />
     </div>
   )
 }

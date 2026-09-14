@@ -85,7 +85,12 @@ export default function WalkInEmergencyForm() {
         }),
       )}
     >
-      <WalkInEmergencyFields register={register} errors={formState.errors} species={especie} />
+      <WalkInEmergencyFields
+        register={register}
+        control={control}
+        errors={formState.errors}
+        species={especie}
+      />
 
       {abrir.isError ? (
         <FormMessage tone="error">

@@ -1,15 +1,25 @@
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 import { createQrCharge } from '../../api/payments'
-import FieldIcon from '../../components/FieldIcon'
 import FormMessage from '../../components/FormMessage'
+import { decimalParaApi, decimalRule } from '../../components/formRules'
 import Icon from '../../components/Icon'
+import TextField from '../../components/TextField'
 import { Button } from '../../components/ui/button'
-import { Input } from '../../components/ui/input'
-import { Label } from '../../components/ui/label'
+import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 import QrChargeTracker from './QrChargeTracker'
+
+// Vacío es válido: significa cobrar el precio de catálogo.
+const esquema = z.object({
+  monto: decimalRule({ max: 99999.99, decimales: 2, unidad: 'soles' }),
+})
+
+type Formulario = z.infer<typeof esquema>
 
 interface QrPaymentPanelProps {
   readonly appointmentId: number
@@ -29,11 +39,14 @@ export default function QrPaymentPanel({
   puedeAjustarMonto,
 }: QrPaymentPanelProps) {
   const [chargeId, setChargeId] = useState<number | null>(null)
-  const [monto, setMonto] = useState('')
-  const montoId = `monto-qr-${String(appointmentId)}`
+  const { register, handleSubmit, formState } = useForm<Formulario>({
+    resolver: zodResolver(esquema),
+    defaultValues: { monto: '' },
+  })
 
   const generar = useMutation({
-    mutationFn: () => createQrCharge(appointmentId, monto),
+    mutationFn: (valores: Formulario) =>
+      createQrCharge(appointmentId, decimalParaApi(valores.monto) ?? ''),
     onSuccess: (charge) => {
       setChargeId(charge.id)
     },
@@ -52,47 +65,38 @@ export default function QrPaymentPanel({
   }
 
   return (
-    <div className="flex flex-col items-start gap-3">
+    <form
+      noValidate
+      className="flex flex-col items-start gap-3"
+      onSubmit={onSubmit(
+        handleSubmit((valores) => {
+          generar.mutate(valores)
+        }),
+      )}
+    >
       {generar.isError ? (
         <FormMessage tone="error">
           {errorMessage(generar.error, 'No se pudo generar el QR.')}
         </FormMessage>
       ) : null}
       {puedeAjustarMonto ? (
-        <div className="flex w-full max-w-sm flex-col gap-2">
-          <Label htmlFor={montoId}>Monto (opcional)</Label>
-          <FieldIcon icon="pago">
-          <Input
-            id={montoId}
-            type="number"
+        <div className="w-full max-w-sm">
+          <TextField
+            id={`monto-qr-${String(appointmentId)}`}
+            label="Monto (opcional)"
+            icon="pago"
             inputMode="decimal"
-            step="0.01"
-            min="0"
-            className="h-10"
             placeholder="Precio de catálogo"
-            aria-describedby={`${montoId}-ayuda`}
-            value={monto}
-            onChange={(evento) => {
-              setMonto(evento.target.value)
-            }}
+            hint="Déjalo vacío para usar el precio de catálogo. En una cita normal admite hasta S/ 5 de diferencia; en una emergencia no hay límite."
+            field={register('monto')}
+            error={formState.errors.monto?.message}
           />
-          </FieldIcon>
-          <p id={`${montoId}-ayuda`} className="m-0 text-sm text-muted-foreground">
-            Déjalo vacío para usar el precio de catálogo. En una cita normal admite hasta S/ 5
-            de diferencia; en una emergencia no hay límite.
-          </p>
         </div>
       ) : null}
-      <Button
-        type="button"
-        disabled={generar.isPending}
-        onClick={() => {
-          generar.mutate()
-        }}
-      >
+      <Button type="submit" disabled={generar.isPending}>
         <Icon name="pago" size={16} />
         <span>{generar.isPending ? 'Generando…' : 'Pagar con QR'}</span>
       </Button>
-    </div>
+    </form>
   )
 }

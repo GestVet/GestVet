@@ -1,30 +1,31 @@
-import type { FieldErrors, UseFormRegister } from 'react-hook-form'
+import type { Control, FieldErrors, UseFormRegister } from 'react-hook-form'
 
 import PasswordField from '../../components/PasswordField'
+import PhoneField from '../../components/PhoneField'
 import TextField from '../../components/TextField'
 import {
   LARGO_DNI,
   MAX_APELLIDO,
   MAX_NOMBRE,
-  MAX_TELEFONO,
   soloDigitos,
   soloLetras,
-  soloTelefono,
 } from '../../services/fieldRules'
 import type { ProfileForm } from './profileSchema'
 
 interface ProfileFieldsProps {
   readonly register: UseFormRegister<ProfileForm>
+  readonly control: Control<ProfileForm>
   readonly errors: FieldErrors<ProfileForm>
 }
 
-export default function ProfileFields({ register, errors }: ProfileFieldsProps) {
+export default function ProfileFields({ register, control, errors }: ProfileFieldsProps) {
   return (
     <>
       <div className="grid items-start gap-5 sm:grid-cols-2">
         <TextField
           id="first_name"
           label="Nombre"
+          placeholder="Por ejemplo: María"
           icon="perfil"
           autoComplete="given-name"
           maxLength={MAX_NOMBRE}
@@ -35,6 +36,7 @@ export default function ProfileFields({ register, errors }: ProfileFieldsProps) 
         <TextField
           id="last_name"
           label="Apellido"
+          placeholder="Por ejemplo: Quispe Rojas"
           icon="perfil"
           autoComplete="family-name"
           maxLength={MAX_APELLIDO}
@@ -42,20 +44,17 @@ export default function ProfileFields({ register, errors }: ProfileFieldsProps) 
           field={register('last_name')}
           error={errors.last_name?.message}
         />
-        <TextField
+        <PhoneField
           id="phone"
           label="Teléfono"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          maxLength={MAX_TELEFONO}
-          sanitize={soloTelefono}
-          field={register('phone')}
+          control={control}
+          name="phone"
           error={errors.phone?.message}
         />
         <TextField
           id="document_id"
           label="DNI"
+          placeholder="12345678"
           icon="documento"
           inputMode="numeric"
           maxLength={LARGO_DNI}
@@ -67,6 +66,7 @@ export default function ProfileFields({ register, errors }: ProfileFieldsProps) 
       <PasswordField
         id="new_password"
         label="Nueva contraseña"
+        placeholder="Déjala vacía para no cambiarla"
         autoComplete="new-password"
         hint="Déjala vacía para conservar la actual."
         field={register('new_password')}

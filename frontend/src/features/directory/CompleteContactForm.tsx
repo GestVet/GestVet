@@ -5,11 +5,12 @@ import { z } from 'zod'
 
 import { clientsQueryKey, updateClientContact } from '../../api/directory'
 import FormMessage from '../../components/FormMessage'
+import PhoneField from '../../components/PhoneField'
 import TextField from '../../components/TextField'
 import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
-import { correoRule, soloTelefono, telefonoRule } from '../../services/fieldRules'
+import { correoRule, telefonoRule } from '../../services/fieldRules'
 
 const esquema = z.object({
   email: correoRule,
@@ -26,7 +27,7 @@ interface CompleteContactFormProps {
 /** Completa el correo real de un cliente dado de alta por emergencia. */
 export default function CompleteContactForm({ clientId, phone }: CompleteContactFormProps) {
   const queryClient = useQueryClient()
-  const { register, handleSubmit, formState } = useForm<Formulario>({
+  const { register, handleSubmit, formState, control } = useForm<Formulario>({
     resolver: zodResolver(esquema),
     defaultValues: { email: '', phone },
   })
@@ -61,17 +62,16 @@ export default function CompleteContactForm({ clientId, phone }: CompleteContact
         <TextField
           id={`contacto-correo-${String(clientId)}`}
           label="Correo real del cliente"
+          placeholder="nombre@correo.com"
           type="email"
           field={register('email')}
           error={formState.errors.email?.message}
         />
-        <TextField
+        <PhoneField
           id={`contacto-telefono-${String(clientId)}`}
           label="Teléfono"
-          type="tel"
-          inputMode="tel"
-          sanitize={soloTelefono}
-          field={register('phone')}
+          control={control}
+          name="phone"
           error={formState.errors.phone?.message}
         />
       </div>

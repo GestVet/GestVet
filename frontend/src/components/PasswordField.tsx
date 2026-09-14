@@ -18,6 +18,7 @@ interface PasswordFieldProps {
   readonly autoComplete: 'current-password' | 'new-password'
   readonly error?: string
   readonly hint?: string
+  readonly placeholder?: string
 }
 
 /**
@@ -34,6 +35,7 @@ export default function PasswordField({
   autoComplete,
   error,
   hint,
+  placeholder,
 }: PasswordFieldProps) {
   const [visible, setVisible] = useState(false)
   const ids = fieldIds(id, hint, error)
@@ -48,6 +50,7 @@ export default function PasswordField({
           className="h-10 pr-11"
           autoComplete={autoComplete}
           spellCheck={false}
+          placeholder={placeholder}
           aria-invalid={error !== undefined}
           aria-describedby={ids.describedBy}
           {...field}

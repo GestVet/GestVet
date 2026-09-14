@@ -14,7 +14,7 @@ import { EMPTY_STAFF_FORM, type StaffFormValues, staffSchema } from './staffSche
 
 export default function StaffForm() {
   const queryClient = useQueryClient()
-  const { register, handleSubmit, reset, formState } = useForm<StaffFormValues>({
+  const { register, handleSubmit, reset, formState, control } = useForm<StaffFormValues>({
     resolver: zodResolver(staffSchema),
     defaultValues: EMPTY_STAFF_FORM,
   })
@@ -38,7 +38,7 @@ export default function StaffForm() {
           }),
         )}
       >
-        <StaffFields register={register} errors={formState.errors} />
+        <StaffFields register={register} control={control} errors={formState.errors} />
 
         {alta.isError ? (
           <FormMessage tone="error">

@@ -49,6 +49,7 @@ export default function PetOwnerProfileFields({ formulario, petId }: PetOwnerPro
       <TextField
         id={id('color')}
         label="Color"
+        placeholder="Por ejemplo: negro con manchas blancas"
         icon="color"
         maxLength={MAX_COLOR}
         field={register('color')}
@@ -57,6 +58,7 @@ export default function PetOwnerProfileFields({ formulario, petId }: PetOwnerPro
       <TextField
         id={id('microchip')}
         label="Microchip"
+        placeholder="985141000123456"
         icon="microchip"
         inputMode="numeric"
         maxLength={15}

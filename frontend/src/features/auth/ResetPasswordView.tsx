@@ -70,6 +70,7 @@ export default function ResetPasswordView() {
           <PasswordField
             id="new_password"
             label="Contraseña nueva"
+            placeholder="Mínimo 10 caracteres"
             autoComplete="new-password"
             hint={`Al menos ${String(MIN_PASSWORD)} caracteres.`}
             field={register('new_password')}
@@ -79,6 +80,7 @@ export default function ResetPasswordView() {
           <PasswordField
             id="confirmacion"
             label="Repite la contraseña"
+            placeholder="Escríbela otra vez"
             autoComplete="new-password"
             field={register('confirmacion')}
             error={formState.errors.confirmacion?.message}

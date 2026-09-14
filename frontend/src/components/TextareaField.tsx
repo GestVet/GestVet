@@ -18,6 +18,7 @@ interface TextareaFieldProps {
   readonly hint?: string
   readonly rows?: number
   readonly placeholder?: string
+  readonly maxLength?: number
 }
 
 /** Un texto largo con su etiqueta, su icono, su error y su ayuda. */
@@ -30,6 +31,7 @@ export default function TextareaField({
   hint,
   rows = 3,
   placeholder,
+  maxLength,
 }: TextareaFieldProps) {
   const ids = fieldIds(id, hint, error)
 
@@ -41,6 +43,7 @@ export default function TextareaField({
           id={id}
           rows={rows}
           placeholder={placeholder}
+          maxLength={maxLength}
           aria-invalid={error !== undefined}
           aria-describedby={ids.describedBy}
           {...field}

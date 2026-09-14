@@ -1,10 +1,14 @@
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 import { appointmentsQueryKey, cancelAppointment } from '../../api/appointments'
-import FieldIcon from '../../components/FieldIcon'
 import FormMessage from '../../components/FormMessage'
+import { MIN_TEXTO, textoObligatorio } from '../../components/formRules'
 import Icon from '../../components/Icon'
+import TextareaField from '../../components/TextareaField'
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -16,12 +20,17 @@ import {
   AlertDialogTrigger,
 } from '../../components/ui/alert-dialog'
 import { Button } from '../../components/ui/button'
-import { Label } from '../../components/ui/label'
-import { Textarea } from '../../components/ui/textarea'
+import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 
-const MIN_MOTIVO = 5
+// El mismo tope que el servidor.
 const MAX_MOTIVO = 300
+
+const esquema = z.object({ motivo: textoObligatorio(MAX_MOTIVO, 'Escribe el motivo') })
+
+type Formulario = z.infer<typeof esquema>
+
+const VACIO: Formulario = { motivo: '' }
 
 interface CancelAppointmentDialogProps {
   readonly appointmentId: number
@@ -36,20 +45,28 @@ interface CancelAppointmentDialogProps {
 export default function CancelAppointmentDialog({ appointmentId }: CancelAppointmentDialogProps) {
   const queryClient = useQueryClient()
   const [abierto, setAbierto] = useState(false)
-  const [motivo, setMotivo] = useState('')
-  const motivoId = `motivo-cancelacion-${String(appointmentId)}`
+  const { register, handleSubmit, reset, formState } = useForm<Formulario>({
+    resolver: zodResolver(esquema),
+    defaultValues: VACIO,
+  })
 
   const cancelar = useMutation({
-    mutationFn: () => cancelAppointment(appointmentId, motivo),
+    mutationFn: (valores: Formulario) => cancelAppointment(appointmentId, valores.motivo),
     onSuccess: async () => {
       setAbierto(false)
-      setMotivo('')
+      reset(VACIO)
       await queryClient.invalidateQueries({ queryKey: appointmentsQueryKey })
     },
   })
 
   return (
-    <AlertDialog open={abierto} onOpenChange={setAbierto}>
+    <AlertDialog
+      open={abierto}
+      onOpenChange={(abrir) => {
+        setAbierto(abrir)
+        reset(VACIO)
+      }}
+    >
       <AlertDialogTrigger asChild>
         <Button type="button" size="sm" variant="destructive">
           <Icon name="cancelar" size={14} />
@@ -57,48 +74,40 @@ export default function CancelAppointmentDialog({ appointmentId }: CancelAppoint
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Cancelar la cita</AlertDialogTitle>
-          <AlertDialogDescription>
-            El motivo queda registrado y lo ve la otra parte de la cita.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor={motivoId}>Motivo</Label>
-          <FieldIcon icon="mensaje" multiline>
-          <Textarea
-            id={motivoId}
+        <form
+          noValidate
+          className="grid gap-4"
+          onSubmit={onSubmit(handleSubmit((valores) => { cancelar.mutate(valores) }))}
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar la cita</AlertDialogTitle>
+            <AlertDialogDescription>
+              El motivo queda registrado y lo ve la otra parte de la cita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <TextareaField
+            id={`motivo-cancelacion-${String(appointmentId)}`}
+            label="Motivo"
+            icon="mensaje"
             rows={2}
             maxLength={MAX_MOTIVO}
-            aria-describedby={`${motivoId}-ayuda`}
-            value={motivo}
-            onChange={(evento) => {
-              setMotivo(evento.target.value)
-            }}
+            placeholder="Por ejemplo: no podré llegar a esa hora"
+            hint={`Entre ${String(MIN_TEXTO)} y ${String(MAX_MOTIVO)} caracteres.`}
+            field={register('motivo')}
+            error={formState.errors.motivo?.message}
           />
-          </FieldIcon>
-          <p id={`${motivoId}-ayuda`} className="m-0 text-xs text-muted-foreground">
-            {`Al menos ${String(MIN_MOTIVO)} caracteres. ${String(motivo.trim().length)} de ${String(MAX_MOTIVO)}.`}
-          </p>
-        </div>
-        {cancelar.isError ? (
-          <FormMessage tone="error">
-            {errorMessage(cancelar.error, 'No se pudo cancelar la cita.')}
-          </FormMessage>
-        ) : null}
-        <AlertDialogFooter>
-          <AlertDialogCancel>Volver</AlertDialogCancel>
-          <Button
-            type="button"
-            variant="danger"
-            disabled={cancelar.isPending || motivo.trim().length < MIN_MOTIVO}
-            onClick={() => {
-              cancelar.mutate()
-            }}
-          >
-            {cancelar.isPending ? 'Cancelando…' : 'Cancelar cita'}
-          </Button>
-        </AlertDialogFooter>
+          {cancelar.isError ? (
+            <FormMessage tone="error">
+              {errorMessage(cancelar.error, 'No se pudo cancelar la cita.')}
+            </FormMessage>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Volver</AlertDialogCancel>
+            <Button type="submit" variant="danger" disabled={cancelar.isPending}>
+              {cancelar.isPending ? 'Cancelando…' : 'Cancelar cita'}
+            </Button>
+          </AlertDialogFooter>
+        </form>
       </AlertDialogContent>
     </AlertDialog>
   )

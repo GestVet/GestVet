@@ -97,6 +97,7 @@ export default function ClinicalEntryForm({ petId }: ClinicalEntryFormProps) {
         <TextField
           id={campo('weight_kg')}
           label="Peso (kg)"
+          placeholder="Por ejemplo: 12.5"
           icon="peso"
           type="number"
           inputMode="decimal"
@@ -105,12 +106,13 @@ export default function ClinicalEntryForm({ petId }: ClinicalEntryFormProps) {
           field={register('weight_kg')}
           error={formState.errors.weight_kg?.message}
         />
-        <TextField id={campo('diagnosis')} label="Diagnóstico" icon="diagnostico" maxLength={300} field={register('diagnosis')} error={formState.errors.diagnosis?.message} />
-        <TextField id={campo('treatment')} label="Tratamiento" icon="tratamiento" maxLength={300} field={register('treatment')} error={formState.errors.treatment?.message} />
+        <TextField id={campo('diagnosis')} label="Diagnóstico" placeholder="Por ejemplo: otitis externa" icon="diagnostico" maxLength={300} field={register('diagnosis')} error={formState.errors.diagnosis?.message} />
+        <TextField id={campo('treatment')} label="Tratamiento" placeholder="Por ejemplo: gotas óticas cada 12 h por 7 días" icon="tratamiento" maxLength={300} field={register('treatment')} error={formState.errors.treatment?.message} />
       </div>
       <TextareaField
         id={campo('notes')}
         label="Notas"
+        placeholder="Motivo de la consulta, examen físico y observaciones"
         icon="nota"
         rows={2}
         field={register('notes')}

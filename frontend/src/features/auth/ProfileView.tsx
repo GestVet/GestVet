@@ -35,7 +35,7 @@ export default function ProfileView() {
   const user = useSession((state) => state.user)
   const updateUser = useSession((state) => state.updateUser)
 
-  const { register, handleSubmit, formState } = useForm<ProfileForm>({
+  const { register, handleSubmit, formState, control } = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
     defaultValues: valoresIniciales(user),
   })
@@ -71,7 +71,7 @@ export default function ProfileView() {
             }),
           )}
         >
-          <ProfileFields register={register} errors={errores} />
+          <ProfileFields register={register} control={control} errors={errores} />
 
           {guardar.isError ? (
             <FormMessage tone="error">

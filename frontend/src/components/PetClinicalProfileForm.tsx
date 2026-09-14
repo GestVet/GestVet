@@ -74,6 +74,7 @@ export default function PetClinicalProfileForm(props: PetClinicalProfileFormProp
         <TextField
           id="weight_kg"
           label="Peso (kg)"
+          placeholder="Por ejemplo: 12.5"
           icon="peso"
           type="number"
           inputMode="decimal"
@@ -85,6 +86,7 @@ export default function PetClinicalProfileForm(props: PetClinicalProfileFormProp
         <TextField
           id="height_cm"
           label="Altura (cm)"
+          placeholder="Por ejemplo: 45"
           icon="altura"
           type="number"
           inputMode="decimal"
@@ -107,6 +109,7 @@ export default function PetClinicalProfileForm(props: PetClinicalProfileFormProp
       <TextareaField
         id="allergies"
         label="Alergias / condiciones crónicas"
+        placeholder="Por ejemplo: alergia a la penicilina, dermatitis"
         icon="alergia"
         rows={2}
         field={register('allergies')}
