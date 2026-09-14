@@ -13,19 +13,24 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from gestvet.core.activity_log import ActivityRecorderDep
 from gestvet.core.auth import require_permission
 from gestvet.core.identity import Principal
+from gestvet.core.identity_registry import IdentityRegistryUnavailable
 from gestvet.core.permissions import Permission
 from gestvet.modules.accounts.adapters.api.dependencies import (
+    IdentityRegistryDep,
     PasswordHasherDep,
     UserRepositoryDep,
 )
 from gestvet.modules.accounts.adapters.api.schemas import (
     ClientPageResponse,
+    DocumentLookupRequest,
+    DocumentLookupResponse,
     RegisterWalkInClientRequest,
     UpdateClientContactRequest,
     UserResponse,
 )
 from gestvet.modules.accounts.domain.exceptions import (
     DocumentIdRequired,
+    DocumentNotFoundInRegistry,
     EmailAlreadyRegistered,
     InvalidDocumentId,
     InvalidEmail,
@@ -33,6 +38,10 @@ from gestvet.modules.accounts.domain.exceptions import (
 )
 from gestvet.modules.accounts.ports.user_repository import UserQuery
 from gestvet.modules.accounts.use_cases.list_clients import CLIENT_ROLES, ListUsers
+from gestvet.modules.accounts.use_cases.look_up_document import (
+    LookUpDocument,
+    LookUpDocumentCommand,
+)
 from gestvet.modules.accounts.use_cases.manage_accounts import (
     RegisterWalkInClient,
     RegisterWalkInClientCommand,
@@ -110,6 +119,30 @@ async def register_walk_in_client(
     except (DocumentIdRequired, InvalidDocumentId) as error:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
     return UserResponse.from_entity(user)
+
+
+@router.post(
+    "/document-lookup",
+    response_model=DocumentLookupResponse,
+    summary="Completar nombre y apellido desde el DNI (alta exprés)",
+)
+async def look_up_document(
+    payload: DocumentLookupRequest,
+    principal: WalkInRegistrarDep,
+    identity: IdentityRegistryDep,
+    activity: ActivityRecorderDep,
+) -> DocumentLookupResponse:
+    try:
+        person = await LookUpDocument(identity, activity)(
+            LookUpDocumentCommand(actor_id=principal.user_id, document_id=payload.document_id)
+        )
+    except (DocumentIdRequired, InvalidDocumentId) as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
+    except DocumentNotFoundInRegistry as error:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    except IdentityRegistryUnavailable as error:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(error)) from error
+    return DocumentLookupResponse(first_names=person.first_names, last_names=person.last_names)
 
 
 @router.patch(

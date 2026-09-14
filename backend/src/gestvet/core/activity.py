@@ -69,6 +69,7 @@ class ActivityKind(StrEnum):
     ACCESS_ROLE_UPDATED = "access_role_updated"
     ACCESS_ROLE_DELETED = "access_role_deleted"
     ACCESS_ROLE_ASSIGNED = "access_role_assigned"
+    DOCUMENT_LOOKED_UP = "document_looked_up"
 
     @property
     def label(self) -> str:
@@ -76,6 +77,7 @@ class ActivityKind(StrEnum):
 
 
 _KIND_LABELS: dict[ActivityKind, str] = {
+    ActivityKind.DOCUMENT_LOOKED_UP: "Consultó un DNI",
     ActivityKind.SIGNED_IN: "Inició sesión",
     ActivityKind.CLIENT_REGISTERED: "Se registró como cliente",
     ActivityKind.PROFILE_UPDATED: "Actualizó su perfil",

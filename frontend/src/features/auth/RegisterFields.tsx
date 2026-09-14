@@ -11,6 +11,7 @@ import {
   soloDigitos,
   soloLetras,
 } from '../../services/fieldRules'
+import IdentityConsentField from './IdentityConsentField'
 import type { RegisterForm } from './registerSchema'
 
 interface RegisterFieldsProps {
@@ -99,6 +100,8 @@ export default function RegisterFields({ register, control, errors }: RegisterFi
         field={register('password')}
         error={errors.password?.message}
       />
+
+      <IdentityConsentField control={control} error={errors.accepts_identity_check?.message} />
     </>
   )
 }

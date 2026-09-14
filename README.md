@@ -8,7 +8,7 @@ Por módulo, lo que el sistema resuelve hoy:
 
 **Cuentas y acceso** (`accounts`) — registro público de clientes (siempre como rol `client`, nunca elegido por quien se registra), alta de personal por administración, recuperación de contraseña por enlace de un solo uso, y roles con permisos editables por la administración. El DNI es obligatorio al registrarse. Cuando alguien llega a una emergencia sin cuenta, el personal puede darlo de alta en el momento con nombre, DNI y teléfono ("alta exprés"): la cuenta nace con un correo de relleno, inutilizable para entrar, y el personal completa el correo real después desde la ficha del cliente.
 
-**Mascotas** (`pets`) — alta y baja por el dueño, con la especie y la raza elegidas de un catálogo. Especie, raza, fecha de nacimiento, sexo, color, microchip y temperamento los edita el dueño desde su ficha; el veterinario también puede corregir la fecha de nacimiento, que en una emergencia queda provisoria (la del día del alta exprés) hasta la primera consulta real. Los datos clínicos (peso, altura, esterilización, alergias) los carga el veterinario en consulta. El personal corrige el estado de una mascota si hubo un error de carga.
+**Mascotas** (`pets`) — alta y baja por el dueño, con la especie y la raza elegidas de un catálogo que la administración amplía cuando llega un animal que no está. Especie, raza, fecha de nacimiento, sexo, color, microchip y temperamento los edita el dueño desde su ficha; el veterinario también puede corregir la fecha de nacimiento, que en una emergencia queda provisoria (la del día del alta exprés) hasta la primera consulta real. Los datos clínicos (peso, altura, esterilización, alergias) los carga el veterinario en consulta. El personal corrige el estado de una mascota si hubo un error de carga.
 
 **Agenda** (`availability`) — la clínica asigna los turnos de cada veterinario, y la guardia es un tipo de turno más; una cita solo se agenda dentro de un turno asignado.
 
@@ -438,8 +438,10 @@ El padrón de clientes es dato personal: solo lo ve el personal de la clínica.
 
 La especie y la raza de una mascota se eligen de un catálogo, no se escriben. Con texto libre, "perro", "Perro" y "can" eran tres especies distintas para cualquier búsqueda o indicador.
 
-- **Contenido.** Vive en `modules/pets/domain/catalog.py`: perro, gato, ave, conejo, roedor, reptil, pez y otro. Cada especie tiene sus razas habituales en el Perú, entre ellas el perro sin pelo del Perú y el cuy. Toda especie acepta "Sin especificar", que es lo que deja el alta exprés de una emergencia.
-- **Validación.** El servidor la aplica al registrar y al editar la ficha. El frontend pide la lista a `GET /api/v1/pets/catalog` y la raza depende de la especie elegida.
+- **Contenido.** Vive en la base, en `pet_species` y `pet_breeds`. La migración 0020 siembra 21 especies, de las mascotas comunes a los animales de granja, con sus razas habituales en el Perú: el perro sin pelo del Perú, el cuy andino, el caballo peruano de paso, la alpaca y la llama. Toda especie tiene "Sin especificar", que es lo que deja el alta exprés de una emergencia; esa raza no se renombra ni se desactiva.
+- **Administración.** La pantalla *Especies y razas* (permiso `pets.manage_catalog`, de la administración por defecto) agrega especies y razas, corrige nombres y desactiva lo que ya no se usa. Nada se borra: una raza desactivada sale de los formularios, pero las mascotas que ya la tienen la conservan. Corregir un nombre lo corrige también en esas fichas. Cada cambio llega al instante a los formularios abiertos por el tema `pet-catalog` del canal en tiempo real.
+- **Formato único.** Todo nombre se guarda con mayúscula solo al inicio, sin espacios de más: "PASTOR ALEMÁN" y "pastor alemán" quedan "Pastor alemán". Un nombre propio conserva su mayúscula si quien escribe deja otra palabra en minúscula, como en "perro sin pelo del Perú". Dos nombres que solo difieren en tildes o mayúsculas son el mismo y no entran dos veces. La regla vive en `modules/pets/domain/catalog.py`; `services/catalogName.ts` la repite solo para mostrar mientras se escribe cómo va a quedar.
+- **Validación.** El servidor la aplica al registrar y al editar la ficha, solo con lo que se ofrece hoy. Al editar, se valida la especie y la raza únicamente si cambian. El frontend pide la lista a `GET /api/v1/pets/catalog` y la raza depende de la especie elegida.
 - **Ficha del dueño.** Además del sexo, el color, el microchip y el temperamento, el dueño corrige la especie, la raza y la fecha de nacimiento. Así completa una mascota dada de alta en una emergencia. Una mascota cargada antes del catálogo conserva su texto hasta que alguien lo cambie.
 - **Otras validaciones.**
   - La fecha de nacimiento no puede estar en el futuro ni ser de hace más de 60 años.
@@ -482,6 +484,38 @@ Detalles:
 - **Protecciones.** El rol de administración por defecto no pierde `roles.manage`. Nadie se quita ese permiso de su propio rol y nadie cambia su propio rol. Así la clínica no se queda sin quien administre.
 - **Permisos por petición.** Se leen de la base en cada petición con una sola consulta. Un cambio rige en la siguiente petición, sin esperar a que venza el token.
 - **Interfaz.** La sesión guarda los permisos. El menú (`navigation.ts`), las rutas (`RequireSession`) y cada botón (`useCan('...')`) preguntan por permisos, nunca por roles. Cuando un rol cambia, el servidor avisa por el tema `permissions` del canal en tiempo real. La interfaz vuelve a pedir `/auth/me` y oculta lo que ya no corresponde sin recargar. Ocultar es comodidad: el servidor igual responde 403.
+
+## Verificación de DNI
+
+- **Registro público.** Pide una autorización explícita (casilla sin marcar) y, al enviar, comprueba que el primer nombre y el primer apellido escritos correspondan al DNI. Nunca devuelve el nombre registrado: el formulario es público y no puede servir para averiguar a quién pertenece un DNI. Si el proveedor no está configurado o no responde, el registro sigue.
+- **Alta exprés de emergencia.** Con la autorización del cliente, el personal completa nombre y apellido desde el DNI con un botón. Cada consulta queda en *Movimientos* con quién la hizo y el DNI enmascarado.
+- **Proveedor.** Hoy Factiliza (`FACTILIZA_API_KEY`, 100 consultas gratis para empezar). De su respuesta se usan solo nombres y apellidos; dirección y ubigeo se descartan en el adaptador y no llegan a los logs. Apis.net.pe y Decolecta dejaron de ofrecer DNI al público por la Ley 29733.
+- **Para producción.** Conviene el convenio con RENIEC (servicio de verificación de identidad, S/ 0.40 a S/ 1.60 por consulta): los proveedores privados no documentan el origen de los datos y el riesgo legal es de la clínica. Cambiar de proveedor es un adaptador nuevo que satisfaga `core/identity_registry.py` y una línea en `get_identity_registry`; ningún caso de uso cambia.
+
+## Carnet de vacunas
+
+Cada vacuna aplicada se registra con fecha, producto, lote y próxima dosis (tabla `pet_vaccinations`, migración 0021). El dueño ve el carnet de su mascota en *Mis mascotas*; el veterinario lo ve y registra desde la ficha del cliente.
+
+- **Catálogo por especie** (`modules/medical_records/domain/vaccination.py`): antirrábica para perros y gatos, séxtuple u óctuple y tos de las perreras para perros, triple felina y leucemia para gatos, desparasitación y "otra vacuna" para cualquiera.
+- **Próxima dosis sugerida.** Anual para las vacunas, cada 90 días la desparasitación. La séxtuple y la triple felina van cada 21 días mientras la mascota tiene menos de un año. El veterinario puede cambiar la fecha o dejarla vacía.
+- **Estado de cada vacuna** según su última dosis: *Vencida*, *Vence pronto* (30 días o menos), *Al día* o *Sin refuerzo*. El carnet muestra lo más urgente primero.
+
+### Microchip y carnet en PDF
+
+- **Microchip ISO.** Uno nuevo debe tener 15 dígitos (ISO 11784/11785; los tres primeros son el país, 604 para Perú, o el fabricante). Un chip antiguo de 9 o 10 dígitos ya guardado sigue valiendo mientras no se cambie.
+- **RENIAN.** Junto al número, "Consultar en RENIAN" copia el microchip y abre su buscador en otra pestaña: RENIAN no tiene API ni acepta el número en la dirección, y leer su web de forma automática no está permitido.
+- **Carnet en PDF.** Dueño y personal lo bajan desde el carnet de vacunas: datos de la mascota y del dueño, estado de cada vacuna, aplicaciones con producto y lote, y un código QR.
+- **Verificación por QR.** El QR abre `/carnet/<enlace>`, una página pública con la mascota, el microchip y el estado actual de sus vacunas, sin ningún dato del dueño. El enlace va firmado con HMAC (`core/signed_links.py`, clave derivada de `JWT_SECRET_KEY` con un propósito propio) y vence al año; uno alterado o vencido responde igual que uno inexistente. Cambiar `JWT_SECRET_KEY` invalida los carnets ya impresos.
+
+## Asistente de IA (OpenRouter)
+
+El veterinario pide desde la historia clínica un resumen de la mascota antes de la consulta: un texto breve, alertas (alergias, vacunas vencidas, cambios de peso) y pendientes. Se pide a mano, no se guarda y lleva la advertencia de revisarlo.
+
+- **Proveedor.** OpenRouter, con `deepseek/deepseek-v4.1-flash` (US$ 0.15 de entrada y 0.60 de salida por millón de tokens, septiembre de 2026) y `deepseek/deepseek-v4-flash-0731` de respaldo. Un resumen típico consume unos miles de tokens: menos de un décimo de centavo de dólar.
+- **Configuración.** `OPENROUTER_API_KEY` en `backend/.env`. Sin clave, el botón responde que el asistente no está configurado y todo lo demás funciona igual. Los modelos se cambian con `OPENROUTER_MODEL` y `OPENROUTER_FALLBACK_MODEL`.
+- **Cada petición** pide la respuesta como JSON con forma fija, apaga el razonamiento (se cobraría como salida) y exige proveedores que no guarden los datos para entrenar.
+- **Privacidad.** Al modelo llegan la ficha, el carnet y la historia de la mascota; nunca el nombre, el DNI ni el contacto del dueño. Como el proveedor está fuera del Perú, el aviso de privacidad de la clínica debe mencionarlo (Ley 29733).
+- **Código.** El puerto es `core/llm.py` y el adaptador `core/llm_openrouter.py`. Las pruebas usan un modelo falso y nunca llaman a OpenRouter.
 
 ## WhatsApp Business API — pendiente
 

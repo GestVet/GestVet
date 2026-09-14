@@ -25,6 +25,7 @@ from gestvet.core.config import get_settings
 from gestvet.core.logs import get_logger, mask_email
 from gestvet.modules.accounts.adapters.api.dependencies import (
     EmailSenderDep,
+    IdentityRegistryDep,
     PasswordHasherDep,
     PasswordResetRepositoryDep,
     UserRepositoryDep,
@@ -43,7 +44,10 @@ from gestvet.modules.accounts.adapters.api.schemas import (
 from gestvet.modules.accounts.domain.entities import User
 from gestvet.modules.accounts.domain.exceptions import (
     DocumentIdRequired,
+    DocumentNotFoundInRegistry,
     EmailAlreadyRegistered,
+    IdentityCheckConsentRequired,
+    IdentityMismatch,
     InactiveAccount,
     InvalidCredentials,
     InvalidDocumentId,
@@ -83,8 +87,9 @@ async def register_client(
     users: UserRepositoryDep,
     hasher: PasswordHasherDep,
     activity: ActivityRecorderDep,
+    identity: IdentityRegistryDep,
 ) -> UserResponse:
-    use_case = RegisterClient(users, hasher, activity)
+    use_case = RegisterClient(users, hasher, activity, identity)
     try:
         user = await use_case(
             RegisterClientCommand(
@@ -94,12 +99,20 @@ async def register_client(
                 last_name=payload.last_name,
                 document_id=payload.document_id,
                 phone=payload.phone,
+                accepts_identity_check=payload.accepts_identity_check,
             )
         )
     except EmailAlreadyRegistered as error:
         logger.info("auth.register_rejected", reason="email_taken")
         raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
-    except (InvalidEmail, InvalidDocumentId, DocumentIdRequired) as error:
+    except (
+        InvalidEmail,
+        InvalidDocumentId,
+        DocumentIdRequired,
+        IdentityCheckConsentRequired,
+        DocumentNotFoundInRegistry,
+        IdentityMismatch,
+    ) as error:
         logger.info("auth.register_rejected", reason=type(error).__name__)
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
     logger.info("auth.registered", user_id=user.id, role=user.role.value)

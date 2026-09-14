@@ -30,7 +30,7 @@ export default function WalkInEmergencyForm() {
   const clienteIdRef = useRef<number | null>(null)
   const mascotaIdRef = useRef<number | null>(null)
 
-  const { register, handleSubmit, formState, reset, control } = useForm<WalkInEmergencyFormValues>({
+  const { register, handleSubmit, formState, reset, control, setValue } = useForm<WalkInEmergencyFormValues>({
     resolver: zodResolver(walkInEmergencySchema),
     defaultValues: EMPTY_WALK_IN_EMERGENCY,
   })
@@ -90,6 +90,7 @@ export default function WalkInEmergencyForm() {
         control={control}
         errors={formState.errors}
         species={especie}
+        setValue={setValue}
       />
 
       {abrir.isError ? (

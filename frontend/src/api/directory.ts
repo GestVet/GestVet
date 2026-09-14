@@ -2,6 +2,7 @@ import { api } from '../services/api'
 import type {
   ActivityPageResponse,
   ClientPageResponse,
+  DocumentLookupResponse,
   RegisterStaffRequest,
   RegisterWalkInClientRequest,
   UpdateClientContactRequest,
@@ -64,6 +65,15 @@ export async function changeUserStatus(
 ): Promise<UserResponse> {
   const { data } = await api.patch<UserResponse>(`/users/${String(userId)}/status`, {
     is_active: isActive,
+  })
+  return data
+}
+
+/** Nombres y apellidos de un DNI, para el alta exprés. El cliente ya lo autorizó. */
+export async function lookUpDocument(documentId: string): Promise<DocumentLookupResponse> {
+  const { data } = await api.post<DocumentLookupResponse>('/clients/document-lookup', {
+    document_id: documentId,
+    consent: true,
   })
   return data
 }

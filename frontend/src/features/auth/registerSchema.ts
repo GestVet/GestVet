@@ -17,6 +17,9 @@ export const registerSchema = z.object({
   phone: telefonoRule,
   document_id: dniRule,
   password: passwordRule,
+  accepts_identity_check: z
+    .boolean()
+    .refine((autorizado) => autorizado, 'Necesitamos tu autorización para verificar tu DNI'),
 })
 
 export type RegisterForm = z.infer<typeof registerSchema>

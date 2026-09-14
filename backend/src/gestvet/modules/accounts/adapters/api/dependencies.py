@@ -13,7 +13,9 @@ from typing import Annotated
 from fastapi import Depends
 
 from gestvet.core.auth import SessionDep
+from gestvet.core.dni_factiliza import get_identity_registry
 from gestvet.core.email import ConsoleEmailSender
+from gestvet.core.identity_registry import IdentityRegistry
 from gestvet.core.security import BcryptPasswordHasher
 from gestvet.modules.accounts.adapters.persistence.directories import (
     SqlReviewsDirectory,
@@ -57,3 +59,4 @@ PasswordResetRepositoryDep = Annotated[
 ]
 EmailSenderDep = Annotated[EmailSender, Depends(get_email_sender)]
 ReviewsDirectoryDep = Annotated[ReviewsDirectory, Depends(get_reviews_directory)]
+IdentityRegistryDep = Annotated[IdentityRegistry, Depends(get_identity_registry)]

@@ -1,4 +1,4 @@
-import type { Control, FieldErrors, UseFormRegister } from 'react-hook-form'
+import type { Control, FieldErrors, UseFormRegister, UseFormSetValue } from 'react-hook-form'
 
 import { MAX_NOMBRE_DE_MASCOTA } from '../../components/formRules'
 import SectionHeading from '../../components/SectionHeading'
@@ -13,6 +13,7 @@ interface WalkInEmergencyFieldsProps {
   readonly control: Control<WalkInEmergencyFormValues>
   readonly errors: FieldErrors<WalkInEmergencyFormValues>
   readonly species: string
+  readonly setValue: UseFormSetValue<WalkInEmergencyFormValues>
 }
 
 /** Los campos del alta exprés, separados del envío para no pasar de tamaño. */
@@ -21,10 +22,11 @@ export default function WalkInEmergencyFields({
   control,
   errors,
   species,
+  setValue,
 }: WalkInEmergencyFieldsProps) {
   return (
     <>
-      <WalkInClientFields register={register} control={control} errors={errors} />
+      <WalkInClientFields register={register} control={control} errors={errors} setValue={setValue} />
 
       <fieldset className="m-0 flex flex-col gap-4 border-0 p-0">
         <legend className="mb-3 p-0">

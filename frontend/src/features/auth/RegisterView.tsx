@@ -24,7 +24,7 @@ const PANEL = (
       { icon: 'emergencia', text: 'Abrir una emergencia a cualquier hora del día.' },
       { icon: 'carpeta', text: 'Seguir la historia clínica de cada mascota.' },
     ]}
-    note="Pedimos tu DNI para identificarte cuando llegues a la clínica."
+    note="Verificamos tu DNI para confirmar que eres tú. Con él te identificamos al llegar a la clínica."
   />
 )
 
@@ -41,12 +41,13 @@ export default function RegisterView() {
       phone: '',
       document_id: '',
       password: '',
+      accepts_identity_check: false,
     },
   })
 
   const crear = useMutation({
     mutationFn: async (valores: RegisterForm) => {
-      await registerClient(valores)
+      await registerClient({ ...valores, accepts_identity_check: true })
       // El alta no devuelve token: se entra con las mismas credenciales.
       return login({ email: valores.email, password: valores.password })
     },

@@ -72,3 +72,23 @@ class CannotDeactivateSelf(AccountsError):
 class InvalidResetToken(AccountsError):
     def __init__(self) -> None:
         super().__init__("El enlace de recuperación no es válido o ya venció.")
+
+
+class IdentityCheckConsentRequired(AccountsError):
+    def __init__(self) -> None:
+        super().__init__("Necesitamos tu autorización para verificar tu DNI.")
+
+
+class DocumentNotFoundInRegistry(AccountsError):
+    def __init__(self) -> None:
+        super().__init__("No encontramos ese DNI. Revisa el número.")
+
+
+class IdentityMismatch(AccountsError):
+    """No dice qué nombre figura: el formulario es público."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            "El nombre o el apellido no coinciden con los de tu DNI. "
+            "Escríbelos como figuran en el documento."
+        )

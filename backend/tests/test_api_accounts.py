@@ -31,6 +31,7 @@ NEW_CLIENT = {
     "last_name": "Quispe",
     "phone": "987654321",
     "document_id": "87654321",
+    "accepts_identity_check": True,
 }
 
 

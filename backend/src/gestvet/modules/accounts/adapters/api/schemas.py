@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -28,6 +29,8 @@ class RegisterClientRequest(BaseModel):
     last_name: str = Field(min_length=1, max_length=120)
     document_id: str = Field(pattern=DOCUMENT_ID_PATTERN)
     phone: str = Field(default="", max_length=32)
+    # La persona autorizó verificar su DNI; el formulario no deja enviarlo sin marcarlo.
+    accepts_identity_check: Literal[True]
 
 
 class RegisterStaffRequest(BaseModel):
@@ -200,3 +203,16 @@ class ActivityPageResponse(BaseModel):
 class ClientPageResponse(BaseModel):
     items: list[UserResponse]
     total: int
+
+
+class DocumentLookupRequest(BaseModel):
+    document_id: str = Field(pattern=DOCUMENT_ID_PATTERN)
+    # El cliente autorizó la consulta de su DNI.
+    consent: Literal[True]
+
+
+class DocumentLookupResponse(BaseModel):
+    """Solo nombres y apellidos: nada más del DNI sale del servidor."""
+
+    first_names: str
+    last_names: str
