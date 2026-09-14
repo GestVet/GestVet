@@ -4,10 +4,19 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import { addClinicalEntry, clinicalEntriesQueryKey } from '../../api/medicalRecords'
-import FieldError from '../../components/FieldError'
 import FormMessage from '../../components/FormMessage'
+import {
+  decimalParaApi,
+  decimalRule,
+  textoObligatorio,
+  textoOpcional,
+} from '../../components/formRules'
 import Icon from '../../components/Icon'
 import SelectField from '../../components/SelectField'
+import TextareaField from '../../components/TextareaField'
+import TextField from '../../components/TextField'
+import { Button } from '../../components/ui/button'
+import { NativeSelectOption } from '../../components/ui/native-select'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
 
@@ -22,10 +31,10 @@ const TIPOS = [
 
 const esquema = z.object({
   kind: z.enum(['consultation', 'vaccine', 'surgery', 'follow_up', 'consent_form', 'other']),
-  notes: z.string().min(1, 'Ingresá una nota'),
-  diagnosis: z.string().max(300).optional(),
-  treatment: z.string().max(300).optional(),
-  weight_kg: z.string().optional(),
+  notes: textoObligatorio(2000, 'Escribe una nota'),
+  diagnosis: textoOpcional(300),
+  treatment: textoOpcional(300),
+  weight_kg: decimalRule({ max: 120, decimales: 2, unidad: 'kg' }),
 })
 
 type Formulario = z.infer<typeof esquema>
@@ -49,6 +58,7 @@ export default function ClinicalEntryForm({ petId }: ClinicalEntryFormProps) {
     resolver: zodResolver(esquema),
     defaultValues: VACIO,
   })
+  const campo = (nombre: string) => `${nombre}-${String(petId)}`
 
   const alta = useMutation({
     mutationFn: (valores: Formulario) =>
@@ -56,9 +66,9 @@ export default function ClinicalEntryForm({ petId }: ClinicalEntryFormProps) {
         pet_id: petId,
         kind: valores.kind,
         notes: valores.notes,
-        diagnosis: valores.diagnosis ?? '',
-        treatment: valores.treatment ?? '',
-        weight_kg: valores.weight_kg === '' ? null : valores.weight_kg,
+        diagnosis: valores.diagnosis,
+        treatment: valores.treatment,
+        weight_kg: decimalParaApi(valores.weight_kg),
       }),
     onSuccess: async () => {
       reset(VACIO)
@@ -68,41 +78,46 @@ export default function ClinicalEntryForm({ petId }: ClinicalEntryFormProps) {
 
   return (
     <form
-      className="form"
+      noValidate
+      className="flex flex-col gap-5"
       onSubmit={onSubmit(
         handleSubmit((valores) => {
           alta.mutate(valores)
         }),
       )}
     >
-      <SelectField id="kind" label="Tipo" field={register('kind')}>
-        {TIPOS.map((tipo) => (
-          <option key={tipo.value} value={tipo.value}>
-            {tipo.label}
-          </option>
-        ))}
-      </SelectField>
-
-      <div className="field">
-        <label htmlFor="notes">Notas</label>
-        <textarea id="notes" rows={2} {...register('notes')} />
-        <FieldError message={formState.errors.notes?.message} />
+      <div className="grid gap-5 sm:grid-cols-2">
+        <SelectField id={campo('kind')} label="Tipo" icon="registroClinico" field={register('kind')}>
+          {TIPOS.map((tipo) => (
+            <NativeSelectOption key={tipo.value} value={tipo.value}>
+              {tipo.label}
+            </NativeSelectOption>
+          ))}
+        </SelectField>
+        <TextField
+          id={campo('weight_kg')}
+          label="Peso (kg)"
+          placeholder="12.5"
+          icon="peso"
+          type="number"
+          inputMode="decimal"
+          step="0.1"
+          min="0"
+          field={register('weight_kg')}
+          error={formState.errors.weight_kg?.message}
+        />
+        <TextField id={campo('diagnosis')} label="Diagnóstico" placeholder="Otitis externa" icon="diagnostico" maxLength={300} field={register('diagnosis')} error={formState.errors.diagnosis?.message} />
+        <TextField id={campo('treatment')} label="Tratamiento" placeholder="Gotas óticas cada 12 h por 7 días" icon="tratamiento" maxLength={300} field={register('treatment')} error={formState.errors.treatment?.message} />
       </div>
-
-      <div className="field">
-        <label htmlFor="diagnosis">Diagnóstico</label>
-        <input id="diagnosis" {...register('diagnosis')} />
-      </div>
-
-      <div className="field">
-        <label htmlFor="treatment">Tratamiento</label>
-        <input id="treatment" {...register('treatment')} />
-      </div>
-
-      <div className="field">
-        <label htmlFor="weight_kg">Peso (kg)</label>
-        <input id="weight_kg" type="number" step="0.1" min="0" {...register('weight_kg')} />
-      </div>
+      <TextareaField
+        id={campo('notes')}
+        label="Notas"
+        placeholder="Motivo de la consulta, examen físico y observaciones"
+        icon="nota"
+        rows={2}
+        field={register('notes')}
+        error={formState.errors.notes?.message}
+      />
 
       {alta.isError ? (
         <FormMessage tone="error">
@@ -110,10 +125,10 @@ export default function ClinicalEntryForm({ petId }: ClinicalEntryFormProps) {
         </FormMessage>
       ) : null}
 
-      <button type="submit" className="btn btn-green" disabled={alta.isPending}>
+      <Button type="submit" variant="success" className="self-start" disabled={alta.isPending}>
         <Icon name="agregar" size={16} />
         <span>{alta.isPending ? 'Guardando…' : 'Agregar a la historia clínica'}</span>
-      </button>
+      </Button>
     </form>
   )
 }

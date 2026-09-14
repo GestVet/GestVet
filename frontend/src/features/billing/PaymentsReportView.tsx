@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import {
@@ -7,62 +7,127 @@ import {
   paymentReportQueryKey,
   paymentsQueryKey,
 } from '../../api/payments'
-import TableShell from '../../components/TableShell'
+import DataTable, { type DataColumn } from '../../components/DataTable'
+import FieldIcon from '../../components/FieldIcon'
+import PageHeader from '../../components/PageHeader'
+import { instanteEnClinica, sumarDias } from '../../services/clinicTime'
+import SectionCard from '../../components/SectionCard'
+import { Input } from '../../components/ui/input'
+import { Label } from '../../components/ui/label'
 import PaymentReportSummary from './PaymentReportSummary'
 
-const COLUMNAS = ['Fecha', 'Cita', 'Monto', 'Medio', 'Referencia', 'Estado'] as const
+type Pago = Awaited<ReturnType<typeof fetchPayments>>['items'][number]
 
 const FORMATO = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
+const FORMATO_CITA = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium' })
+
+/** Qué se atendió, por ejemplo "Consulta general de Rocco, cita del 14 set. 2026". */
+function atencion(pago: Pago): string {
+  const cita = pago.appointment_at ?? null
+  if (cita === null) {
+    return ''
+  }
+  return `${pago.appointment_type} de ${pago.pet_name}, cita del ${FORMATO_CITA.format(new Date(cita))}`
+}
+
+const COLUMNAS: readonly DataColumn<Pago>[] = [
+  { id: 'fecha', header: 'Fecha', cell: (pago) => FORMATO.format(new Date(pago.paid_at)) },
+  {
+    id: 'cliente',
+    header: 'Cliente y atención',
+    className: 'min-w-56 whitespace-normal',
+    cell: (pago) =>
+      pago.client_name === '' ? (
+        'Cita no encontrada'
+      ) : (
+        <span className="flex flex-col">
+          <span className="font-medium">{pago.client_name}</span>
+          <span className="text-muted-foreground">{atencion(pago)}</span>
+        </span>
+      ),
+  },
+  { id: 'monto', header: 'Monto', cell: (pago) => `S/ ${pago.amount}` },
+  { id: 'medio', header: 'Medio', cell: (pago) => pago.method_label },
+  { id: 'referencia', header: 'Referencia', cell: (pago) => pago.reference || '—' },
+  {
+    id: 'estado',
+    header: 'Estado',
+    className: 'whitespace-normal',
+    cell: (pago) =>
+      pago.is_voided ? (
+        <span className="text-muted-foreground">Anulado: {pago.void_reason}</span>
+      ) : (
+        'Vigente'
+      ),
+  },
+]
+
+/** Del inicio de `desde` al final de `hasta`, en la hora de la clínica. */
+function ventanaDeFechas(desde: string, hasta: string) {
+  return {
+    starts_after: desde === '' ? undefined : instanteEnClinica(desde),
+    ends_before: hasta === '' ? undefined : instanteEnClinica(sumarDias(hasta, 1)),
+  }
+}
+
+function limite(fecha: string): string | undefined {
+  return fecha === '' ? undefined : fecha
+}
 
 export default function PaymentsReportView() {
   const [desde, setDesde] = useState('')
   const [hasta, setHasta] = useState('')
 
-  const filtro = {
-    starts_after: desde === '' ? undefined : new Date(desde).toISOString(),
-    ends_before: hasta === '' ? undefined : new Date(hasta).toISOString(),
-  }
+  const filtro = ventanaDeFechas(desde, hasta)
 
+  // Con las fechas cambiando, el resumen y la tabla conservan lo anterior
+  // hasta que llega el rango nuevo, en vez de vaciarse.
   const reporte = useQuery({
     queryKey: paymentReportQueryKey(filtro),
     queryFn: () => fetchPaymentReport(filtro),
+    placeholderData: keepPreviousData,
   })
-
   const pagos = useQuery({
     queryKey: paymentsQueryKey(filtro),
     queryFn: () => fetchPayments(filtro),
+    placeholderData: keepPreviousData,
   })
-  const items = pagos.data?.items ?? []
 
   return (
-    <div className="stack">
-      <div className="page-header">
-        <h1>Pagos</h1>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Pagos" />
 
-      <section className="card">
-        <div className="form" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
-          <div className="field">
-            <label htmlFor="reporte-desde">Desde</label>
-            <input
+      <SectionCard title="Resumen por medio de pago">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="reporte-desde">Desde</Label>
+            <FieldIcon icon="fecha">
+            <Input
               id="reporte-desde"
               type="date"
+              className="h-10"
+              max={limite(hasta)}
               value={desde}
               onChange={(evento) => {
                 setDesde(evento.target.value)
               }}
             />
+            </FieldIcon>
           </div>
-          <div className="field">
-            <label htmlFor="reporte-hasta">Hasta</label>
-            <input
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="reporte-hasta">Hasta</Label>
+            <FieldIcon icon="fecha">
+            <Input
               id="reporte-hasta"
               type="date"
+              className="h-10"
+              min={limite(desde)}
               value={hasta}
               onChange={(evento) => {
                 setHasta(evento.target.value)
               }}
             />
+            </FieldIcon>
           </div>
         </div>
 
@@ -71,33 +136,18 @@ export default function PaymentsReportView() {
           items={reporte.data?.items ?? []}
           grandTotal={reporte.data?.grand_total ?? '0'}
         />
-      </section>
+      </SectionCard>
 
-      <section className="card">
-        <TableShell
+      <SectionCard title="Pagos">
+        <DataTable
           columns={COLUMNAS}
+          data={pagos.data?.items ?? []}
           isLoading={pagos.isPending}
-          isEmpty={items.length === 0}
           emptyMessage="No hay pagos para mostrar."
-        >
-          {items.map((pago) => (
-            <tr key={pago.id}>
-              <td>{FORMATO.format(new Date(pago.paid_at))}</td>
-              <td>#{pago.appointment_id}</td>
-              <td>S/ {pago.amount}</td>
-              <td>{pago.method_label}</td>
-              <td>{pago.reference || '—'}</td>
-              <td>
-                {pago.is_voided ? (
-                  <span className="muted">Anulado: {pago.void_reason}</span>
-                ) : (
-                  'Vigente'
-                )}
-              </td>
-            </tr>
-          ))}
-        </TableShell>
-      </section>
+          getRowId={(pago) => String(pago.id)}
+          pageSize={15}
+        />
+      </SectionCard>
     </div>
   )
 }

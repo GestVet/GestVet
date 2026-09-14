@@ -1,6 +1,6 @@
 """Casos de uso de administración de cuentas.
 
-Alta de personal, activación y turno de guardia. Todo lo que en el original
+Alta de personal y activación. Todo lo que en el original
 vivía repartido entre cuatro endpoints que aceptaban cualquier rol destino.
 """
 
@@ -13,10 +13,8 @@ from gestvet.core.activity import ActivityKind, ActivityRecorder
 from gestvet.core.identity import Role
 from gestvet.modules.accounts.domain.entities import (
     User,
-    ensure_role_is_backup_eligible,
     ensure_role_is_staff_assignable,
     normalize_email,
-    swapped_guard_role,
     validate_document_id,
 )
 from gestvet.modules.accounts.domain.exceptions import (
@@ -24,9 +22,7 @@ from gestvet.modules.accounts.domain.exceptions import (
     DocumentIdRequired,
     EmailAlreadyRegistered,
     UserNotFound,
-    VeterinarianHasUpcomingAppointments,
 )
-from gestvet.modules.accounts.ports.appointment_directory import AppointmentDirectory
 from gestvet.modules.accounts.ports.user_repository import PasswordHasher, UserRepository
 
 # Dominio reservado, nunca resuelve de verdad: nadie puede recibir un correo
@@ -115,88 +111,6 @@ class ChangeUserStatus:
             command.actor_id,
             ActivityKind.USER_STATUS_CHANGED,
             f"{guardado.email}: cuenta {estado}",
-        )
-        return guardado
-
-
-@dataclass(frozen=True, slots=True)
-class ToggleGuardDutyCommand:
-    user_id: int
-    actor_id: int
-
-
-class ToggleGuardDuty:
-    """Pone o saca a un veterinario del turno de guardia.
-
-    Es un intercambio entre dos roles y nada más. El original tenía un endpoint
-    que aceptaba el rol destino en el cuerpo, así que servía igual para
-    convertir a un cliente en administrador.
-    """
-
-    def __init__(
-        self,
-        users: UserRepository,
-        activity: ActivityRecorder,
-        appointments: AppointmentDirectory,
-    ) -> None:
-        self._users = users
-        self._activity = activity
-        self._appointments = appointments
-
-    async def __call__(self, command: ToggleGuardDutyCommand) -> User:
-        user = await self._users.get(command.user_id)
-        if user is None:
-            raise UserNotFound(command.user_id)
-
-        if user.role is Role.VETERINARIAN:
-            # De guardia solo recibe emergencias. Si ya tiene citas normales
-            # asignadas, quedarían sin nadie que las atienda.
-            if await self._appointments.has_upcoming_normal_appointments(command.user_id):
-                raise VeterinarianHasUpcomingAppointments(command.user_id)
-
-        user.role = swapped_guard_role(user.role)
-        guardado = await self._users.save(user)
-        await self._activity.record(
-            command.actor_id,
-            ActivityKind.GUARD_DUTY_TOGGLED,
-            f"{guardado.email}: {guardado.role.label}",
-        )
-        return guardado
-
-
-@dataclass(frozen=True, slots=True)
-class ToggleEmergencyCoverageCommand:
-    user_id: int
-    actor_id: int
-    can_cover_emergencies: bool
-
-
-class ToggleEmergencyCoverage:
-    """Habilita o quita a un veterinario normal como respaldo de emergencias.
-
-    Solo tiene sentido en un veterinario normal: el de guardia ya atiende
-    emergencias por su rol, y ni el cliente ni la administración atienden
-    ninguna cita.
-    """
-
-    def __init__(self, users: UserRepository, activity: ActivityRecorder) -> None:
-        self._users = users
-        self._activity = activity
-
-    async def __call__(self, command: ToggleEmergencyCoverageCommand) -> User:
-        user = await self._users.get(command.user_id)
-        if user is None:
-            raise UserNotFound(command.user_id)
-
-        ensure_role_is_backup_eligible(user.role)
-        user.can_cover_emergencies = command.can_cover_emergencies
-
-        guardado = await self._users.save(user)
-        estado = "habilitado" if command.can_cover_emergencies else "deshabilitado"
-        await self._activity.record(
-            command.actor_id,
-            ActivityKind.GUARD_DUTY_TOGGLED,
-            f"{guardado.email}: respaldo de emergencias {estado}",
         )
         return guardado
 

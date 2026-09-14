@@ -1,16 +1,13 @@
-import ClinicalEntryRow from './ClinicalEntryRow'
+import AttachmentsPanel from './AttachmentsPanel'
 import ClinicalHistoryReportButton from './ClinicalHistoryReportButton'
-import TableShell from './TableShell'
+import DataTable, { type DataColumn } from './DataTable'
+import RowExpandButton from './RowExpandButton'
+import CollapsibleSection from './CollapsibleSection'
 
-const COLUMNAS = [
-  'Fecha',
-  'Tipo',
-  'Diagnóstico',
-  'Tratamiento',
-  'Peso',
-  'Notas',
-  'Adjuntos',
-] as const
+// Las celdas de texto libre pueden partirse; las demas no.
+const TEXTO_LARGO = 'min-w-48 whitespace-normal'
+
+const FORMATO = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
 
 interface AttachmentLike {
   readonly id: number
@@ -34,6 +31,46 @@ interface ClinicalEntryLike {
   readonly attachments: readonly AttachmentLike[]
 }
 
+const COLUMNAS: readonly DataColumn<ClinicalEntryLike>[] = [
+  { id: 'fecha', header: 'Fecha', cell: (entrada) => FORMATO.format(new Date(entrada.occurred_at)) },
+  { id: 'tipo', header: 'Tipo', cell: (entrada) => entrada.kind_label },
+  {
+    id: 'diagnostico',
+    header: 'Diagnóstico',
+    className: TEXTO_LARGO,
+    cell: (entrada) => entrada.diagnosis || '—',
+  },
+  {
+    id: 'tratamiento',
+    header: 'Tratamiento',
+    className: TEXTO_LARGO,
+    cell: (entrada) => entrada.treatment || '—',
+  },
+  {
+    id: 'peso',
+    header: 'Peso',
+    cell: (entrada) => (entrada.weight_kg ? `${entrada.weight_kg} kg` : '—'),
+  },
+  {
+    id: 'notas',
+    header: 'Notas',
+    className: TEXTO_LARGO,
+    cell: (entrada) => entrada.notes,
+  },
+  {
+    id: 'adjuntos',
+    header: 'Adjuntos',
+    cell: (entrada, fila) => (
+      <RowExpandButton
+        isExpanded={fila.isExpanded}
+        onToggle={fila.toggleExpanded}
+        collapsedLabel={`Ver adjuntos (${String(entrada.attachments.length)})`}
+        expandedLabel="Ocultar adjuntos"
+      />
+    ),
+  },
+]
+
 interface ClinicalEntryListProps {
   readonly items: readonly ClinicalEntryLike[]
   readonly isLoading: boolean
@@ -56,23 +93,23 @@ export default function ClinicalEntryList({
   canManageAttachments,
 }: ClinicalEntryListProps) {
   return (
-    <div className="stack">
-      <ClinicalHistoryReportButton petId={petId} />
-      <TableShell
+    <CollapsibleSection title="Historia clínica" actions={<ClinicalHistoryReportButton petId={petId} />}>
+      <DataTable
         columns={COLUMNAS}
+        data={items}
         isLoading={isLoading}
-        isEmpty={items.length === 0}
         emptyMessage="Todavía no hay entradas en la historia clínica."
-      >
-        {items.map((entrada) => (
-          <ClinicalEntryRow
-            key={entrada.id}
-            entrada={entrada}
+        getRowId={(entrada) => String(entrada.id)}
+        pageSize={10}
+        renderExpanded={(entrada) => (
+          <AttachmentsPanel
+            clinicalEntryId={entrada.id}
             petId={petId}
-            canManageAttachments={canManageAttachments}
+            attachments={entrada.attachments}
+            canManage={canManageAttachments}
           />
-        ))}
-      </TableShell>
-    </div>
+        )}
+      />
+    </CollapsibleSection>
   )
 }

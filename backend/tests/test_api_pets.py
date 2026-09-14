@@ -122,7 +122,7 @@ async def test_cada_cliente_solo_ve_sus_mascotas(
 async def test_la_baja_de_una_mascota_ajena_responde_que_no_existe(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    """No se responde 403: decir 'no podés' confirmaría que el id es de alguien."""
+    """No se responde 403: decir 'no puedes' confirmaría que el id es de alguien."""
     ana = await _client_account(session)
     beto = await _client_account(session, "beto@example.com")
     pets = SqlAlchemyPetRepository(session)
@@ -323,24 +323,6 @@ async def test_el_veterinario_actualiza_el_perfil_clinico(
     assert body["allergies"] == "Ninguna conocida"
 
 
-async def test_el_veterinario_de_guardia_tambien_actualiza_el_perfil_clinico(
-    client: AsyncClient, session: AsyncSession
-) -> None:
-    ana = await _client_account(session)
-    guardia = await _staff_account(session, Role.EMERGENCY_VETERINARIAN)
-    pets = SqlAlchemyPetRepository(session)
-    mascota = await pets.add(build_pet(owner_id=ana.id or 0))
-    await session.commit()
-
-    response = await client.patch(
-        f"{PETS_URL}/{mascota.id}/clinical-profile",
-        json={"birth_date": "2020-05-17", "weight_kg": "10", "is_sterilized": False},
-        headers=authorization_for(guardia),
-    )
-
-    assert response.status_code == 200
-
-
 async def test_un_cliente_no_puede_actualizar_el_perfil_clinico(
     client: AsyncClient, session: AsyncSession
 ) -> None:
@@ -400,3 +382,79 @@ async def test_sin_credencial_no_actualiza_ningun_perfil(client: AsyncClient) ->
     assert (
         await client.patch(f"{PETS_URL}/1/clinical-profile", json={"weight_kg": "10"})
     ).status_code == 401
+
+
+CATALOG_URL = f"{PETS_URL}/catalog"
+
+
+async def test_el_catalogo_trae_especies_y_razas_del_peru(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    dueno = await _client_account(session)
+
+    response = await client.get(CATALOG_URL, headers=authorization_for(dueno))
+
+    assert response.status_code == 200
+    especies = {item["name"]: item["breeds"] for item in response.json()["species"]}
+    assert "Perro sin pelo del Perú" in especies["Perro"]
+    assert "Cuy" in especies["Roedor"]
+    assert all("Sin especificar" in razas for razas in especies.values())
+
+
+async def test_el_catalogo_exige_credencial(client: AsyncClient) -> None:
+    assert (await client.get(CATALOG_URL)).status_code == 401
+
+
+@pytest.mark.parametrize("cambio", [{"species": "Dinosaurio"}, {"breed": "Siamés"}])
+async def test_la_especie_y_la_raza_salen_del_catalogo(
+    client: AsyncClient, session: AsyncSession, cambio: dict[str, str]
+) -> None:
+    dueno = await _client_account(session)
+
+    response = await client.post(
+        PETS_URL, json={**NEW_PET, **cambio}, headers=authorization_for(dueno)
+    )
+
+    assert response.status_code == 422
+
+
+async def test_el_dueno_completa_la_ficha_de_una_mascota_de_emergencia(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    ana = await _client_account(session)
+    mascota = await SqlAlchemyPetRepository(session).add(
+        build_pet(owner_id=ana.id or 0, breed="Sin especificar")
+    )
+    await session.commit()
+
+    response = await client.patch(
+        f"{PETS_URL}/{mascota.id}/owner-profile",
+        json={"species": "Gato", "breed": "Siamés", "birth_date": "2022-01-10"},
+        headers=authorization_for(ana),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert (body["species"], body["breed"], body["birth_date"]) == ("Gato", "Siamés", "2022-01-10")
+
+
+@pytest.mark.parametrize(
+    "cambio",
+    [
+        {"microchip_number": "ABC-123"},
+        {"breed": "Siamés"},
+        {"birth_date": "2099-01-01"},
+    ],
+)
+async def test_la_ficha_del_dueno_se_valida(
+    client: AsyncClient, session: AsyncSession, cambio: dict[str, str]
+) -> None:
+    ana = await _client_account(session)
+    mascota = await SqlAlchemyPetRepository(session).add(build_pet(owner_id=ana.id or 0))
+    await session.commit()
+
+    response = await client.patch(
+        f"{PETS_URL}/{mascota.id}/owner-profile", json=cambio, headers=authorization_for(ana)
+    )
+
+    assert response.status_code == 422

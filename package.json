@@ -13,6 +13,7 @@
     "test:backend": "uv run --directory backend pytest -q",
     "build:frontend": "pnpm --filter gestvet-frontend build",
     "migrate": "uv run --directory backend alembic upgrade head",
+    "seed": "uv run --directory backend python scripts/seed_dev.py",
     "openapi:export": "uv run --directory backend python scripts/export_openapi.py openapi.json",
     "generate:api": "pnpm openapi:export && pnpm --filter gestvet-frontend generate:api",
     "verify": "pnpm lint:backend && pnpm arch:backend && pnpm test:backend && pnpm lint:frontend && pnpm build:frontend"

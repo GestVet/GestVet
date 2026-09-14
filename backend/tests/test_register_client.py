@@ -9,6 +9,7 @@ from __future__ import annotations
 import pytest
 
 from gestvet.core.identity import Role
+from gestvet.core.identity_registry import DisabledIdentityRegistry
 from gestvet.core.pagination import Page
 from gestvet.modules.accounts.domain.entities import User, normalize_email
 from gestvet.modules.accounts.domain.exceptions import (
@@ -72,10 +73,12 @@ class FakeHasher:
 
 async def test_registro_crea_un_cliente_y_nunca_otro_rol() -> None:
     users = InMemoryUserRepository()
-    register = RegisterClient(users, FakeHasher(), RecordingActivity())
+    register = RegisterClient(users, FakeHasher(), RecordingActivity(), DisabledIdentityRegistry())
 
     created = await register(
         RegisterClientCommand(
+            accepts_identity_check=True,
+            accepts_terms=True,
             email="Ana.Quispe@Example.com",
             password="contrasena-larga",
             first_name="Ana",
@@ -92,8 +95,10 @@ async def test_registro_crea_un_cliente_y_nunca_otro_rol() -> None:
 
 async def test_registro_rechaza_un_correo_repetido() -> None:
     users = InMemoryUserRepository()
-    register = RegisterClient(users, FakeHasher(), RecordingActivity())
+    register = RegisterClient(users, FakeHasher(), RecordingActivity(), DisabledIdentityRegistry())
     command = RegisterClientCommand(
+        accepts_identity_check=True,
+        accepts_terms=True,
         email="ana@example.com",
         password="contrasena-larga",
         first_name="Ana",
@@ -108,8 +113,10 @@ async def test_registro_rechaza_un_correo_repetido() -> None:
 
 async def test_registro_exige_dni() -> None:
     users = InMemoryUserRepository()
-    register = RegisterClient(users, FakeHasher(), RecordingActivity())
+    register = RegisterClient(users, FakeHasher(), RecordingActivity(), DisabledIdentityRegistry())
     command = RegisterClientCommand(
+        accepts_identity_check=True,
+        accepts_terms=True,
         email="ana@example.com",
         password="contrasena-larga",
         first_name="Ana",
@@ -123,8 +130,10 @@ async def test_registro_exige_dni() -> None:
 
 async def test_registro_rechaza_un_dni_con_formato_invalido() -> None:
     users = InMemoryUserRepository()
-    register = RegisterClient(users, FakeHasher(), RecordingActivity())
+    register = RegisterClient(users, FakeHasher(), RecordingActivity(), DisabledIdentityRegistry())
     command = RegisterClientCommand(
+        accepts_identity_check=True,
+        accepts_terms=True,
         email="ana@example.com",
         password="contrasena-larga",
         first_name="Ana",
@@ -144,7 +153,7 @@ def test_correo_invalido(raw: str) -> None:
 
 @pytest.mark.parametrize(
     "role",
-    [Role.ADMIN, Role.VETERINARIAN, Role.EMERGENCY_VETERINARIAN],
+    [Role.ADMIN, Role.VETERINARIAN],
 )
 def test_ningun_rol_privilegiado_es_autoasignable(role: Role) -> None:
     """Cierra el hallazgo P0 de la auditoría de CitasVet."""

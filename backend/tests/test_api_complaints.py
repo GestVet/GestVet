@@ -234,3 +234,23 @@ async def test_sin_credencial_no_se_llega_a_ninguna_parte(client: AsyncClient) -
     assert (await client.post(URL, json={**RECLAMO, "appointment_id": 1})).status_code == 401
     assert (await client.get(URL)).status_code == 401
     assert (await client.post(f"{URL}/1/evidence", files=_archivo())).status_code == 401
+
+
+async def test_el_listado_dice_quien_reclama_de_que_mascota_y_en_que_cita(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+    await client.post(
+        URL,
+        json={**RECLAMO, "appointment_id": escenario.cita_id},
+        headers=authorization_for(escenario.cliente),
+    )
+
+    response = await client.get(URL, headers=authorization_for(escenario.cliente))
+
+    reclamo = response.json()["items"][0]
+    assert reclamo["client_name"] == "Ana Quispe"
+    assert reclamo["veterinarian_name"] == "Ana Quispe"
+    assert reclamo["pet_name"] == "Rocco"
+    assert reclamo["appointment_type"] == "Consulta general"
+    assert reclamo["appointment_at"].startswith("2026-09-14T10:00")

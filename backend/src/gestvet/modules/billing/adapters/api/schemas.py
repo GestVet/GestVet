@@ -15,6 +15,7 @@ from gestvet.modules.billing.domain.entities import (
     PaymentMethod,
 )
 from gestvet.modules.billing.domain.qr_charge import QrCharge, QrChargeStatus
+from gestvet.modules.billing.ports.appointment_directory import PaymentContext
 from gestvet.modules.billing.ports.payment_repository import MethodTotal
 
 
@@ -45,9 +46,16 @@ class PaymentResponse(BaseModel):
     void_reason: str
     paid_at: datetime
     created_at: datetime
+    # Para leer el listado sin ir a buscar la cita. Vacíos si la cita no se encuentra.
+    client_name: str = ""
+    pet_name: str = ""
+    appointment_type: str = ""
+    appointment_at: datetime | None = None
 
     @classmethod
-    def from_entity(cls, payment: Payment) -> PaymentResponse:
+    def from_entity(
+        cls, payment: Payment, context: PaymentContext | None = None
+    ) -> PaymentResponse:
         return cls(
             id=payment.id or 0,
             appointment_id=payment.appointment_id,
@@ -63,6 +71,10 @@ class PaymentResponse(BaseModel):
             void_reason=payment.void_reason,
             paid_at=payment.paid_at,
             created_at=payment.created_at,
+            client_name=context.client_name if context else "",
+            pet_name=context.pet_name if context else "",
+            appointment_type=context.appointment_type if context else "",
+            appointment_at=context.scheduled_at if context else None,
         )
 
 

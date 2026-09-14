@@ -1,11 +1,9 @@
 """Pruebas de la administracion de cuentas.
 
-Alta de personal, listado, activacion, turno de guardia y perfil propio.
+Alta de personal, listado, activacion y perfil propio.
 """
 
 from __future__ import annotations
-
-from datetime import UTC, datetime, timedelta
 
 import pytest
 from httpx import AsyncClient
@@ -15,14 +13,7 @@ from gestvet.core.identity import Role
 from gestvet.modules.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
-from gestvet.modules.availability.adapters.persistence.sqlalchemy_availability_repository import (
-    SqlAlchemyAvailabilityRepository,
-)
-from gestvet.modules.availability.domain.entities import AvailabilitySlot
-from gestvet.modules.pets.adapters.persistence.sqlalchemy_pet_repository import (
-    SqlAlchemyPetRepository,
-)
-from tests.conftest import GENERAL_TYPE_ID, VALID_PASSWORD, authorization_for, build_pet, build_user
+from tests.conftest import VALID_PASSWORD, authorization_for, build_user
 
 STAFF_URL = "/api/v1/staff"
 USERS_URL = "/api/v1/users"
@@ -103,14 +94,15 @@ async def test_el_listado_de_personal_excluye_clientes_y_administracion(
 ) -> None:
     jefa = await _cuenta(session, Role.ADMIN)
     await _cuenta(session, Role.VETERINARIAN, "vet@example.com")
-    await _cuenta(session, Role.EMERGENCY_VETERINARIAN, "guardia@example.com")
+    await _cuenta(session, Role.VETERINARIAN, "guardia@example.com")
     await _cuenta(session, Role.CLIENT, "ana@example.com")
 
     response = await client.get(STAFF_URL, headers=authorization_for(jefa))
 
     assert response.status_code == 200
     roles = {item["role"] for item in response.json()["items"]}
-    assert roles == {Role.VETERINARIAN.value, Role.EMERGENCY_VETERINARIAN.value}
+    assert roles == {Role.VETERINARIAN.value}
+    assert response.json()["total"] == 2
 
 
 async def test_la_administracion_desactiva_y_reactiva_una_cuenta(
@@ -145,108 +137,6 @@ async def test_nadie_se_desactiva_a_si_mismo(client: AsyncClient, session: Async
     )
 
     assert response.status_code == 409
-
-
-async def test_el_turno_de_guardia_se_pone_y_se_saca(
-    client: AsyncClient, session: AsyncSession
-) -> None:
-    jefa = await _cuenta(session, Role.ADMIN)
-    vet = await _cuenta(session, Role.VETERINARIAN, "vet@example.com")
-    cabeceras = authorization_for(jefa)
-
-    puesto = await client.post(f"{STAFF_URL}/{vet.id}/guard-duty", headers=cabeceras)
-    sacado = await client.post(f"{STAFF_URL}/{vet.id}/guard-duty", headers=cabeceras)
-
-    assert puesto.json()["role"] == Role.EMERGENCY_VETERINARIAN.value
-    assert sacado.json()["role"] == Role.VETERINARIAN.value
-
-
-@pytest.mark.parametrize("rol", [Role.CLIENT, Role.ADMIN])
-async def test_el_turno_de_guardia_no_sirve_para_cambiar_cualquier_rol(
-    client: AsyncClient, session: AsyncSession, rol: Role
-) -> None:
-    """El original aceptaba el rol destino en el cuerpo: servia para todo."""
-    jefa = await _cuenta(session, Role.ADMIN)
-    otro = await _cuenta(session, rol, f"otro-{rol.value}@example.com")
-
-    response = await client.post(
-        f"{STAFF_URL}/{otro.id}/guard-duty", headers=authorization_for(jefa)
-    )
-
-    assert response.status_code == 409
-
-
-async def test_no_se_pone_de_guardia_con_citas_normales_pendientes(
-    client: AsyncClient, session: AsyncSession
-) -> None:
-    """HU09: la guardia no puede dejar huérfana una cita normal ya asignada."""
-    jefa = await _cuenta(session, Role.ADMIN)
-    vet = await _cuenta(session, Role.VETERINARIAN, "vet@example.com")
-    cliente = await _cuenta(session, Role.CLIENT, "ana@example.com")
-    pets = SqlAlchemyPetRepository(session)
-    mascota = await pets.add(build_pet(owner_id=cliente.id or 0))
-    slots = SqlAlchemyAvailabilityRepository(session)
-    inicio = datetime(2026, 9, 20, 9, 0, tzinfo=UTC)
-    await slots.add(
-        AvailabilitySlot(
-            veterinarian_id=vet.id or 0, starts_at=inicio, ends_at=inicio + timedelta(hours=8)
-        )
-    )
-    await session.commit()
-
-    reservada = await client.post(
-        "/api/v1/appointments",
-        json={
-            "pet_id": mascota.id,
-            "veterinarian_id": vet.id,
-            "appointment_type_id": GENERAL_TYPE_ID,
-            "scheduled_at": (inicio + timedelta(hours=1)).isoformat(),
-        },
-        headers=authorization_for(cliente),
-    )
-    assert reservada.status_code == 201
-
-    response = await client.post(
-        f"{STAFF_URL}/{vet.id}/guard-duty", headers=authorization_for(jefa)
-    )
-
-    assert response.status_code == 409
-
-
-async def test_el_respaldo_de_emergencias_solo_lo_habilita_un_veterinario_normal(
-    client: AsyncClient, session: AsyncSession
-) -> None:
-    jefa = await _cuenta(session, Role.ADMIN)
-    vet = await _cuenta(session, Role.VETERINARIAN, "vet@example.com")
-    guardia = await _cuenta(session, Role.EMERGENCY_VETERINARIAN, "guardia@example.com")
-    cabeceras = authorization_for(jefa)
-
-    habilitado = await client.post(
-        f"{STAFF_URL}/{vet.id}/emergency-coverage",
-        json={"can_cover_emergencies": True},
-        headers=cabeceras,
-    )
-    assert habilitado.status_code == 200
-    assert habilitado.json()["can_cover_emergencies"] is True
-
-    rechazado = await client.post(
-        f"{STAFF_URL}/{guardia.id}/emergency-coverage",
-        json={"can_cover_emergencies": True},
-        headers=cabeceras,
-    )
-    assert rechazado.status_code == 409
-
-
-async def test_el_veterinario_de_guardia_no_aparece_para_reservar(
-    client: AsyncClient, session: AsyncSession
-) -> None:
-    """HU09: la guardia es exclusiva de las emergencias."""
-    ana = await _cuenta(session, Role.CLIENT, "ana@example.com")
-    await _cuenta(session, Role.EMERGENCY_VETERINARIAN, "guardia@example.com")
-
-    response = await client.get("/api/v1/veterinarians", headers=authorization_for(ana))
-
-    assert response.json()["total"] == 0
 
 
 async def test_cada_cuenta_edita_su_perfil(client: AsyncClient, session: AsyncSession) -> None:

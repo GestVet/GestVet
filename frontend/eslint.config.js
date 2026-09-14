@@ -92,6 +92,63 @@ export default tseslint.config(
   },
 
   // ---------------------------------------------------------------------
+  // Componentes de shadcn/ui.
+  //
+  // `src/components/ui` es codigo que genera y actualiza el CLI de shadcn. Se
+  // lintea con todas las reglas del proyecto salvo dos, que contradicen su
+  // diseno a proposito: cada archivo agrupa una familia de componentes (Card,
+  // CardHeader, CardTitle...) y algunos exportan sus variantes junto al
+  // componente. Separarlos rompería `shadcn add` en cada actualizacion.
+  // ---------------------------------------------------------------------
+  {
+    files: ['src/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      'react/no-multi-comp': 'off',
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true, allowExportNames: ['buttonVariants', 'badgeVariants', 'tabsListVariants'] },
+      ],
+    },
+  },
+
+  // ---------------------------------------------------------------------
+  // Fuentes unicas de iconos y de primitivas.
+  //
+  // Los iconos de la aplicacion salen del registro de src/components/icons.ts,
+  // que es la unica fuente de verdad. Lucide y Radix llegan como dependencias
+  // de shadcn/ui y solo pueden usarse dentro de src/components/ui y, en el
+  // caso de Lucide, en el registro; el resto de la aplicacion usa el registro
+  // y los componentes ya tematizados.
+  // ---------------------------------------------------------------------
+  {
+    files: [
+      'src/{features,router,hooks,store,api,services}/**/*.{ts,tsx}',
+      'src/components/*.{ts,tsx}',
+      'src/main.tsx',
+    ],
+    ignores: ['src/components/icons.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'lucide-react',
+              message:
+                'Los iconos salen del registro unico: usa <Icon name="..." /> y agrega el trazo en src/components/icons.ts.',
+            },
+            {
+              name: 'radix-ui',
+              message:
+                'Usa el componente de src/components/ui, que ya envuelve la primitiva con el tema. Si no existe, agregalo con `shadcn add`.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // ---------------------------------------------------------------------
   // Nombrado de carpetas y archivos.
   // ---------------------------------------------------------------------
   {
@@ -106,12 +163,17 @@ export default tseslint.config(
         'error',
         {
           // Componentes y vistas en PascalCase, porque nombran un componente.
-          'src/components/**/*.tsx': 'PASCAL_CASE',
+          'src/components/*.tsx': 'PASCAL_CASE',
           'src/features/**/*.tsx': 'PASCAL_CASE',
           // Todo lo demas nombra un modulo, no un componente.
           'src/{api,hooks,services,store}/**/*.ts': 'CAMEL_CASE',
-          'src/components/**/*.ts': 'CAMEL_CASE',
+          'src/components/*.ts': 'CAMEL_CASE',
           'src/features/**/*.ts': 'CAMEL_CASE',
+          // shadcn/ui genera sus archivos en kebab-case y `shadcn add` los
+          // reescribe con ese nombre al actualizarlos. Renombrarlos a mano
+          // romperia cada actualizacion, asi que la carpeta tiene su propia
+          // convencion en vez de una excepcion.
+          'src/components/ui/**/*.{ts,tsx}': 'KEBAB_CASE',
         },
         { ignoreMiddleExtensions: true },
       ],

@@ -2,6 +2,7 @@ import { api } from '../services/api'
 import type {
   ActivityPageResponse,
   ClientPageResponse,
+  DocumentLookupResponse,
   RegisterStaffRequest,
   RegisterWalkInClientRequest,
   UpdateClientContactRequest,
@@ -68,17 +69,11 @@ export async function changeUserStatus(
   return data
 }
 
-export async function toggleGuardDuty(userId: number): Promise<UserResponse> {
-  const { data } = await api.post<UserResponse>(`/staff/${String(userId)}/guard-duty`)
-  return data
-}
-
-export async function toggleEmergencyCoverage(
-  userId: number,
-  canCoverEmergencies: boolean,
-): Promise<UserResponse> {
-  const { data } = await api.post<UserResponse>(`/staff/${String(userId)}/emergency-coverage`, {
-    can_cover_emergencies: canCoverEmergencies,
+/** Nombres y apellidos de un DNI, para el alta exprés. El cliente ya lo autorizó. */
+export async function lookUpDocument(documentId: string): Promise<DocumentLookupResponse> {
+  const { data } = await api.post<DocumentLookupResponse>('/clients/document-lookup', {
+    document_id: documentId,
+    consent: true,
   })
   return data
 }

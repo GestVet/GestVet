@@ -1,79 +1,144 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 
+import {
+  accessRolesQueryKey,
+  fetchAccessRoles,
+  fetchRoleAssignments,
+  roleAssignmentsQueryKey,
+} from '../../api/access'
 import { fetchStaff, staffQueryKey } from '../../api/directory'
-import type { UserRole } from '../../api/types'
-import FormMessage from '../../components/FormMessage'
+import type { AccessRoleResponse, UserResponse, UserRole } from '../../api/types'
+import DataTable, { type DataColumn } from '../../components/DataTable'
+import FormDialog from '../../components/FormDialog'
+import Icon from '../../components/Icon'
+import PageHeader from '../../components/PageHeader'
+import SectionCard from '../../components/SectionCard'
 import StatusBadge from '../../components/StatusBadge'
-import TableShell from '../../components/TableShell'
-import { errorMessage } from '../../services/api'
+import { Button } from '../../components/ui/button'
+import { useCan } from '../../store/session'
+import StaffAccessRole from './StaffAccessRole'
 import StaffForm from './StaffForm'
 import StaffRowActions from './StaffRowActions'
-
-const COLUMNAS = ['Nombre', 'Correo', 'Rol', 'Respaldo', 'Estado', 'Acciones'] as const
 
 const ETIQUETA_DE_ROL: Record<UserRole, string> = {
   admin: 'Administración',
   client: 'Cliente',
   veterinarian: 'Veterinario',
-  emergency_veterinarian: 'Veterinario de guardia',
+}
+
+/** Roles y asignaciones, cuando quien mira puede cambiarlos. */
+interface Accesos {
+  readonly roles: readonly AccessRoleResponse[]
+  readonly asignados: ReadonlyMap<number, number>
+}
+
+function columnaDeRol(accesos: Accesos | null): DataColumn<UserResponse> {
+  if (accesos === null) {
+    return { id: 'rol', header: 'Rol', cell: (cuenta) => ETIQUETA_DE_ROL[cuenta.role] }
+  }
+  return {
+    id: 'rol',
+    header: 'Rol',
+    cell: (cuenta) => (
+      <StaffAccessRole
+        account={cuenta}
+        roles={accesos.roles}
+        assignedRoleId={accesos.asignados.get(cuenta.id)}
+      />
+    ),
+  }
+}
+
+function columnas(accesos: Accesos | null): DataColumn<UserResponse>[] {
+  return [
+    { id: 'nombre', header: 'Nombre', cell: (cuenta) => `${cuenta.first_name} ${cuenta.last_name}` },
+    { id: 'correo', header: 'Correo', cell: (cuenta) => cuenta.email },
+    columnaDeRol(accesos),
+    {
+      id: 'estado',
+      header: 'Estado',
+      cell: (cuenta) => (
+        <StatusBadge
+          label={cuenta.is_active ? 'Activa' : 'Inactiva'}
+          tone={cuenta.is_active ? 'completed' : undefined}
+        />
+      ),
+    },
+    { id: 'acciones', header: 'Acciones', cell: (cuenta) => <StaffRowActions account={cuenta} /> },
+  ]
+}
+
+function useAccesos(): Accesos | null {
+  const puedeAsignar = useCan('roles.manage')
+  const roles = useQuery({
+    queryKey: accessRolesQueryKey,
+    queryFn: fetchAccessRoles,
+    enabled: puedeAsignar,
+  })
+  const asignaciones = useQuery({
+    queryKey: roleAssignmentsQueryKey,
+    queryFn: fetchRoleAssignments,
+    enabled: puedeAsignar,
+  })
+  if (!puedeAsignar || roles.data === undefined || asignaciones.data === undefined) {
+    return null
+  }
+  return {
+    roles: roles.data.items,
+    asignados: new Map(asignaciones.data.items.map((item) => [item.user_id, item.role_id])),
+  }
 }
 
 export default function StaffView() {
   const personal = useQuery({ queryKey: staffQueryKey, queryFn: fetchStaff })
-  const [fallo, setFallo] = useState<unknown>(null)
-
-  const items = personal.data?.items ?? []
+  const accesos = useAccesos()
+  const [dandoDeAlta, setDandoDeAlta] = useState(false)
 
   return (
-    <div className="stack">
-      <div className="page-header">
-        <h1>Personal</h1>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Personal"
+        description="Los veterinarios de la clínica, su rol y si su cuenta está activa."
+        actions={
+          <Button
+            type="button"
+            size="lg"
+            className="h-10 px-4"
+            onClick={() => {
+              setDandoDeAlta(true)
+            }}
+          >
+            <Icon name="agregar" size={16} />
+            <span>Dar de alta</span>
+          </Button>
+        }
+      />
 
-      <StaffForm />
+      <FormDialog
+        open={dandoDeAlta}
+        onOpenChange={setDandoDeAlta}
+        title="Dar de alta un veterinario"
+        description="La cuenta queda activa con la contraseña inicial. Pídele que la cambie al entrar."
+        size="lg"
+      >
+        <StaffForm
+          onDone={() => {
+            setDandoDeAlta(false)
+          }}
+        />
+      </FormDialog>
 
-      <section className="card">
-        <h2>Equipo</h2>
-        {fallo === null ? null : (
-          <FormMessage tone="error">
-            {errorMessage(fallo, 'No se pudo actualizar la cuenta.')}
-          </FormMessage>
-        )}
-
-        <TableShell
-          columns={COLUMNAS}
+      <SectionCard title="Equipo">
+        <DataTable
+          columns={columnas(accesos)}
+          data={personal.data?.items ?? []}
           isLoading={personal.isPending}
-          isEmpty={items.length === 0}
           emptyMessage="Todavía no hay veterinarios registrados."
-        >
-          {items.map((cuenta) => (
-            <tr key={cuenta.id}>
-              <td>
-                {cuenta.first_name} {cuenta.last_name}
-              </td>
-              <td>{cuenta.email}</td>
-              <td>{ETIQUETA_DE_ROL[cuenta.role]}</td>
-              <td>
-                {cuenta.role === 'veterinarian' && cuenta.can_cover_emergencies ? (
-                  <StatusBadge label="Habilitado" tone="confirmed" />
-                ) : (
-                  '—'
-                )}
-              </td>
-              <td>
-                <StatusBadge
-                  label={cuenta.is_active ? 'Activa' : 'Inactiva'}
-                  tone={cuenta.is_active ? 'completed' : undefined}
-                />
-              </td>
-              <td>
-                <StaffRowActions account={cuenta} onError={setFallo} />
-              </td>
-            </tr>
-          ))}
-        </TableShell>
-      </section>
+          getRowId={(cuenta) => String(cuenta.id)}
+          pageSize={15}
+        />
+      </SectionCard>
     </div>
   )
 }

@@ -2,15 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 
 import { downloadClinicalHistoryReport } from '../api/medicalRecords'
 import { errorMessage } from '../services/api'
-
-function guardarArchivo(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  link.click()
-  URL.revokeObjectURL(url)
-}
+import { guardarArchivo } from '../services/descargas'
 
 /**
  * Descarga el PDF y dispara el guardado, listo para un componente

@@ -1,113 +1,70 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 
 import { registerStaff, staffQueryKey } from '../../api/directory'
-import FieldError from '../../components/FieldError'
+import DialogFormActions from '../../components/DialogFormActions'
 import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
+import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
 import { errorMessage } from '../../services/api'
+import StaffFields from './StaffFields'
+import { EMPTY_STAFF_FORM, type StaffFormValues, staffSchema } from './staffSchema'
 
-// La longitud mínima la exige también el backend. Repetirla no duplica la
-// regla: avisa antes de gastar un viaje al servidor.
-const MIN_PASSWORD = 10
-
-const esquema = z.object({
-  first_name: z.string().min(1, 'Ingresá el nombre'),
-  last_name: z.string().min(1, 'Ingresá el apellido'),
-  email: z.email('Ingresá un correo válido'),
-  phone: z.string().max(32).optional(),
-  password: z.string().min(MIN_PASSWORD, `Usá al menos ${String(MIN_PASSWORD)} caracteres`),
-  role: z.enum(['veterinarian', 'emergency_veterinarian']),
-})
-
-type Formulario = z.infer<typeof esquema>
-
-const VACIO: Formulario = {
-  first_name: '',
-  last_name: '',
-  email: '',
-  phone: '',
-  password: '',
-  role: 'veterinarian',
+interface StaffFormProps {
+  /** Se llama al dar de alta o al cancelar: cierra la ventana. */
+  readonly onDone: () => void
 }
 
-export default function StaffForm() {
+export default function StaffForm({ onDone }: StaffFormProps) {
   const queryClient = useQueryClient()
-  const { register, handleSubmit, reset, formState } = useForm<Formulario>({
-    resolver: zodResolver(esquema),
-    defaultValues: VACIO,
+  const { register, handleSubmit, formState, control } = useForm<StaffFormValues>({
+    resolver: zodResolver(staffSchema),
+    defaultValues: EMPTY_STAFF_FORM,
   })
 
   const alta = useMutation({
-    mutationFn: (valores: Formulario) => registerStaff({ ...valores, phone: valores.phone ?? '' }),
+    mutationFn: registerStaff,
     onSuccess: async () => {
-      reset(VACIO)
       await queryClient.invalidateQueries({ queryKey: staffQueryKey })
+      onDone()
     },
   })
 
   return (
-    <section className="card">
-      <h2>Dar de alta un veterinario</h2>
-      <form
-        className="form"
-        onSubmit={onSubmit(
-          handleSubmit((valores) => {
-            alta.mutate(valores)
-          }),
-        )}
-      >
-        <div className="field">
-          <label htmlFor="first_name">Nombre</label>
-          <input id="first_name" {...register('first_name')} />
-          <FieldError message={formState.errors.first_name?.message} />
-        </div>
+    <form
+      noValidate
+      className="flex flex-col gap-5"
+      onSubmit={onSubmit(
+        handleSubmit((valores) => {
+          alta.mutate(valores)
+        }),
+      )}
+    >
+      <StaffFields register={register} control={control} errors={formState.errors} />
 
-        <div className="field">
-          <label htmlFor="last_name">Apellido</label>
-          <input id="last_name" {...register('last_name')} />
-          <FieldError message={formState.errors.last_name?.message} />
-        </div>
+      {alta.isError ? (
+        <FormMessage tone="error">
+          {errorMessage(alta.error, 'No se pudo dar de alta la cuenta.')}
+        </FormMessage>
+      ) : null}
 
-        <div className="field">
-          <label htmlFor="email">Correo</label>
-          <input id="email" type="email" {...register('email')} />
-          <FieldError message={formState.errors.email?.message} />
-        </div>
-
-        <div className="field">
-          <label htmlFor="phone">Teléfono</label>
-          <input id="phone" inputMode="tel" {...register('phone')} />
-        </div>
-
-        <div className="field">
-          <label htmlFor="password">Contraseña inicial</label>
-          <input id="password" type="password" {...register('password')} />
-          <FieldError message={formState.errors.password?.message} />
-        </div>
-
-        <div className="field">
-          <label htmlFor="role">Rol</label>
-          <select id="role" {...register('role')}>
-            <option value="veterinarian">Veterinario</option>
-            <option value="emergency_veterinarian">Veterinario de guardia</option>
-          </select>
-        </div>
-
-        {alta.isError ? (
-          <FormMessage tone="error">
-            {errorMessage(alta.error, 'No se pudo dar de alta la cuenta.')}
-          </FormMessage>
-        ) : null}
-
-        <button type="submit" className="btn btn-green" disabled={alta.isPending}>
+      <DialogFormActions>
+        <Button type="button" variant="outline" size="lg" className="h-10 px-4" onClick={onDone}>
+          Cancelar
+        </Button>
+        <Button
+          type="submit"
+          variant="success"
+          size="lg"
+          className="h-10 px-4"
+          disabled={alta.isPending}
+        >
           <Icon name="agregar" size={16} />
           <span>{alta.isPending ? 'Creando…' : 'Dar de alta'}</span>
-        </button>
-      </form>
-    </section>
+        </Button>
+      </DialogFormActions>
+    </form>
   )
 }

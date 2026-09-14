@@ -70,9 +70,12 @@ _PAYMENT_RECORDS = (
         "SELECT payments.id AS payment_id, payments.appointment_id, payments.client_id, "
         "payments.amount, payments.paid_at, "
         "appointment_types.id AS appointment_type_id, appointment_types.name AS type_label, "
-        "appointment_types.is_emergency "
+        "appointment_types.is_emergency, users.first_name, users.last_name, "
+        "pets.name AS pet_name "
         "FROM payments "
         "JOIN appointments ON appointments.id = payments.appointment_id "
+        "JOIN users ON users.id = payments.client_id "
+        "JOIN pets ON pets.id = appointments.pet_id "
         "JOIN appointment_types ON appointment_types.id = appointments.appointment_type_id "
         "WHERE payments.voided_at IS NULL AND payments.paid_at >= :since"
     )
@@ -91,8 +94,7 @@ _COMPLAINT_COUNTS = text(
 ).bindparams(bindparam("since", type_=_MOMENT))
 
 _ACTIVE_VETERINARIANS = text(
-    "SELECT id, first_name, last_name FROM users "
-    "WHERE role IN (:vet_role, :emergency_role) AND is_active"
+    "SELECT id, first_name, last_name FROM users WHERE role = :vet_role AND is_active"
 )
 
 
@@ -154,6 +156,8 @@ class SqlBillingDirectory:
                 is_emergency_type=bool(row.is_emergency),
                 amount=Decimal(str(row.amount)).quantize(_CENTS),
                 paid_at=as_utc(row.paid_at),
+                client_name=f"{row.first_name} {row.last_name}".strip(),
+                pet_name=row.pet_name,
             )
             for row in rows
         ]
@@ -176,7 +180,6 @@ class SqlReputationDirectory:
             _ACTIVE_VETERINARIANS,
             {
                 "vet_role": Role.VETERINARIAN.value,
-                "emergency_role": Role.EMERGENCY_VETERINARIAN.value,
             },
         )
         return [

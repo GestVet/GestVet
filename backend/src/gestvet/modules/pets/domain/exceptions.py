@@ -31,3 +31,19 @@ class PetStatusIsFinal(PetsError):
             "pedile al personal de la clínica que lo corrija."
         )
         self.pet_id = pet_id
+
+
+class CatalogEntryNotFound(PetsError):
+    def __init__(self, kind: str, entry_id: int) -> None:
+        super().__init__(f"No existe la {kind} {entry_id}.")
+        self.entry_id = entry_id
+
+
+class CatalogNameTaken(PetsError):
+    def __init__(self, name: str) -> None:
+        super().__init__(f"Ya existe «{name}» en el catálogo.")
+        self.name = name
+
+
+class CatalogEntryLocked(PetsError):
+    """Una entrada del catálogo que el sistema necesita tal como está."""

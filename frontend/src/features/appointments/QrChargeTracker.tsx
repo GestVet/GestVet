@@ -40,7 +40,7 @@ export default function QrChargeTracker({
   })
 
   if (cobro.isPending || cobro.data === undefined) {
-    return <p className="empty">Generando el código…</p>
+    return <p className="m-0 text-sm text-muted-foreground">Generando el código…</p>
   }
 
   return (

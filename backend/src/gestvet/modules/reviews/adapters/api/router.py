@@ -13,9 +13,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from gestvet.core.activity_log import ActivityRecorderDep
-from gestvet.core.auth import PrincipalDep, require_roles
-from gestvet.core.identity import Principal, Role
+from gestvet.core.auth import require_permission
+from gestvet.core.identity import Principal
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
+from gestvet.core.permissions import Permission
 from gestvet.modules.reviews.adapters.api.dependencies import (
     AppointmentDirectoryDep,
     ReviewRepositoryDep,
@@ -36,7 +37,8 @@ from gestvet.modules.reviews.use_cases.submit_review import SubmitReview, Submit
 
 router = APIRouter()
 
-ClientDep = Annotated[Principal, Depends(require_roles(Role.CLIENT))]
+ReviewerDep = Annotated[Principal, Depends(require_permission(Permission.REVIEWS_SUBMIT))]
+ReviewsReaderDep = Annotated[Principal, Depends(require_permission(Permission.REVIEWS_READ))]
 
 
 @router.post(
@@ -47,7 +49,7 @@ ClientDep = Annotated[Principal, Depends(require_roles(Role.CLIENT))]
 )
 async def submit_review(
     payload: SubmitReviewRequest,
-    client: ClientDep,
+    client: ReviewerDep,
     reviews: ReviewRepositoryDep,
     appointments: AppointmentDirectoryDep,
     activity: ActivityRecorderDep,
@@ -74,7 +76,7 @@ async def submit_review(
     summary="Reseñas y promedio de un veterinario",
 )
 async def list_veterinarian_reviews(
-    _principal: PrincipalDep,
+    _principal: ReviewsReaderDep,
     reviews: ReviewRepositoryDep,
     veterinarian_id: Annotated[int, Query(ge=1)],
     limit: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = DEFAULT_PAGE_SIZE,

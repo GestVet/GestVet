@@ -3,7 +3,16 @@ from __future__ import annotations
 from datetime import UTC, date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Numeric, String
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from gestvet.core.database import Base
@@ -36,3 +45,30 @@ class PetRow(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
+
+
+class PetSpeciesRow(Base):
+    __tablename__ = "pet_species"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(40))
+    # El nombre sin tildes ni mayúsculas: lo que impide cargar dos veces lo mismo.
+    name_key: Mapped[str] = mapped_column(String(40), unique=True, index=True)
+    sort_order: Mapped[int] = mapped_column(Integer)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class PetBreedRow(Base):
+    __tablename__ = "pet_breeds"
+    __table_args__ = (
+        UniqueConstraint("species_id", "name_key", name="uq_pet_breeds_species_name_key"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    species_id: Mapped[int] = mapped_column(
+        ForeignKey("pet_species.id", name="fk_pet_breeds_species", ondelete="RESTRICT"),
+        index=True,
+    )
+    name: Mapped[str] = mapped_column(String(60))
+    name_key: Mapped[str] = mapped_column(String(60))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)

@@ -5,7 +5,8 @@ from typing import Annotated
 from fastapi import Depends
 
 from gestvet.core.auth import SessionDep
-from gestvet.core.whatsapp import ConsoleWhatsAppSender, WhatsAppSender
+from gestvet.core.whatsapp import WhatsAppSender
+from gestvet.core.whatsapp_console import ConsoleWhatsAppSender
 from gestvet.modules.billing.adapters.gateways.sandbox import SandboxPaymentGateway
 from gestvet.modules.billing.adapters.persistence.directories import (
     SqlAppointmentDirectory,

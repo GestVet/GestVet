@@ -1,41 +1,45 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { careRemindersQueryKey, fetchCareReminders } from '../../api/insights'
-import TableShell from '../../components/TableShell'
+import DataTable, { type DataColumn } from '../../components/DataTable'
+import SectionCard from '../../components/SectionCard'
 
-const COLUMNAS = ['Mascota', 'Dueño', 'Motivo', 'Última vez'] as const
+type Recordatorio = Awaited<ReturnType<typeof fetchCareReminders>>['items'][number]
+
 const FORMATO = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium' })
+
+const COLUMNAS: readonly DataColumn<Recordatorio>[] = [
+  { id: 'mascota', header: 'Mascota', cell: (item) => item.pet_name },
+  { id: 'dueno', header: 'Dueño', cell: (item) => item.owner_name },
+  { id: 'motivo', header: 'Motivo', cell: (item) => item.reason_label },
+  {
+    id: 'ultima',
+    header: 'Última vez',
+    cell: (item) =>
+      item.last_occurred_at ? FORMATO.format(new Date(item.last_occurred_at)) : 'Nunca',
+  },
+]
 
 export default function CareRemindersSection() {
   const recordatorios = useQuery({
     queryKey: careRemindersQueryKey,
     queryFn: fetchCareReminders,
   })
-  const items = recordatorios.data?.items ?? []
 
   return (
-    <section className="card">
-      <h2>Cuidado vencido</h2>
-      <p className="muted">
-        Mascotas sin vacuna hace más de un año o sin control hace más de medio año.
-      </p>
-      <TableShell
+    <SectionCard
+      collapsible
+      scrollable
+      title="Cuidado vencido"
+      description="Mascotas sin vacuna hace más de un año o sin control hace más de medio año."
+    >
+      <DataTable
         columns={COLUMNAS}
+        data={recordatorios.data?.items ?? []}
         isLoading={recordatorios.isPending}
-        isEmpty={items.length === 0}
         emptyMessage="No hay recordatorios pendientes."
-      >
-        {items.map((item, index) => (
-          <tr key={`${String(item.pet_id)}-${item.reason_label}-${String(index)}`}>
-            <td>{item.pet_name}</td>
-            <td>{item.owner_name}</td>
-            <td>{item.reason_label}</td>
-            <td>
-              {item.last_occurred_at ? FORMATO.format(new Date(item.last_occurred_at)) : 'Nunca'}
-            </td>
-          </tr>
-        ))}
-      </TableShell>
-    </section>
+        getRowId={(item, index) => `${String(item.pet_id)}-${item.reason_label}-${String(index)}`}
+      />
+    </SectionCard>
   )
 }

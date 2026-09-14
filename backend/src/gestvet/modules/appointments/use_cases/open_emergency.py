@@ -11,11 +11,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from gestvet.core.activity import ActivityKind, ActivityRecorder
-from gestvet.modules.appointments.domain.entities import (
-    ACTIVE_STATUSES,
-    Appointment,
-    clinic_day_window,
-)
+from gestvet.core.clinic_time import clinic_day_window
+from gestvet.modules.appointments.domain.entities import ACTIVE_STATUSES, Appointment
 from gestvet.modules.appointments.domain.exceptions import (
     AppointmentTypeNotFound,
     NoEmergencyVeterinarian,
@@ -91,23 +88,24 @@ class OpenEmergency:
             if carga_minima == 0:
                 return menos_cargado
 
-        # Todos los dedicados ya tienen algo activo, o no hay ninguno de
-        # guardia: un veterinario normal habilitado como respaldo, si le queda
-        # libre el resto de la jornada, cubre antes que sobrecargar a uno solo.
-        respaldo = await self._pick_free_backup(moment)
-        if respaldo is not None:
-            return respaldo
+        # Todos los de guardia ya atienden algo, o nadie está de guardia a esta
+        # hora: cubre un veterinario en su turno de atención que tenga libre el
+        # resto de la jornada, antes que sobrecargar a uno solo.
+        libre = await self._pick_free_on_shift(moment, frozenset(on_duty))
+        if libre is not None:
+            return libre
 
         if menos_cargado is not None:
             return menos_cargado
 
         raise NoEmergencyVeterinarian()
 
-    async def _pick_free_backup(self, moment: datetime) -> int | None:
-        candidatos = await self._schedule.list_emergency_backup_candidates()
-        if not candidatos:
-            return None
-
+    async def _pick_free_on_shift(self, moment: datetime, on_duty: frozenset[int]) -> int | None:
+        candidatos = [
+            vet_id
+            for vet_id in await self._schedule.veterinarians_working(moment)
+            if vet_id not in on_duty
+        ]
         _, fin_de_jornada = clinic_day_window(moment)
         for candidato_id in candidatos:
             pagina = await self._appointments.search(

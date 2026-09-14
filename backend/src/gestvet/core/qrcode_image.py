@@ -20,3 +20,11 @@ def render_qr_png_data_url(payload: str) -> str:
     image.save(buffer, format="PNG")
     encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
     return f"data:image/png;base64,{encoded}"
+
+
+def render_qr_png(payload: str) -> bytes:
+    """El QR como bytes PNG, para incrustarlo en un documento."""
+    image = qrcode.make(payload)
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    return buffer.getvalue()

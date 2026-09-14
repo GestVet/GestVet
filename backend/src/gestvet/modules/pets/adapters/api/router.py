@@ -15,10 +15,14 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from gestvet.core.activity_log import ActivityRecorderDep
-from gestvet.core.auth import require_roles
-from gestvet.core.identity import STAFF_ROLES, VETERINARIAN_ROLES, Principal, Role
+from gestvet.core.auth import require_permission
+from gestvet.core.identity import Principal
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
-from gestvet.modules.pets.adapters.api.dependencies import PetRepositoryDep
+from gestvet.core.permissions import Permission
+from gestvet.modules.pets.adapters.api.dependencies import (
+    PetCatalogRepositoryDep,
+    PetRepositoryDep,
+)
 from gestvet.modules.pets.adapters.api.schemas import (
     ChangePetStatusRequest,
     CorrectPetStatusRequest,
@@ -29,6 +33,7 @@ from gestvet.modules.pets.adapters.api.schemas import (
     UpdatePetClinicalProfileRequest,
     UpdatePetOwnerProfileRequest,
 )
+from gestvet.modules.pets.domain.catalog import UNKNOWN_BREED
 from gestvet.modules.pets.domain.exceptions import InvalidPetData, PetNotFound, PetStatusIsFinal
 from gestvet.modules.pets.ports.pet_repository import PetQuery
 from gestvet.modules.pets.use_cases.change_pet_status import ChangePetStatus, ChangePetStatusCommand
@@ -47,16 +52,19 @@ from gestvet.modules.pets.use_cases.update_pet_owner_profile import (
     UpdatePetOwnerProfileCommand,
 )
 
-# Raza y fecha de nacimiento reales no importan para abrir una emergencia; el
-# dueño las completa después, igual que cualquier mascota. "Sin especificar"
-# es más honesto que inventar una raza o una fecha.
-UNKNOWN_BREED = "Sin especificar"
-
 router = APIRouter()
 
-ClientDep = Annotated[Principal, Depends(require_roles(Role.CLIENT))]
-StaffDep = Annotated[Principal, Depends(require_roles(*STAFF_ROLES))]
-VeterinarianDep = Annotated[Principal, Depends(require_roles(*VETERINARIAN_ROLES))]
+OwnerDep = Annotated[Principal, Depends(require_permission(Permission.PETS_MANAGE_OWN))]
+PetRegistrarDep = Annotated[
+    Principal, Depends(require_permission(Permission.PETS_REGISTER_FOR_OWNER))
+]
+PetsReaderDep = Annotated[Principal, Depends(require_permission(Permission.PETS_READ_ANY))]
+PetStatusCorrectorDep = Annotated[
+    Principal, Depends(require_permission(Permission.PETS_CORRECT_STATUS))
+]
+ClinicalProfileEditorDep = Annotated[
+    Principal, Depends(require_permission(Permission.PETS_EDIT_CLINICAL_PROFILE))
+]
 
 
 @router.post(
@@ -67,12 +75,13 @@ VeterinarianDep = Annotated[Principal, Depends(require_roles(*VETERINARIAN_ROLES
 )
 async def register_pet(
     payload: RegisterPetRequest,
-    client: ClientDep,
+    client: OwnerDep,
     pets: PetRepositoryDep,
+    catalog: PetCatalogRepositoryDep,
     activity: ActivityRecorderDep,
 ) -> PetResponse:
     try:
-        pet = await RegisterPet(pets, activity)(
+        pet = await RegisterPet(pets, catalog, activity)(
             RegisterPetCommand(
                 name=payload.name,
                 species=payload.species,
@@ -94,12 +103,13 @@ async def register_pet(
 )
 async def register_pet_for_owner(
     payload: RegisterPetForOwnerRequest,
-    staff: StaffDep,
+    staff: PetRegistrarDep,
     pets: PetRepositoryDep,
+    catalog: PetCatalogRepositoryDep,
     activity: ActivityRecorderDep,
 ) -> PetResponse:
     try:
-        pet = await RegisterPet(pets, activity)(
+        pet = await RegisterPet(pets, catalog, activity)(
             RegisterPetCommand(
                 name=payload.name,
                 species=payload.species,
@@ -115,7 +125,7 @@ async def register_pet_for_owner(
 
 @router.get("/mine", response_model=PetPageResponse, summary="Listar mis mascotas")
 async def list_my_pets(
-    client: ClientDep,
+    client: OwnerDep,
     pets: PetRepositoryDep,
     is_active: Annotated[bool | None, Query(description="Filtra por estado")] = None,
     search: Annotated[str | None, Query(description="Busca en nombre, especie y raza")] = None,
@@ -139,7 +149,7 @@ async def list_my_pets(
 
 @router.get("", response_model=PetPageResponse, summary="Listar mascotas de un cliente")
 async def list_pets_of_owner(
-    staff: StaffDep,
+    staff: PetsReaderDep,
     pets: PetRepositoryDep,
     owner_id: Annotated[int, Query(ge=1, description="Cliente dueño de las mascotas")],
     is_active: Annotated[bool | None, Query(description="Filtra por estado")] = None,
@@ -163,7 +173,7 @@ async def list_pets_of_owner(
 async def change_pet_status(
     pet_id: int,
     payload: ChangePetStatusRequest,
-    client: ClientDep,
+    client: OwnerDep,
     pets: PetRepositoryDep,
     activity: ActivityRecorderDep,
 ) -> PetResponse:
@@ -188,7 +198,7 @@ async def change_pet_status(
 async def correct_pet_status(
     pet_id: int,
     payload: CorrectPetStatusRequest,
-    staff: StaffDep,
+    staff: PetStatusCorrectorDep,
     pets: PetRepositoryDep,
     activity: ActivityRecorderDep,
 ) -> PetResponse:
@@ -211,25 +221,28 @@ async def correct_pet_status(
 @router.patch(
     "/{pet_id}/owner-profile",
     response_model=PetResponse,
-    summary="Actualizar raza, sexo, color, microchip y temperamento de una mascota propia",
+    summary="Actualizar la ficha de una mascota propia",
 )
 async def update_pet_owner_profile(
     pet_id: int,
     payload: UpdatePetOwnerProfileRequest,
-    client: ClientDep,
+    client: OwnerDep,
     pets: PetRepositoryDep,
+    catalog: PetCatalogRepositoryDep,
     activity: ActivityRecorderDep,
 ) -> PetResponse:
     try:
-        pet = await UpdatePetOwnerProfile(pets, activity)(
+        pet = await UpdatePetOwnerProfile(pets, catalog, activity)(
             UpdatePetOwnerProfileCommand(
                 pet_id=pet_id,
                 owner_id=client.user_id,
-                breed=payload.breed,
                 sex=payload.sex,
                 color=payload.color,
                 microchip_number=payload.microchip_number,
                 temperament=payload.temperament,
+                species=payload.species,
+                breed=payload.breed,
+                birth_date=payload.birth_date,
             )
         )
     except PetNotFound as error:
@@ -247,7 +260,7 @@ async def update_pet_owner_profile(
 async def update_pet_clinical_profile(
     pet_id: int,
     payload: UpdatePetClinicalProfileRequest,
-    veterinarian: VeterinarianDep,
+    veterinarian: ClinicalProfileEditorDep,
     pets: PetRepositoryDep,
     activity: ActivityRecorderDep,
 ) -> PetResponse:

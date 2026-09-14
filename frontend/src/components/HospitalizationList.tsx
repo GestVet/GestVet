@@ -1,7 +1,10 @@
-import HospitalizationRow from './HospitalizationRow'
-import TableShell from './TableShell'
+import CollapsibleSection from './CollapsibleSection'
+import DataTable, { type DataColumn } from './DataTable'
+import HospitalizationDetails from './HospitalizationDetails'
+import RowExpandButton from './RowExpandButton'
+import StatusBadge from './StatusBadge'
 
-const COLUMNAS = ['Ingreso', 'Motivo', 'Estado', 'Alta', 'Notas'] as const
+const FORMATO = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
 
 interface NoteLike {
   readonly id: number
@@ -24,6 +27,48 @@ interface HospitalizationLike {
   readonly notes: readonly NoteLike[]
 }
 
+const COLUMNAS: readonly DataColumn<HospitalizationLike>[] = [
+  {
+    id: 'ingreso',
+    header: 'Ingreso',
+    cell: (internacion) => FORMATO.format(new Date(internacion.admitted_at)),
+  },
+  {
+    id: 'motivo',
+    header: 'Motivo',
+    className: 'min-w-48 whitespace-normal',
+    cell: (internacion) => internacion.reason,
+  },
+  {
+    id: 'estado',
+    header: 'Estado',
+    cell: (internacion) => (
+      <StatusBadge
+        label={internacion.status_label}
+        tone={internacion.status === 'open' ? 'pending' : 'completed'}
+      />
+    ),
+  },
+  {
+    id: 'alta',
+    header: 'Alta',
+    cell: (internacion) =>
+      internacion.discharged_at ? FORMATO.format(new Date(internacion.discharged_at)) : '—',
+  },
+  {
+    id: 'notas',
+    header: 'Notas',
+    cell: (internacion, fila) => (
+      <RowExpandButton
+        isExpanded={fila.isExpanded}
+        onToggle={fila.toggleExpanded}
+        collapsedLabel={`Ver notas (${String(internacion.notes.length)})`}
+        expandedLabel="Ocultar notas"
+      />
+    ),
+  },
+]
+
 interface HospitalizationListProps {
   readonly items: readonly HospitalizationLike[]
   readonly isLoading: boolean
@@ -45,23 +90,19 @@ export default function HospitalizationList({
   canManage,
 }: HospitalizationListProps) {
   return (
-    <div className="stack">
-      <h3>Internaciones</h3>
-      <TableShell
+    // Cerrada al empezar: casi ninguna mascota tiene internaciones.
+    <CollapsibleSection title="Internaciones" defaultOpen={false}>
+      <DataTable
         columns={COLUMNAS}
+        data={items}
         isLoading={isLoading}
-        isEmpty={items.length === 0}
         emptyMessage="Esta mascota nunca fue internada."
-      >
-        {items.map((internacion) => (
-          <HospitalizationRow
-            key={internacion.id}
-            internacion={internacion}
-            petId={petId}
-            canManage={canManage}
-          />
-        ))}
-      </TableShell>
-    </div>
+        getRowId={(internacion) => String(internacion.id)}
+        pageSize={10}
+        renderExpanded={(internacion) => (
+          <HospitalizationDetails internacion={internacion} petId={petId} canManage={canManage} />
+        )}
+      />
+    </CollapsibleSection>
   )
 }

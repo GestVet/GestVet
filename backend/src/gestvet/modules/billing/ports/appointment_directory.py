@@ -15,13 +15,28 @@ amerita cobrar distinto (o no cobrar), eso lo decide el personal a mano.
 pregunta se declara acá como puerto y un adaptador la responde leyendo la
 tabla ajena, igual que hacen `medical_records` y `accounts`.
 
+El listado de pagos, además, muestra de quién es cada pago y qué se atendió:
+un número de cita no le dice nada a quien revisa la caja.
+
 Se lee, nunca se escribe.
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
 from typing import Protocol
+
+
+@dataclass(frozen=True, slots=True)
+class PaymentContext:
+    """Lo que el listado de pagos muestra en vez del número de cita."""
+
+    client_name: str
+    pet_name: str
+    appointment_type: str
+    scheduled_at: datetime
 
 
 class AppointmentDirectory(Protocol):
@@ -32,3 +47,5 @@ class AppointmentDirectory(Protocol):
     async def is_completed(self, appointment_id: int) -> bool: ...
 
     async def is_emergency(self, appointment_id: int) -> bool: ...
+
+    async def contexts_for(self, appointment_ids: list[int]) -> dict[int, PaymentContext]: ...

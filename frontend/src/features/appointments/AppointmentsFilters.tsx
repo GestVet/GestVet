@@ -1,4 +1,9 @@
 import type { AppointmentStatus } from '../../api/types'
+import FieldIcon from '../../components/FieldIcon'
+import { Checkbox } from '../../components/ui/checkbox'
+import { Input } from '../../components/ui/input'
+import { Label } from '../../components/ui/label'
+import { NativeSelect, NativeSelectOption } from '../../components/ui/native-select'
 
 const ESTADOS: readonly { value: AppointmentStatus; label: string }[] = [
   { value: 'pending', label: 'Pendiente' },
@@ -32,59 +37,67 @@ export default function AppointmentsFilters({
   onSoloEmergenciasChange,
 }: AppointmentsFiltersProps) {
   return (
-    <div className="form" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
-      <div className="field">
-        <label htmlFor="filtro-estado">Estado</label>
-        <select
+    <div className="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="filtro-estado">Estado</Label>
+        <FieldIcon icon="filtro">
+        <NativeSelect
           id="filtro-estado"
+          className="w-full [&_select]:h-10"
           value={estado}
           onChange={(evento) => {
             onEstadoChange(evento.target.value)
           }}
         >
-          <option value="">Todos</option>
+          <NativeSelectOption value="">Todos</NativeSelectOption>
           {ESTADOS.map((opcion) => (
-            <option key={opcion.value} value={opcion.value}>
+            <NativeSelectOption key={opcion.value} value={opcion.value}>
               {opcion.label}
-            </option>
+            </NativeSelectOption>
           ))}
-        </select>
+        </NativeSelect>
+        </FieldIcon>
       </div>
-      <div className="field">
-        <label htmlFor="filtro-desde">Desde</label>
-        <input
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="filtro-desde">Desde</Label>
+        <FieldIcon icon="fecha">
+        <Input
           id="filtro-desde"
           type="date"
+          className="h-10"
+          max={hasta === '' ? undefined : hasta}
           value={desde}
           onChange={(evento) => {
             onDesdeChange(evento.target.value)
           }}
         />
+        </FieldIcon>
       </div>
-      <div className="field">
-        <label htmlFor="filtro-hasta">Hasta</label>
-        <input
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="filtro-hasta">Hasta</Label>
+        <FieldIcon icon="fecha">
+        <Input
           id="filtro-hasta"
           type="date"
+          className="h-10"
+          min={desde === '' ? undefined : desde}
           value={hasta}
           onChange={(evento) => {
             onHastaChange(evento.target.value)
           }}
         />
+        </FieldIcon>
       </div>
       {mostrarEmergencias ? (
-        <div className="field">
-          <label htmlFor="filtro-emergencias">
-            <input
-              id="filtro-emergencias"
-              type="checkbox"
-              checked={soloEmergencias}
-              onChange={(evento) => {
-                onSoloEmergenciasChange(evento.target.checked)
-              }}
-            />{' '}
-            Solo emergencias
-          </label>
+        <div className="flex h-10 items-center gap-2">
+          <Checkbox
+            id="filtro-emergencias"
+            checked={soloEmergencias}
+            onCheckedChange={(marcado) => {
+              onSoloEmergenciasChange(marcado === true)
+            }}
+          />
+          <Label htmlFor="filtro-emergencias">Solo emergencias</Label>
         </div>
       ) : null}
     </div>

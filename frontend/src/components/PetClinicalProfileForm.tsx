@@ -4,17 +4,29 @@ import { z } from 'zod'
 
 import { onSubmit } from '../hooks/formSubmit'
 import { usePetClinicalProfileUpdate } from '../hooks/usePetProfile'
-import FieldError from './FieldError'
 import FormMessage from './FormMessage'
+import {
+  decimalParaApi,
+  decimalRule,
+  fechaDeNacimientoRule,
+  limitesDeNacimiento,
+  textoOpcional,
+} from './formRules'
 import Icon from './Icon'
 import SelectField from './SelectField'
+import TextareaField from './TextareaField'
+import TextField from './TextField'
+import { Button } from './ui/button'
+import { NativeSelectOption } from './ui/native-select'
 
 const esquema = z.object({
-  birth_date: z.string().min(1, 'Ingresá la fecha de nacimiento'),
-  weight_kg: z.string(),
-  height_cm: z.string(),
+  // La confirma el veterinario: en un alta exprés de emergencia queda provisoria.
+  birth_date: fechaDeNacimientoRule,
+  // Los mismos topes que el servidor: 120 kg y 200 cm cubren de un hámster a un gran danés.
+  weight_kg: decimalRule({ max: 120, decimales: 2, unidad: 'kg' }),
+  height_cm: decimalRule({ max: 200, decimales: 1, unidad: 'cm' }),
   is_sterilized: z.enum(['', 'true', 'false']),
-  allergies: z.string().max(300),
+  allergies: textoOpcional(300),
 })
 
 type Formulario = z.infer<typeof esquema>
@@ -43,7 +55,22 @@ function valoresIniciales(props: PetClinicalProfileFormProps): Formulario {
   }
 }
 
-/** Datos que confirma el veterinario en consulta: peso, altura, esterilización y alergias. */
+function paraApi(valores: Formulario, fechaGuardada: string) {
+  return {
+    // Solo viaja si cambió: guardar el peso no pisa una fecha que corrigió el
+    // dueño desde su ficha.
+    birth_date: valores.birth_date === fechaGuardada ? null : valores.birth_date,
+    weight_kg: decimalParaApi(valores.weight_kg),
+    height_cm: decimalParaApi(valores.height_cm),
+    is_sterilized: valores.is_sterilized === '' ? null : valores.is_sterilized === 'true',
+    allergies: valores.allergies,
+  }
+}
+
+/**
+ * Datos que confirma el veterinario en consulta: fecha de nacimiento, peso,
+ * altura, esterilización y alergias.
+ */
 export default function PetClinicalProfileForm(props: PetClinicalProfileFormProps) {
   const { register, handleSubmit, formState } = useForm<Formulario>({
     resolver: zodResolver(esquema),
@@ -51,58 +78,79 @@ export default function PetClinicalProfileForm(props: PetClinicalProfileFormProp
   })
   const guardar = usePetClinicalProfileUpdate(props.petId)
   const errores = formState.errors
+  const limites = limitesDeNacimiento()
 
   return (
     <form
-      className="form"
+      noValidate
+      className="flex flex-col gap-5"
       onSubmit={onSubmit(
         handleSubmit((valores) => {
-          guardar.mutate({
-            birth_date: valores.birth_date,
-            weight_kg: valores.weight_kg === '' ? null : valores.weight_kg,
-            height_cm: valores.height_cm === '' ? null : valores.height_cm,
-            is_sterilized: valores.is_sterilized === '' ? null : valores.is_sterilized === 'true',
-            allergies: valores.allergies,
-          })
+          guardar.mutate(paraApi(valores, props.birthDate))
         }),
       )}
     >
-      <div className="field">
-        <label htmlFor="birth_date">Fecha de nacimiento</label>
-        <input id="birth_date" type="date" {...register('birth_date')} />
-        <FieldError message={errores.birth_date?.message} />
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <TextField
+          id={`clinica-nacimiento-${String(props.petId)}`}
+          label="Fecha de nacimiento"
+          type="date"
+          min={limites.min}
+          max={limites.max}
+          field={register('birth_date')}
+          error={errores.birth_date?.message}
+        />
+        <TextField
+          id="weight_kg"
+          label="Peso (kg)"
+          placeholder="12.5"
+          icon="peso"
+          type="number"
+          inputMode="decimal"
+          step="0.1"
+          min="0"
+          field={register('weight_kg')}
+          error={errores.weight_kg?.message}
+        />
+        <TextField
+          id="height_cm"
+          label="Altura (cm)"
+          placeholder="45"
+          icon="altura"
+          type="number"
+          inputMode="decimal"
+          step="0.1"
+          min="0"
+          field={register('height_cm')}
+          error={errores.height_cm?.message}
+        />
+        <SelectField
+          id="is_sterilized"
+          label="Esterilizado"
+          icon="salud"
+          field={register('is_sterilized')}
+          placeholder="No evaluado"
+        >
+          <NativeSelectOption value="true">Sí</NativeSelectOption>
+          <NativeSelectOption value="false">No</NativeSelectOption>
+        </SelectField>
       </div>
-      <div className="field">
-        <label htmlFor="weight_kg">Peso (kg)</label>
-        <input id="weight_kg" type="number" step="0.1" min="0" {...register('weight_kg')} />
-        <FieldError message={errores.weight_kg?.message} />
-      </div>
-      <div className="field">
-        <label htmlFor="height_cm">Altura (cm)</label>
-        <input id="height_cm" type="number" step="0.1" min="0" {...register('height_cm')} />
-        <FieldError message={errores.height_cm?.message} />
-      </div>
-      <SelectField
-        id="is_sterilized"
-        label="Esterilizado"
-        field={register('is_sterilized')}
-        placeholder="No evaluado"
-      >
-        <option value="true">Sí</option>
-        <option value="false">No</option>
-      </SelectField>
-      <div className="field">
-        <label htmlFor="allergies">Alergias / condiciones crónicas</label>
-        <textarea id="allergies" rows={2} {...register('allergies')} />
-        <FieldError message={errores.allergies?.message} />
-      </div>
+      <TextareaField
+        id="allergies"
+        label="Alergias / condiciones crónicas"
+        placeholder="Alergia a la penicilina, dermatitis"
+        icon="alergia"
+        rows={2}
+        field={register('allergies')}
+        error={errores.allergies?.message}
+      />
 
       {guardar.isError ? <FormMessage tone="error">{guardar.errorMessage}</FormMessage> : null}
 
-      <button type="submit" className="btn btn-blue" disabled={guardar.isPending}>
+      <Button type="submit" className="self-start" disabled={guardar.isPending}>
         <Icon name="confirmar" size={16} />
-        <span>{guardar.isPending ? 'Guardando…' : 'Guardar'}</span>
-      </button>
+        <span>{guardar.isPending ? 'Guardando…' : 'Guardar datos clínicos'}</span>
+      </Button>
     </form>
   )
 }

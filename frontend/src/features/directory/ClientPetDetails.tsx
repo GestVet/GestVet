@@ -1,0 +1,28 @@
+import type { PetResponse } from '../../api/types'
+import PetProfilePanel from '../../components/PetProfilePanel'
+import { useCan } from '../../store/session'
+import ClientPetHistory from './ClientPetHistory'
+import ClientPetHospitalizations from './ClientPetHospitalizations'
+import ClientPetVaccinations from './ClientPetVaccinations'
+
+interface ClientPetDetailsProps {
+  readonly mascota: PetResponse
+}
+
+/** Ficha, historia e internaciones de una mascota, vistas por el personal. */
+export default function ClientPetDetails({ mascota }: ClientPetDetailsProps) {
+  const esVeterinario = useCan('pets.edit_clinical_profile')
+
+  return (
+    <div className="flex flex-col gap-8">
+      <PetProfilePanel
+        mascota={mascota}
+        canEditOwnerFields={false}
+        canEditClinicalFields={esVeterinario}
+      />
+      <ClientPetVaccinations petId={mascota.id} />
+      <ClientPetHistory petId={mascota.id} />
+      <ClientPetHospitalizations petId={mascota.id} />
+    </div>
+  )
+}
