@@ -13,9 +13,11 @@ from gestvet.modules.medical_records.adapters.persistence.mappers import (
 from gestvet.modules.medical_records.adapters.persistence.models import (
     AttachmentRow,
     ClinicalEntryRow,
+    PetVaccinationRow,
 )
 from gestvet.modules.medical_records.domain.attachment import Attachment
 from gestvet.modules.medical_records.domain.entities import ClinicalEntry
+from gestvet.modules.medical_records.domain.vaccination import Vaccination, VaccineCode
 from gestvet.modules.medical_records.ports.clinical_entry_repository import ClinicalEntryQuery
 
 
@@ -94,3 +96,49 @@ class SqlAlchemyAttachmentRepository:
         if row is not None:
             await self._session.delete(row)
             await self._session.flush()
+
+
+def _vaccination(row: PetVaccinationRow) -> Vaccination:
+    return Vaccination(
+        id=row.id,
+        pet_id=row.pet_id,
+        veterinarian_id=row.veterinarian_id,
+        appointment_id=row.appointment_id,
+        vaccine=VaccineCode(row.vaccine),
+        applied_on=row.applied_on,
+        next_due_on=row.next_due_on,
+        product_name=row.product_name,
+        batch=row.batch,
+        notes=row.notes,
+        created_at=row.created_at,
+    )
+
+
+class SqlAlchemyVaccinationRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def add(self, vaccination: Vaccination) -> Vaccination:
+        row = PetVaccinationRow(
+            pet_id=vaccination.pet_id,
+            veterinarian_id=vaccination.veterinarian_id,
+            appointment_id=vaccination.appointment_id,
+            vaccine=vaccination.vaccine.value,
+            applied_on=vaccination.applied_on,
+            next_due_on=vaccination.next_due_on,
+            product_name=vaccination.product_name,
+            batch=vaccination.batch,
+            notes=vaccination.notes,
+            created_at=vaccination.created_at,
+        )
+        self._session.add(row)
+        await self._session.flush()
+        return _vaccination(row)
+
+    async def list_for_pet(self, pet_id: int) -> list[Vaccination]:
+        rows = await self._session.execute(
+            select(PetVaccinationRow)
+            .where(PetVaccinationRow.pet_id == pet_id)
+            .order_by(PetVaccinationRow.applied_on.desc(), PetVaccinationRow.id.desc())
+        )
+        return [_vaccination(row) for row in rows.scalars().all()]

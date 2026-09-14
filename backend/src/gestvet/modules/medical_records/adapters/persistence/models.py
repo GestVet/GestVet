@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Numeric, String, Text
+from sqlalchemy import BigInteger, Date, DateTime, ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from gestvet.core.database import Base
@@ -55,6 +55,32 @@ class AttachmentRow(Base):
     uploaded_by: Mapped[int] = mapped_column(
         ForeignKey("users.id", name="fk_attachments_uploaded_by", ondelete="RESTRICT")
     )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+
+
+class PetVaccinationRow(Base):
+    __tablename__ = "pet_vaccinations"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    pet_id: Mapped[int] = mapped_column(
+        ForeignKey("pets.id", name="fk_pet_vaccinations_pet", ondelete="RESTRICT"), index=True
+    )
+    veterinarian_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", name="fk_pet_vaccinations_veterinarian", ondelete="RESTRICT")
+    )
+    appointment_id: Mapped[int | None] = mapped_column(
+        ForeignKey("appointments.id", name="fk_pet_vaccinations_appointment", ondelete="SET NULL"),
+        nullable=True,
+    )
+    vaccine: Mapped[str] = mapped_column(String(30))
+    applied_on: Mapped[date] = mapped_column(Date)
+    # Indexada: los recordatorios buscan por fecha de vencimiento.
+    next_due_on: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
+    product_name: Mapped[str] = mapped_column(String(80), default="")
+    batch: Mapped[str] = mapped_column(String(40), default="")
+    notes: Mapped[str] = mapped_column(String(300), default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )

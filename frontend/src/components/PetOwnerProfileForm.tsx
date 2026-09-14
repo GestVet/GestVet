@@ -6,7 +6,7 @@ import { usePetOwnerProfileUpdate } from '../hooks/usePetProfile'
 import FormMessage from './FormMessage'
 import Icon from './Icon'
 import PetOwnerProfileFields from './PetOwnerProfileFields'
-import { petOwnerProfileSchema, type PetOwnerProfileValues } from './petOwnerProfileSchema'
+import { petOwnerProfileSchemaFor, type PetOwnerProfileValues } from './petOwnerProfileSchema'
 import { Button } from './ui/button'
 
 interface PetOwnerProfileFormProps {
@@ -57,7 +57,7 @@ function cuerpo(valores: PetOwnerProfileValues, props: PetOwnerProfileFormProps)
 /** Datos que conoce el dueño: especie, raza, nacimiento, sexo, color, microchip y temperamento. */
 export default function PetOwnerProfileForm(props: PetOwnerProfileFormProps) {
   const formulario = useForm<PetOwnerProfileValues>({
-    resolver: zodResolver(petOwnerProfileSchema),
+    resolver: zodResolver(petOwnerProfileSchemaFor(props.microchipNumber)),
     defaultValues: valoresIniciales(props),
   })
   const guardar = usePetOwnerProfileUpdate(props.petId)

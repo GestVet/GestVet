@@ -91,11 +91,23 @@ export const fechaDeNacimientoRule = z
     `Ninguna mascota vive más de ${String(MAX_AÑOS_DE_VIDA)} años. Revisa el año`,
   )
 
-// Un microchip ISO tiene 15 digitos; los mas antiguos, 9 o 10.
-export const microchipRule = z
-  .string()
-  .trim()
-  .regex(/^(?:\d{9,15})?$/u, 'El microchip tiene de 9 a 15 dígitos, sin espacios ni letras')
+const MICROCHIP_ISO = /^\d{15}$/u
+
+/**
+ * Un microchip ISO 11784/11785 tiene 15 dígitos.
+ *
+ * Un chip antiguo de 9 o 10 dígitos, ya guardado, sigue valiendo mientras no se
+ * cambie: igual que en el servidor, no puede impedir corregir otro dato.
+ */
+export function microchipRule(guardado: string) {
+  return z
+    .string()
+    .trim()
+    .refine(
+      (valor) => valor === '' || valor === guardado || MICROCHIP_ISO.test(valor),
+      'El microchip tiene 15 dígitos (estándar ISO), sin espacios ni letras',
+    )
+}
 
 /** Deja solo los digitos mientras la persona escribe. */
 export function soloDigitosDeMicrochip(valor: string): string {

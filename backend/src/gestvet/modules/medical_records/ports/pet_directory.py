@@ -11,6 +11,7 @@ Se lee, nunca se escribe.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
 from typing import Protocol
 
@@ -29,6 +30,7 @@ class PetSummary:
     height_cm: Decimal | None
     is_sterilized: bool | None
     allergies: str
+    birth_date: date | None = None
 
 
 class PetDirectory(Protocol):

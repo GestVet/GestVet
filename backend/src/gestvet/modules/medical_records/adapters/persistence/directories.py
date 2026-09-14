@@ -7,6 +7,8 @@ por pruebas, igual que hacen los lectores de `appointments` hacia `pets` y
 
 from __future__ import annotations
 
+from datetime import date
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,12 +25,17 @@ _PET_IS_OWNED = text("SELECT 1 FROM pets WHERE id = :pet_id AND owner_id = :owne
 _PET_SUMMARY = text(
     "SELECT pets.name, pets.species, pets.breed, pets.sex, pets.color, "
     "pets.microchip_number, pets.temperament, pets.weight_kg, pets.height_cm, "
-    "pets.is_sterilized, pets.allergies, users.first_name, users.last_name "
+    "pets.is_sterilized, pets.allergies, pets.birth_date, users.first_name, users.last_name "
     "FROM pets JOIN users ON users.id = pets.owner_id "
     "WHERE pets.id = :pet_id"
 )
 
 _SEX_LABELS = {"male": "Macho", "female": "Hembra"}
+
+
+def _as_date(value: date | str | None) -> date | None:
+    # SQLite devuelve la fecha como texto en una consulta cruda; Postgres, como fecha.
+    return date.fromisoformat(value) if isinstance(value, str) else value
 
 
 class SqlPetDirectory:
@@ -61,6 +68,7 @@ class SqlPetDirectory:
             height_cm,
             is_sterilized,
             allergies,
+            birth_date,
             first_name,
             last_name,
         ) = row
@@ -77,4 +85,5 @@ class SqlPetDirectory:
             height_cm=height_cm,
             is_sterilized=is_sterilized,
             allergies=allergies,
+            birth_date=_as_date(birth_date),
         )

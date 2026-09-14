@@ -49,7 +49,17 @@ from gestvet.modules.hospitalizations.adapters.api.router import (
     router as hospitalizations_router,
 )
 from gestvet.modules.insights.adapters.api.router import router as insights_router
+from gestvet.modules.medical_records.adapters.api.assistant_router import (
+    router as clinical_assistant_router,
+)
+from gestvet.modules.medical_records.adapters.api.public_card_router import (
+    router as public_card_router,
+)
 from gestvet.modules.medical_records.adapters.api.router import router as medical_records_router
+from gestvet.modules.medical_records.adapters.api.vaccinations_router import (
+    router as vaccinations_router,
+)
+from gestvet.modules.pets.adapters.api.catalog_router import router as pet_catalog_router
 from gestvet.modules.pets.adapters.api.router import router as pets_router
 from gestvet.modules.reviews.adapters.api.router import router as reviews_router
 
@@ -176,12 +186,31 @@ def create_app() -> FastAPI:
     app.include_router(
         veterinarians_router, prefix=f"{API_PREFIX}/veterinarians", tags=["veterinarians"]
     )
+    # Antes que el de mascotas: "/pets/catalog" no es una mascota.
+    app.include_router(pet_catalog_router, prefix=f"{API_PREFIX}/pets/catalog", tags=["pets"])
     app.include_router(pets_router, prefix=f"{API_PREFIX}/pets", tags=["pets"])
     app.include_router(
         availability_router, prefix=f"{API_PREFIX}/availability", tags=["availability"]
     )
     app.include_router(
         appointments_router, prefix=f"{API_PREFIX}/appointments", tags=["appointments"]
+    )
+    # Antes que la historia clínica: "/medical-records/vaccinations" no es una entrada.
+    # Sin sesión: la abre quien escanea el QR del carnet.
+    app.include_router(
+        public_card_router,
+        prefix=f"{API_PREFIX}/public/vaccination-cards",
+        tags=["public"],
+    )
+    app.include_router(
+        clinical_assistant_router,
+        prefix=f"{API_PREFIX}/medical-records/assistant",
+        tags=["medical-records"],
+    )
+    app.include_router(
+        vaccinations_router,
+        prefix=f"{API_PREFIX}/medical-records/vaccinations",
+        tags=["medical-records"],
     )
     app.include_router(
         medical_records_router, prefix=f"{API_PREFIX}/medical-records", tags=["medical-records"]

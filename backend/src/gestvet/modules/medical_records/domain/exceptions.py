@@ -38,3 +38,16 @@ class AttachmentNotFound(MedicalRecordsError):
     def __init__(self, attachment_id: int) -> None:
         super().__init__(f"No existe el adjunto {attachment_id}.")
         self.attachment_id = attachment_id
+
+
+class InvalidVaccination(MedicalRecordsError):
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
+
+
+class InvalidCardLink(MedicalRecordsError):
+    """Alterado, vencido o de una mascota que ya no existe: se responde igual."""
+
+    def __init__(self) -> None:
+        super().__init__("Este carnet no es válido o ya venció. Pide uno nuevo a la clínica.")

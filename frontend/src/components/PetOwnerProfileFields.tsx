@@ -62,7 +62,7 @@ export default function PetOwnerProfileFields({ formulario, petId }: PetOwnerPro
         icon="microchip"
         inputMode="numeric"
         maxLength={15}
-        hint="De 9 a 15 dígitos. Déjalo vacío si no tiene."
+        hint="15 dígitos, estándar ISO. Déjalo vacío si no tiene."
         sanitize={soloDigitosDeMicrochip}
         field={register('microchip_number')}
         error={errores.microchip_number?.message}

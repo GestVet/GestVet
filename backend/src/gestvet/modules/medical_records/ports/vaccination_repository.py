@@ -1,0 +1,15 @@
+"""Puerto de persistencia del carnet de vacunas."""
+
+from __future__ import annotations
+
+from typing import Protocol
+
+from gestvet.modules.medical_records.domain.vaccination import Vaccination
+
+
+class VaccinationRepository(Protocol):
+    async def add(self, vaccination: Vaccination) -> Vaccination: ...
+
+    async def list_for_pet(self, pet_id: int) -> list[Vaccination]:
+        """Todas las vacunas de una mascota, la más reciente primero."""
+        ...
