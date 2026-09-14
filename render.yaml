@@ -1,0 +1,94 @@
+# Blueprint de Render para GestVet.
+#
+# Un solo recurso en Render: el backend FastAPI (Web Service, runtime
+# Python + uv). El frontend se despliega aparte, en Vercel (ver
+# vercel.json / configuración del proyecto en el dashboard de Vercel), así
+# que no hay un segundo `service` acá. La base de datos tampoco es un
+# recurso de Render: es un proyecto Postgres de Supabase, externo al
+# Blueprint, por eso no aparece una sección `databases:` acá.
+#
+# Nota sobre DATABASE_URL / Supabase: pegar la cadena del **Session Pooler**
+# de Supabase (Project Settings → Database → Connection string → "Session
+# pooler", puerto 5432), no la del **Transaction Pooler** (puerto 6543): ese
+# modo no soporta prepared statements y el backend usa asyncpg con
+# SQLAlchemy sin desactivarlos (ver backend/src/gestvet/core/database.py),
+# así que rompe con "prepared statement already exists". Tampoco la
+# conexión "Direct" (5432 sin pooler): en Supabase resuelve solo a IPv6 y
+# Render no garantiza salida IPv6. Cambiar el prefijo de `postgresql://` a
+# `postgresql+asyncpg://` antes de pegarla (ver backend/src/gestvet/core/config.py).
+#
+# Nota sobre el disco: los adjuntos de la historia clínica se guardan en
+# disco local (`LocalDiskAttachmentStorage`), así que el Web Service del
+# backend lleva un `disk` persistente montado en ATTACHMENTS_STORAGE_DIR.
+# Un servicio con disco no admite más de una instancia ni despliegues sin
+# downtime — aceptable para el tamaño actual del proyecto (ver DESPLIEGUE.md,
+# sección 6); migrar a un bucket S3-compatible es el paso siguiente natural.
+
+services:
+  - type: web
+    name: gestvet-api
+    runtime: python
+    region: oregon
+    plan: starter
+    rootDir: backend
+    buildCommand: pip install uv && uv sync --frozen --no-dev
+    preDeployCommand: uv run alembic upgrade head
+    startCommand: uv run uvicorn gestvet.main:app --app-dir src --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
+    autoDeployTrigger: checksPass
+    disk:
+      name: attachments
+      mountPath: /data/attachments
+      sizeGB: 5
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13"
+      - key: APP_NAME
+        value: gestvet-api
+      - key: APP_VERSION
+        value: 0.1.0
+      - key: DEBUG
+        value: "false"
+      - key: LOG_LEVEL
+        value: INFO
+      - key: LOG_JSON
+        value: "true"
+
+      # Cadena de conexión de Supabase (Session Pooler, puerto 5432, prefijo
+      # postgresql+asyncpg://). No vive en el repo: se carga una sola vez
+      # desde el Dashboard de Render tras el primer despliegue del Blueprint.
+      - key: DATABASE_URL
+        sync: false
+
+      # Dominio del proyecto de Vercel (frontend) y de este mismo servicio.
+      # Ajustar si el proyecto de Vercel termina con otro nombre o dominio propio.
+      - key: CORS_ALLOWED_ORIGINS
+        value: '["https://gestvet.vercel.app"]'
+      - key: FRONTEND_BASE_URL
+        value: https://gestvet.vercel.app
+      - key: API_BASE_URL
+        value: https://gestvet-api.onrender.com
+
+      - key: ATTACHMENTS_STORAGE_DIR
+        value: /data/attachments
+
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_TTL_SECONDS
+        value: "3600"
+
+      # Asistente de IA (OpenRouter) y verificación de DNI (Factiliza) son
+      # opcionales: sin clave, esas features quedan apagadas y el resto de la
+      # app funciona igual (ver backend/src/gestvet/core/config.py).
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: deepseek/deepseek-v4.1-flash
+      - key: OPENROUTER_FALLBACK_MODEL
+        value: deepseek/deepseek-v4-flash-0731
+      - key: OPENROUTER_TIMEOUT_SECONDS
+        value: "45"
+      - key: FACTILIZA_API_KEY
+        sync: false
