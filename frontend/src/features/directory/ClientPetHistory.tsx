@@ -6,6 +6,7 @@ import SectionHeading from '../../components/SectionHeading'
 import { Separator } from '../../components/ui/separator'
 import { useCan } from '../../store/session'
 import ClinicalEntryForm from './ClinicalEntryForm'
+import ClinicalSummaryPanel from './ClinicalSummaryPanel'
 
 interface ClientPetHistoryProps {
   readonly petId: number
@@ -20,6 +21,7 @@ export default function ClientPetHistory({ petId }: ClientPetHistoryProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      {puedeCargar ? <ClinicalSummaryPanel petId={petId} /> : null}
       <ClinicalEntryList
         items={historia.data?.items ?? []}
         isLoading={historia.isPending}
