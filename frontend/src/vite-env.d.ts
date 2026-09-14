@@ -14,3 +14,10 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+/**
+ * sienna-accessibility no publica tipos propios: se importa solo por su
+ * side-effect de auto-inicialización (ver
+ * frontend/src/components/AccessibilityWidget.tsx), sin bindings que tipar.
+ */
+declare module 'sienna-accessibility'
