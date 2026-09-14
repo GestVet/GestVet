@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 // El de `react-router/dom` es el que le pasa `flushSync` de react-dom al
@@ -7,21 +7,10 @@ import { RouterProvider } from 'react-router/dom'
 
 import router from './router'
 import { logger, logUncaughtErrors } from './services/logger'
+import { queryClient } from './services/queryClient'
 import './index.css'
 
 logUncaughtErrors()
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      // Los listados del sistema se consultan con filtros del servidor, así que
-      // reintentar en bucle ante un 4xx solo retrasa el error visible.
-      retry: 1,
-      staleTime: 30_000,
-      refetchOnWindowFocus: false,
-    },
-  },
-})
 
 const container = document.getElementById('root')
 

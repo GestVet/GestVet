@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
-import { Link, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { z } from 'zod'
 
 import { login } from '../../api/auth'
@@ -16,6 +16,7 @@ import { useSession } from '../../store/session'
 import AuthAside from './AuthAside'
 import AuthCard from './AuthCard'
 import { correoRule } from '../../services/fieldRules'
+import SessionExpiredNotice from './SessionExpiredNotice'
 
 const esquema = z.object({
   email: correoRule,
@@ -40,9 +41,22 @@ const PANEL = (
 
 const ENLACE = 'font-medium text-primary underline underline-offset-4'
 
+/**
+ * A dónde ir después de entrar.
+ *
+ * La guarda de rutas deja la pantalla que se quiso abrir: quien vuelve tras una
+ * sesión vencida sigue donde estaba en vez de empezar desde el panel.
+ */
+function destinoDe(estado: unknown): string {
+  const desde =
+    typeof estado === 'object' && estado !== null && 'from' in estado ? estado.from : undefined
+  return typeof desde === 'string' && desde.startsWith('/') && desde !== '/acceso' ? desde : '/panel'
+}
+
 export default function LoginView() {
   const signIn = useSession((state) => state.signIn)
   const navigate = useNavigate()
+  const destino = destinoDe(useLocation().state)
   const { register, handleSubmit, formState } = useForm<Formulario>({
     resolver: zodResolver(esquema),
     mode: 'onTouched',
@@ -53,7 +67,7 @@ export default function LoginView() {
     mutationFn: login,
     onSuccess: (respuesta) => {
       signIn(respuesta)
-      void navigate('/panel')
+      void navigate(destino, { replace: true })
     },
   })
 
@@ -79,6 +93,7 @@ export default function LoginView() {
           }),
         )}
       >
+        <SessionExpiredNotice />
         <TextField
           id="email"
           label="Correo"

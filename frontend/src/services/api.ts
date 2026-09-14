@@ -10,6 +10,31 @@ const DEFAULT_BASE_URL = '/api/v1'
 export const REQUEST_ID_HEADER = 'X-Request-ID'
 
 const SERVER_ERROR = 500
+const CLIENT_ERROR = 400
+const UNAUTHORIZED = 401
+
+// Lo registra el almacen de sesion: los servicios son la capa mas baja y no
+// pueden importarlo.
+const sesion: { alVencer: (() => void) | null } = { alVencer: null }
+
+/** Qué hacer cuando el servidor rechaza la credencial de una petición. */
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  sesion.alVencer = handler
+}
+
+/**
+ * Si vale la pena repetir una consulta que falló.
+ *
+ * Un 4xx no cambia por repetir la petición: un 401 de una sesión vencida
+ * reintentado solo demora el aviso. Un corte de red o un 5xx, quizá sí.
+ */
+export function debeReintentar(fallos: number, error: unknown): boolean {
+  const estado = axios.isAxiosError(error) ? error.response?.status : undefined
+  if (estado !== undefined && estado >= CLIENT_ERROR && estado < SERVER_ERROR) {
+    return false
+  }
+  return fallos < 1
+}
 
 // `import.meta.env` llega sin tipar salvo por los tipos de Vite, asi que se
 // acota aca y no en cada llamada.
@@ -93,6 +118,17 @@ api.interceptors.response.use(
   },
   (error: unknown) => {
     registrarFallo(error)
+    // Un 401 de una petición que llevaba credencial es una sesión vencida o
+    // revocada. Seguir mostrando pantallas vacías confunde: se cierra la sesión
+    // y el acceso explica qué pasó. Un 401 sin credencial, como una contraseña
+    // equivocada al entrar, lo resuelve su propio formulario.
+    if (
+      axios.isAxiosError(error) &&
+      error.response?.status === UNAUTHORIZED &&
+      error.config?.headers.has('Authorization') === true
+    ) {
+      sesion.alVencer?.()
+    }
     throw error
   },
 )
