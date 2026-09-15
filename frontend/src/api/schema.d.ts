@@ -1886,7 +1886,7 @@ export interface components {
         };
         /**
          * DayOpenTimesResponse
-         * @description Un día con horas libres. `day` es la fecha en el calendario de la clínica.
+         * @description Un día con turnos publicados. `day` es la fecha en el calendario de la clínica.
          */
         DayOpenTimesResponse: {
             /**
@@ -1966,6 +1966,15 @@ export interface components {
              * Format: email
              */
             email: string;
+        };
+        /** GridSlotResponse */
+        GridSlotResponse: {
+            status: components["schemas"]["SlotStatus"];
+            /**
+             * Time
+             * Format: date-time
+             */
+            time: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2113,7 +2122,7 @@ export interface components {
         };
         /**
          * OpenTimesResponse
-         * @description Solo trae los días que tienen al menos una hora libre.
+         * @description Trae los días con al menos un turno, con cada cuarto de hora y su estado.
          */
         OpenTimesResponse: {
             /** Days */
@@ -2617,6 +2626,19 @@ export interface components {
             /** User Id */
             user_id: number;
         };
+        /** ScheduleWindowResponse */
+        ScheduleWindowResponse: {
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+        };
         /** ServiceConsumptionListResponse */
         ServiceConsumptionListResponse: {
             /** Items */
@@ -2671,6 +2693,11 @@ export interface components {
             /** Veterinarian Id */
             veterinarian_id: number;
         };
+        /**
+         * SlotStatus
+         * @enum {string}
+         */
+        SlotStatus: "available" | "taken" | "too_short" | "past" | "emergency";
         /** SpeciesResponse */
         SpeciesResponse: {
             /** Breeds */
@@ -2742,6 +2769,11 @@ export interface components {
         };
         /** UpdatePetOwnerProfileRequest */
         UpdatePetOwnerProfileRequest: {
+            /**
+             * Allergies
+             * @default
+             */
+            allergies: string;
             /** Birth Date */
             birth_date?: string | null;
             /** Breed */
@@ -2751,6 +2783,10 @@ export interface components {
              * @default
              */
             color: string;
+            /** Height Cm */
+            height_cm?: number | string | null;
+            /** Is Sterilized */
+            is_sterilized?: boolean | null;
             /**
              * Microchip Number
              * @default
@@ -2764,6 +2800,8 @@ export interface components {
              * @default
              */
             temperament: string;
+            /** Weight Kg */
+            weight_kg?: number | string | null;
         };
         /** UpdateProfileRequest */
         UpdateProfileRequest: {
@@ -2926,10 +2964,12 @@ export interface components {
         };
         /** VeterinarianOpenTimesResponse */
         VeterinarianOpenTimesResponse: {
-            /** Times */
-            times: string[];
+            /** Slots */
+            slots: components["schemas"]["GridSlotResponse"][];
             /** Veterinarian Id */
             veterinarian_id: number;
+            /** Windows */
+            windows: components["schemas"]["ScheduleWindowResponse"][];
         };
         /**
          * VeterinarianResponse

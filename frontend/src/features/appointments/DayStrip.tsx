@@ -6,8 +6,8 @@ export interface DiaDeReserva {
   /** AAAA-MM-DD en la fecha de la clinica. */
   readonly key: string
   readonly disponible: boolean
-  /** Horas libres ese día, sumando todos los veterinarios. */
-  readonly horas: number
+  /** Horas de inicio disponibles ese día, sumando todos los veterinarios. */
+  readonly disponibles: number
 }
 
 interface DayStripProps {
@@ -28,7 +28,9 @@ export default function DayStrip({ dias, seleccionado, onSelect }: DayStripProps
       {dias.map((dia) => {
         const { semana, numero, mes } = partesDelDia(dia.key)
         const elegido = dia.key === seleccionado
-        const detalle = dia.disponible ? `${String(dia.horas)} horas libres` : 'sin horas libres'
+        const detalle = dia.disponible
+          ? `${String(dia.disponibles)} horarios disponibles`
+          : 'sin horarios disponibles'
         return (
           <button
             key={dia.key}
@@ -50,7 +52,7 @@ export default function DayStrip({ dias, seleccionado, onSelect }: DayStripProps
             <span className="text-lg leading-none font-semibold tabular-nums">{numero}</span>
             <span>{mes}</span>
             <span className="mt-0.5 whitespace-nowrap">
-              {dia.disponible ? `${String(dia.horas)} libres` : 'Sin horas'}
+              {dia.disponible ? `${String(dia.disponibles)} horarios` : 'Sin horarios'}
             </span>
           </button>
         )

@@ -58,6 +58,9 @@ export type OpenWalkInEmergencyRequest = components['schemas']['OpenWalkInEmerge
 export type OpenTimesResponse = components['schemas']['OpenTimesResponse']
 export type DayOpenTimesResponse = components['schemas']['DayOpenTimesResponse']
 export type VeterinarianOpenTimesResponse = components['schemas']['VeterinarianOpenTimesResponse']
+export type GridSlotResponse = components['schemas']['GridSlotResponse']
+export type ScheduleWindowResponse = components['schemas']['ScheduleWindowResponse']
+export type SlotStatus = components['schemas']['SlotStatus']
 
 export type ClinicalEntryResponse = components['schemas']['ClinicalEntryResponse']
 export type ClinicalEntryPageResponse = components['schemas']['ClinicalEntryPageResponse']

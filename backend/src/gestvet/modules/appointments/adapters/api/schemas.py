@@ -17,7 +17,7 @@ from gestvet.modules.appointments.domain.entities import (
     AppointmentStatus,
     AppointmentType,
 )
-from gestvet.modules.appointments.use_cases.list_open_times import DayOpenTimes
+from gestvet.modules.appointments.use_cases.list_open_times import DayOpenTimes, SlotStatus
 
 
 class BookAppointmentRequest(BaseModel):
@@ -115,20 +115,31 @@ class AppointmentPageResponse(BaseModel):
     total: int
 
 
+class ScheduleWindowResponse(BaseModel):
+    starts_at: datetime
+    ends_at: datetime
+
+
+class GridSlotResponse(BaseModel):
+    time: datetime
+    status: SlotStatus
+
+
 class VeterinarianOpenTimesResponse(BaseModel):
     veterinarian_id: int
-    times: list[datetime]
+    windows: list[ScheduleWindowResponse]
+    slots: list[GridSlotResponse]
 
 
 class DayOpenTimesResponse(BaseModel):
-    """Un día con horas libres. `day` es la fecha en el calendario de la clínica."""
+    """Un día con turnos publicados. `day` es la fecha en el calendario de la clínica."""
 
     day: date
     veterinarians: list[VeterinarianOpenTimesResponse]
 
 
 class OpenTimesResponse(BaseModel):
-    """Solo trae los días que tienen al menos una hora libre."""
+    """Trae los días con al menos un turno, con cada cuarto de hora y su estado."""
 
     days: list[DayOpenTimesResponse]
 
@@ -140,7 +151,14 @@ class OpenTimesResponse(BaseModel):
                     day=item.day,
                     veterinarians=[
                         VeterinarianOpenTimesResponse(
-                            veterinarian_id=vet.veterinarian_id, times=list(vet.times)
+                            veterinarian_id=vet.veterinarian_id,
+                            windows=[
+                                ScheduleWindowResponse(starts_at=w.starts_at, ends_at=w.ends_at)
+                                for w in vet.windows
+                            ],
+                            slots=[
+                                GridSlotResponse(time=s.time, status=s.status) for s in vet.slots
+                            ],
                         )
                         for vet in item.veterinarians
                     ],

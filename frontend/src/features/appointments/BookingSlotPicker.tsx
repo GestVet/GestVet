@@ -18,6 +18,7 @@ import VeterinarianTimes, { type OfertaDeVeterinario } from './VeterinarianTimes
 
 interface BookingSlotPickerProps {
   readonly appointmentTypeId: number
+  readonly durationMinutes: number
 }
 
 function ofertasDelDia(
@@ -30,15 +31,22 @@ function ofertasDelDia(
       veterinarianId: oferta.veterinarian_id,
       nombre: perfil?.full_name ?? 'Veterinario',
       calificacion: perfil?.average_rating ?? null,
-      times: oferta.times,
+      windows: oferta.windows,
+      slots: oferta.slots,
     }
   })
 }
 
-function diaDeReserva(key: string, conHoras: readonly DayOpenTimesResponse[]): DiaDeReserva {
-  const ofertas = conHoras.find((item) => item.day === key)?.veterinarians ?? []
-  const horas = ofertas.reduce((total, oferta) => total + oferta.times.length, 0)
-  return { key, disponible: horas > 0, horas }
+function disponiblesDelDia(dia: DayOpenTimesResponse | undefined): number {
+  return (dia?.veterinarians ?? []).reduce(
+    (total, oferta) => total + oferta.slots.filter((slot) => slot.status === 'available').length,
+    0,
+  )
+}
+
+function diaDeReserva(key: string, conTurnos: readonly DayOpenTimesResponse[]): DiaDeReserva {
+  const disponibles = disponiblesDelDia(conTurnos.find((item) => item.day === key))
+  return { key, disponible: disponibles > 0, disponibles }
 }
 
 /**
@@ -62,7 +70,10 @@ function textoDeEleccion(scheduledAt: string, elegido: OfertaDeVeterinario | und
  * servidor con las reglas de la reserva, y se actualizan solas si otra persona
  * toma una mientras esta pantalla esta abierta.
  */
-export default function BookingSlotPicker({ appointmentTypeId }: BookingSlotPickerProps) {
+export default function BookingSlotPicker({
+  appointmentTypeId,
+  durationMinutes,
+}: BookingSlotPickerProps) {
   const { control, setValue, formState } = useFormContext<BookingForm>()
   const [veterinarianId, scheduledAt] = useWatch({
     control,
@@ -80,8 +91,9 @@ export default function BookingSlotPicker({ appointmentTypeId }: BookingSlotPick
   if (horas.isPending) {
     return <p className="m-0 text-sm text-muted-foreground">Buscando horas libres…</p>
   }
-  const conHoras = horas.data?.days ?? []
-  if (conHoras.length === 0) {
+  const conTurnos = horas.data?.days ?? []
+  const conLibres = conTurnos.filter((item) => disponiblesDelDia(item) > 0)
+  if (conLibres.length === 0) {
     return (
       <p className="m-0 rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground">
         No hay horas libres en las próximas dos semanas para este tipo de atención. Prueba con otro,
@@ -90,9 +102,9 @@ export default function BookingSlotPicker({ appointmentTypeId }: BookingSlotPick
     )
   }
 
-  const dia = diaElegido ?? conHoras[0].day
+  const dia = diaElegido ?? conLibres[0].day
   const ofertas = ofertasDelDia(
-    conHoras.find((item) => item.day === dia),
+    conTurnos.find((item) => item.day === dia),
     veterinarios.data?.items ?? [],
   )
   const elegido = ofertas.find((oferta) => oferta.veterinarianId === Number(veterinarianId))
@@ -101,7 +113,7 @@ export default function BookingSlotPicker({ appointmentTypeId }: BookingSlotPick
     <fieldset className="m-0 flex min-w-0 flex-col gap-4 border-0 p-0">
       <legend className="mb-2 text-sm font-semibold">2. Elige el día y la hora</legend>
       <DayStrip
-        dias={dias.map((key) => diaDeReserva(key, conHoras))}
+        dias={dias.map((key) => diaDeReserva(key, conTurnos))}
         seleccionado={dia}
         onSelect={(key) => {
           setDiaElegido(key)
@@ -109,8 +121,14 @@ export default function BookingSlotPicker({ appointmentTypeId }: BookingSlotPick
           setValue('scheduled_at', '')
         }}
       />
+      <p className="m-0 text-xs text-muted-foreground">
+        La cita dura {durationMinutes} min. Las horas tachadas no se pueden elegir: están ocupadas, ya
+        pasaron o no alcanzan antes de que termine el turno.
+      </p>
       <VeterinarianTimes
         ofertas={ofertas}
+        dia={dia}
+        durationMinutes={durationMinutes}
         veterinarianId={Number(veterinarianId)}
         scheduledAt={scheduledAt}
         onSelect={(vet, time) => {

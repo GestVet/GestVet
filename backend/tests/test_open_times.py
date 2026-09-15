@@ -8,6 +8,7 @@ fallaría sin que el código cambiara.
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -65,6 +66,14 @@ async def montar(
     return cliente, mascota, veterinario
 
 
+def estados(oferta: dict[str, Any]) -> dict[datetime, str]:
+    return {datetime.fromisoformat(slot["time"]): slot["status"] for slot in oferta["slots"]}
+
+
+def libres(oferta: dict[str, Any]) -> list[datetime]:
+    return [hora for hora, estado in estados(oferta).items() if estado == "available"]
+
+
 async def test_ofrece_cada_cuarto_de_hora_en_que_la_cita_cabe(
     client: AsyncClient, session: AsyncSession
 ) -> None:
@@ -82,8 +91,30 @@ async def test_ofrece_cada_cuarto_de_hora_en_que_la_cita_cabe(
     assert oferta["veterinarian_id"] == veterinario.id
     # Consulta general de 30 minutos en un tramo de 9:00 a 10:00: la última
     # hora posible es 9:30, que termina justo al cierre.
-    horas = [datetime.fromisoformat(hora) for hora in oferta["times"]]
-    assert horas == [inicio, inicio + timedelta(minutes=15), inicio + timedelta(minutes=30)]
+    assert libres(oferta) == [
+        inicio,
+        inicio + timedelta(minutes=15),
+        inicio + timedelta(minutes=30),
+    ]
+
+
+async def test_las_horas_que_no_alcanzan_antes_del_cierre_salen_marcadas(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    inicio = pasado_manana_a_las(9)
+    cliente, _, _ = await montar(session, inicio, inicio + timedelta(hours=1))
+
+    response = await client.get(
+        URL, params={"appointment_type_id": GENERAL_TYPE_ID}, headers=authorization_for(cliente)
+    )
+
+    oferta = response.json()["days"][0]["veterinarians"][0]
+    assert estados(oferta)[inicio + timedelta(minutes=45)] == "too_short"
+    turnos = [
+        (datetime.fromisoformat(w["starts_at"]), datetime.fromisoformat(w["ends_at"]))
+        for w in oferta["windows"]
+    ]
+    assert turnos == [(inicio, inicio + timedelta(hours=1))]
 
 
 async def test_una_cita_existente_bloquea_su_hora_y_el_margen(
@@ -107,13 +138,12 @@ async def test_una_cita_existente_bloquea_su_hora_y_el_margen(
         URL, params={"appointment_type_id": GENERAL_TYPE_ID}, headers=authorization_for(cliente)
     )
 
-    horas = [
-        datetime.fromisoformat(hora)
-        for hora in response.json()["days"][0]["veterinarians"][0]["times"]
-    ]
+    oferta = response.json()["days"][0]["veterinarians"][0]
     # La cita ocupa de 9:30 a 10:00 y el margen de 10 minutos corre a los dos
     # lados: la primera hora libre es 10:15 y la última que cabe, 10:30.
-    assert horas == [inicio + timedelta(minutes=75), inicio + timedelta(minutes=90)]
+    assert libres(oferta) == [inicio + timedelta(minutes=75), inicio + timedelta(minutes=90)]
+    # Las horas que pisa la cita no desaparecen: salen ocupadas.
+    assert estados(oferta)[inicio + timedelta(minutes=30)] == "taken"
 
 
 async def test_no_ofrece_horas_que_ya_pasaron(client: AsyncClient, session: AsyncSession) -> None:
@@ -124,14 +154,15 @@ async def test_no_ofrece_horas_que_ya_pasaron(client: AsyncClient, session: Asyn
         URL, params={"appointment_type_id": GENERAL_TYPE_ID}, headers=authorization_for(cliente)
     )
 
-    horas = [
-        datetime.fromisoformat(hora)
+    todas = {
+        hora: estado
         for dia in response.json()["days"]
         for oferta in dia["veterinarians"]
-        for hora in oferta["times"]
-    ]
-    assert horas
-    assert all(hora >= ahora for hora in horas)
+        for hora, estado in estados(oferta).items()
+    }
+    assert any(estado == "available" for estado in todas.values())
+    assert all(hora >= ahora for hora, estado in todas.items() if estado == "available")
+    assert all(estado == "past" for hora, estado in todas.items() if hora < ahora)
 
 
 async def test_una_guardia_no_se_ofrece_para_citas_normales(

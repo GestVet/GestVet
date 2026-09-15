@@ -29,6 +29,7 @@ export default function BookingFields() {
   const mascotas = useQuery({ queryKey: myPetsQueryKey, queryFn: fetchMyPets })
   const motivos = useQuery({ queryKey: appointmentTypesQueryKey, queryFn: fetchAppointmentTypes })
   const tipoId = Number(useWatch({ control, name: 'appointment_type_id' }) || 0)
+  const duracion = motivos.data?.items.find((motivo) => motivo.id === tipoId)?.duration_minutes ?? 0
 
   const activas = mascotas.data?.items.filter((mascota) => mascota.is_active) ?? []
 
@@ -77,7 +78,7 @@ export default function BookingFields() {
       {tipoId > 0 ? (
         // La clave vuelve a montar el selector con cada tipo: el dia elegido
         // para una consulta no tiene por que servir para una cirugia.
-        <BookingSlotPicker key={tipoId} appointmentTypeId={tipoId} />
+        <BookingSlotPicker key={tipoId} appointmentTypeId={tipoId} durationMinutes={duracion} />
       ) : (
         <p className="m-0 rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground">
           Elige el tipo de atención para ver los días y las horas libres.

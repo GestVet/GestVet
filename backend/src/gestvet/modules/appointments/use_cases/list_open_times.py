@@ -1,13 +1,17 @@
-"""Caso de uso: horas libres para reservar.
+"""Caso de uso: la grilla de horas de cada turno, con lo que se puede reservar.
 
 La persona elige primero el día y después una hora de un veterinario, en vez de
-escribir una fecha y esperar a que el servidor la rechace. Para eso hace falta
-calcular qué horas caben, y el cálculo aplica las mismas reglas que la reserva:
+escribir una fecha y esperar a que el servidor la rechace. Cada cuarto de hora
+del turno sale con su estado, y solo queda libre si cumple las mismas reglas
+que la reserva:
 
-- la cita entera cabe en un tramo publicado;
-- no pisa otra cita activa del veterinario, con el margen entre citas;
+- la hora todavía no pasó;
 - el veterinario no está cubriendo una emergencia ese día;
-- la hora todavía no pasó.
+- la cita entera cabe antes de que termine el tramo publicado;
+- no pisa otra cita activa del veterinario, con el margen entre citas.
+
+Las horas que no cumplen se devuelven igual, con el motivo: una hora que
+desaparece no le explica a nadie por qué no la puede tomar.
 
 Lo calcula el servidor porque un cliente no puede ver las citas de otros, que
 son justamente las que ocupan las horas.
@@ -19,6 +23,7 @@ from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
+from enum import StrEnum
 
 from gestvet.core.clinic_time import clinic_date, clinic_midnight
 from gestvet.core.pagination import MAX_PAGE_SIZE
@@ -56,10 +61,31 @@ class OpenTimesQuery:
     now: datetime
 
 
+class SlotStatus(StrEnum):
+    AVAILABLE = "available"
+    TAKEN = "taken"
+    TOO_SHORT = "too_short"
+    PAST = "past"
+    EMERGENCY = "emergency"
+
+
+@dataclass(frozen=True, slots=True)
+class ScheduleWindow:
+    starts_at: datetime
+    ends_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class GridSlot:
+    time: datetime
+    status: SlotStatus
+
+
 @dataclass(frozen=True, slots=True)
 class VeterinarianOpenTimes:
     veterinarian_id: int
-    times: tuple[datetime, ...]
+    windows: tuple[ScheduleWindow, ...]
+    slots: tuple[GridSlot, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -90,30 +116,46 @@ class ListOpenTimes:
         busy = await self._busy_by_veterinarian(slots, window_start, window_end)
         covering = await self._days_covering_emergencies(window_start, window_end)
 
-        found: defaultdict[date, defaultdict[int, set[datetime]]] = defaultdict(
-            lambda: defaultdict(set)
+        grid: defaultdict[date, defaultdict[int, dict[datetime, SlotStatus]]] = defaultdict(
+            lambda: defaultdict(dict)
         )
-        earliest = max(query.now, window_start)
+        windows: defaultdict[date, defaultdict[int, list[ScheduleWindow]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
         for slot in slots:
-            starts = _fitting_starts(slot, appointment_type.duration, earliest, window_end)
-            for start in starts:
+            vet = slot.veterinarian_id
+            days_of_slot: set[date] = set()
+            for start in _grid_starts(slot, window_start, window_end):
                 day = clinic_date(start)
-                if (slot.veterinarian_id, day) in covering:
-                    continue
-                ends = start + appointment_type.duration
-                if any(cita.overlaps(start, ends) for cita in busy[slot.veterinarian_id]):
-                    continue
-                found[day][slot.veterinarian_id].add(start)
+                days_of_slot.add(day)
+                status = _classify(
+                    start,
+                    slot,
+                    appointment_type.duration,
+                    now=query.now,
+                    covering=(vet, day) in covering,
+                    busy=busy[vet],
+                )
+                grid[day][vet][start] = status
+            for day in days_of_slot:
+                windows[day][vet].append(ScheduleWindow(slot.starts_at, slot.ends_at))
 
         return [
             DayOpenTimes(
                 day=day,
                 veterinarians=tuple(
-                    VeterinarianOpenTimes(veterinarian_id=vet, times=tuple(sorted(times)))
-                    for vet, times in sorted(found[day].items())
+                    VeterinarianOpenTimes(
+                        veterinarian_id=vet,
+                        windows=tuple(sorted(windows[day][vet], key=lambda w: w.starts_at)),
+                        slots=tuple(
+                            GridSlot(time=start, status=status)
+                            for start, status in sorted(by_time.items())
+                        ),
+                    )
+                    for vet, by_time in sorted(grid[day].items())
                 ),
             )
-            for day in sorted(found)
+            for day in sorted(grid)
         ]
 
     async def _busy_by_veterinarian(
@@ -143,11 +185,33 @@ class ListOpenTimes:
         }
 
 
-def _fitting_starts(
-    slot: ScheduleSlot, duration: timedelta, earliest: datetime, window_end: datetime
+def _grid_starts(
+    slot: ScheduleSlot, window_start: datetime, window_end: datetime
 ) -> Iterator[datetime]:
-    """Cada cuarto de hora del tramo en el que la cita entera todavía cabe."""
-    start = _ceil_to_step(max(slot.starts_at, earliest))
-    while start + duration <= slot.ends_at and start < window_end:
+    """Cada cuarto de hora del tramo dentro de la ventana consultada, quepa o no la cita."""
+    start = _ceil_to_step(max(slot.starts_at, window_start))
+    end = min(slot.ends_at, window_end)
+    while start < end:
         yield start
         start += SLOT_STEP
+
+
+def _classify(
+    start: datetime,
+    slot: ScheduleSlot,
+    duration: timedelta,
+    *,
+    now: datetime,
+    covering: bool,
+    busy: list[Appointment],
+) -> SlotStatus:
+    if start < now:
+        return SlotStatus.PAST
+    if covering:
+        return SlotStatus.EMERGENCY
+    ends = start + duration
+    if ends > slot.ends_at:
+        return SlotStatus.TOO_SHORT
+    if any(cita.overlaps(start, ends) for cita in busy):
+        return SlotStatus.TAKEN
+    return SlotStatus.AVAILABLE
