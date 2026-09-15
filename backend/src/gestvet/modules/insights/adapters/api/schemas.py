@@ -12,6 +12,7 @@ from gestvet.modules.insights.domain.entities import (
     NoShowRisk,
     PaymentAnomaly,
     PetOverview,
+    ServiceConsumption,
     VeterinarianAlert,
 )
 
@@ -156,3 +157,27 @@ class PetOverviewResponse(BaseModel):
 
 class PetOverviewListResponse(BaseModel):
     items: list[PetOverviewResponse]
+
+
+class ServiceConsumptionResponse(BaseModel):
+    appointment_type_id: int
+    name: str
+    is_emergency: bool
+    price: Decimal
+    appointment_count: int
+    estimated_revenue: Decimal
+
+    @classmethod
+    def from_entity(cls, item: ServiceConsumption) -> ServiceConsumptionResponse:
+        return cls(
+            appointment_type_id=item.appointment_type_id,
+            name=item.name,
+            is_emergency=item.is_emergency,
+            price=item.price,
+            appointment_count=item.appointment_count,
+            estimated_revenue=item.estimated_revenue,
+        )
+
+
+class ServiceConsumptionListResponse(BaseModel):
+    items: list[ServiceConsumptionResponse]

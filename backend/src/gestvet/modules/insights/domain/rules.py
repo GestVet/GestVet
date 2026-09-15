@@ -29,6 +29,8 @@ from gestvet.modules.insights.domain.entities import (
     PetCareRecord,
     PetOverview,
     PetOverviewRecord,
+    ServiceConsumption,
+    ServiceConsumptionRecord,
     VaccinationStatus,
     VeterinarianAlert,
     VeterinarianSignal,
@@ -166,6 +168,23 @@ def build_pet_overview(records: list[PetOverviewRecord], today: date) -> list[Pe
         )
         for record in records
     ]
+
+
+def build_service_consumption(
+    records: list[ServiceConsumptionRecord],
+) -> list[ServiceConsumption]:
+    items = [
+        ServiceConsumption(
+            appointment_type_id=record.appointment_type_id,
+            name=record.name,
+            is_emergency=record.is_emergency,
+            price=record.price,
+            appointment_count=record.appointment_count,
+            estimated_revenue=record.price * record.appointment_count,
+        )
+        for record in records
+    ]
+    return sorted(items, key=lambda item: item.appointment_count, reverse=True)
 
 
 def build_veterinarian_alerts(signals: list[VeterinarianSignal]) -> list[VeterinarianAlert]:

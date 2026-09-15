@@ -759,6 +759,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/insights/service-consumption": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cuántas citas tuvo cada servicio, sin datos de clientes */
+        get: operations["list_service_consumption_api_v1_insights_service_consumption_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/insights/service-consumption.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Descargar en PDF los servicios más consumidos */
+        get: operations["download_service_consumption_pdf_api_v1_insights_service_consumption_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/insights/veterinarian-alerts": {
         parameters: {
             query?: never;
@@ -2582,6 +2616,26 @@ export interface components {
             role_id: number;
             /** User Id */
             user_id: number;
+        };
+        /** ServiceConsumptionListResponse */
+        ServiceConsumptionListResponse: {
+            /** Items */
+            items: components["schemas"]["ServiceConsumptionResponse"][];
+        };
+        /** ServiceConsumptionResponse */
+        ServiceConsumptionResponse: {
+            /** Appointment Count */
+            appointment_count: number;
+            /** Appointment Type Id */
+            appointment_type_id: number;
+            /** Estimated Revenue */
+            estimated_revenue: string;
+            /** Is Emergency */
+            is_emergency: boolean;
+            /** Name */
+            name: string;
+            /** Price */
+            price: string;
         };
         /**
          * ShiftKind
@@ -4498,6 +4552,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PetOverviewListResponse"];
+                };
+            };
+        };
+    };
+    list_service_consumption_api_v1_insights_service_consumption_get: {
+        parameters: {
+            query?: {
+                /** @description Desde */
+                starts_after?: string | null;
+                /** @description Hasta */
+                ends_before?: string | null;
+                /** @description Filtra por estado de la cita */
+                status?: ("pending" | "confirmed" | "completed" | "cancelled" | "no_show") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceConsumptionListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_service_consumption_pdf_api_v1_insights_service_consumption_pdf_get: {
+        parameters: {
+            query?: {
+                /** @description Desde */
+                starts_after?: string | null;
+                /** @description Hasta */
+                ends_before?: string | null;
+                /** @description Filtra por estado de la cita */
+                status?: ("pending" | "confirmed" | "completed" | "cancelled" | "no_show") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

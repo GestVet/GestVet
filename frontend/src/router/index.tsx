@@ -23,8 +23,8 @@ import InsightsView from '../features/insights/InsightsView'
 import TermsView from '../features/legal/TermsView'
 import DashboardView from '../features/panel/DashboardView'
 import PetCatalogView from '../features/pet-catalog/PetCatalogView'
+import ClinicOverviewView from '../features/clinic-overview/ClinicOverviewView'
 import PetsView from '../features/pets/PetsView'
-import PetsOverviewView from '../features/pets-overview/PetsOverviewView'
 import AppShell from '../features/shell/AppShell'
 import RequireSession from '../features/shell/RequireSession'
 
@@ -80,7 +80,10 @@ const router = createBrowserRouter(
         conPermiso('pagos', PaymentsReportView, 'payments.report'),
         conPermiso('reclamos', ComplaintsView, 'complaints.read'),
         conPermiso('indicadores', InsightsView, 'insights.read'),
-        conPermiso('panorama-mascotas', PetsOverviewView, 'pets.overview_read'),
+        conPermiso('panorama-clinica', ClinicOverviewView, [
+          'pets.overview_read',
+          'payments.report',
+        ]),
         conPermiso('movimientos', ActivityView, 'activity.read'),
         // Cualquier ruta que no exista lleva a la landing, no a un error.
         { path: '*', element: <Navigate to="/" replace /> },

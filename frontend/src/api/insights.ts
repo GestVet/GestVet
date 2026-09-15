@@ -4,6 +4,7 @@ import type {
   NoShowRiskListResponse,
   PaymentAnomalyListResponse,
   PetOverviewListResponse,
+  ServiceConsumptionListResponse,
   VeterinarianAlertListResponse,
 } from './types'
 
@@ -12,6 +13,16 @@ export const noShowRisksQueryKey = ['insights', 'no-show-risks'] as const
 export const paymentAnomaliesQueryKey = ['insights', 'payment-anomalies'] as const
 export const veterinarianAlertsQueryKey = ['insights', 'veterinarian-alerts'] as const
 export const petsOverviewQueryKey = ['insights', 'pets-overview'] as const
+
+export interface ServiceConsumptionFilter {
+  readonly starts_after?: string
+  readonly ends_before?: string
+  readonly status?: string
+}
+
+export function serviceConsumptionQueryKey(filter: ServiceConsumptionFilter) {
+  return ['insights', 'service-consumption', filter] as const
+}
 
 export async function fetchCareReminders(): Promise<CareReminderListResponse> {
   const { data } = await api.get<CareReminderListResponse>('/insights/care-reminders')
@@ -35,5 +46,24 @@ export async function fetchVeterinarianAlerts(): Promise<VeterinarianAlertListRe
 
 export async function fetchPetsOverview(): Promise<PetOverviewListResponse> {
   const { data } = await api.get<PetOverviewListResponse>('/insights/pets-overview')
+  return data
+}
+
+export async function fetchServiceConsumption(
+  filter: ServiceConsumptionFilter = {},
+): Promise<ServiceConsumptionListResponse> {
+  const { data } = await api.get<ServiceConsumptionListResponse>('/insights/service-consumption', {
+    params: filter,
+  })
+  return data
+}
+
+export async function downloadServiceConsumptionPdf(
+  filter: ServiceConsumptionFilter = {},
+): Promise<Blob> {
+  const { data } = await api.get<Blob>('/insights/service-consumption.pdf', {
+    params: filter,
+    responseType: 'blob',
+  })
   return data
 }

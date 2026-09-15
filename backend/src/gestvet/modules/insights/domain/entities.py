@@ -167,3 +167,22 @@ class VeterinarianSignal:
     veterinarian_name: str
     low_rating_count: int
     complaint_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class ServiceConsumptionRecord:
+    appointment_type_id: int
+    name: str
+    is_emergency: bool
+    price: Decimal
+    appointment_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class ServiceConsumption:
+    appointment_type_id: int
+    name: str
+    is_emergency: bool
+    price: Decimal
+    appointment_count: int
+    estimated_revenue: Decimal

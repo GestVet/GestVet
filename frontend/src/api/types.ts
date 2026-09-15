@@ -108,6 +108,9 @@ export type VeterinarianAlertResponse = components['schemas']['VeterinarianAlert
 export type VeterinarianAlertListResponse = components['schemas']['VeterinarianAlertListResponse']
 export type PetOverviewResponse = components['schemas']['PetOverviewResponse']
 export type PetOverviewListResponse = components['schemas']['PetOverviewListResponse']
+export type ServiceConsumptionResponse = components['schemas']['ServiceConsumptionResponse']
+export type ServiceConsumptionListResponse =
+  components['schemas']['ServiceConsumptionListResponse']
 
 export type UserRole = UserResponse['role']
 

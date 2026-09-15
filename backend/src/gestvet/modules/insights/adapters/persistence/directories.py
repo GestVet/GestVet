@@ -13,10 +13,10 @@ sistema de tipos de SQLAlchemy.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, bindparam, text
+from sqlalchemy import Date, DateTime, Numeric, bindparam, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from gestvet.core.identity import Role
@@ -26,6 +26,9 @@ from gestvet.modules.insights.ports.billing_directory import PaymentRecord
 from gestvet.modules.insights.ports.clinical_directory import PetCareRecord
 from gestvet.modules.insights.ports.pet_overview_directory import PetOverviewRecord
 from gestvet.modules.insights.ports.reputation_directory import VeterinarianSignal
+from gestvet.modules.insights.ports.service_consumption_directory import (
+    ServiceConsumptionRecord,
+)
 
 _MOMENT = DateTime(timezone=True)
 _DAY = Date()
@@ -120,6 +123,40 @@ _PET_OVERVIEW_RECORDS = text(_PET_OVERVIEW_BASE.format(filter="")).columns(
     next_vaccine_due_on=_DAY,
 )
 
+# Sin filtro, "todo el tiempo": evita tener una tercera variante de la
+# consulta solo para el caso sin rango de fechas (el filtro de estado sí
+# tiene su propia variante, ver mas abajo).
+_FAR_PAST = datetime(2000, 1, 1, tzinfo=UTC)
+_FAR_FUTURE = datetime(2100, 1, 1, tzinfo=UTC)
+
+_SERVICE_CONSUMPTION_BASE = (
+    "SELECT appointment_types.id AS appointment_type_id, appointment_types.name, "
+    "appointment_types.is_emergency, appointment_types.price, "
+    "COUNT(appointments.id) AS appointment_count "
+    "FROM appointment_types "
+    "LEFT JOIN appointments ON appointments.appointment_type_id = appointment_types.id "
+    "AND appointments.scheduled_at BETWEEN :since AND :until{status_filter} "
+    "GROUP BY appointment_types.id, appointment_types.name, appointment_types.is_emergency, "
+    "appointment_types.price "
+    "ORDER BY appointment_count DESC"
+)
+
+_SERVICE_CONSUMPTION_RECORDS = (
+    text(_SERVICE_CONSUMPTION_BASE.format(status_filter=""))
+    .columns(price=Numeric(10, 2))
+    .bindparams(bindparam("since", type_=_MOMENT), bindparam("until", type_=_MOMENT))
+)
+
+_SERVICE_CONSUMPTION_RECORDS_BY_STATUS = (
+    text(_SERVICE_CONSUMPTION_BASE.format(status_filter=" AND appointments.status = :status"))
+    .columns(price=Numeric(10, 2))
+    .bindparams(
+        bindparam("since", type_=_MOMENT),
+        bindparam("until", type_=_MOMENT),
+        bindparam("status"),
+    )
+)
+
 _PET_OVERVIEW_RECORDS_FOR_VET = (
     text(
         _PET_OVERVIEW_BASE.format(
@@ -183,6 +220,38 @@ class SqlPetOverviewDirectory:
                 last_vaccine_on=row.last_vaccine_on,
                 next_vaccine_due_on=row.next_vaccine_due_on,
                 vaccine_count=row.vaccine_count,
+            )
+            for row in rows
+        ]
+
+
+class SqlServiceConsumptionDirectory:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def records(
+        self,
+        starts_after: datetime | None,
+        ends_before: datetime | None,
+        status: str | None,
+    ) -> list[ServiceConsumptionRecord]:
+        params = {
+            "since": starts_after or _FAR_PAST,
+            "until": ends_before or _FAR_FUTURE,
+        }
+        if status is None:
+            rows = await self._session.execute(_SERVICE_CONSUMPTION_RECORDS, params)
+        else:
+            rows = await self._session.execute(
+                _SERVICE_CONSUMPTION_RECORDS_BY_STATUS, {**params, "status": status}
+            )
+        return [
+            ServiceConsumptionRecord(
+                appointment_type_id=row.appointment_type_id,
+                name=row.name,
+                is_emergency=bool(row.is_emergency),
+                price=row.price,
+                appointment_count=row.appointment_count,
             )
             for row in rows
         ]

@@ -36,7 +36,13 @@ from gestvet.modules.pets.adapters.persistence.sqlalchemy_pet_repository import 
 )
 from gestvet.modules.reviews.adapters.persistence.repositories import SqlAlchemyReviewRepository
 from gestvet.modules.reviews.domain.entities import Review
-from tests.conftest import GENERAL_TYPE_ID, authorization_for, build_pet, build_user
+from tests.conftest import (
+    GENERAL_TYPE_ID,
+    SURGERY_TYPE_ID,
+    authorization_for,
+    build_pet,
+    build_user,
+)
 
 URL = "/api/v1/insights"
 HORA = datetime(2026, 9, 14, 10, 0, tzinfo=UTC)
@@ -252,6 +258,79 @@ async def test_administracion_ve_todas_las_mascotas_veterinario_solo_las_que_ate
         f"{URL}/pets-overview", headers=authorization_for(base.cliente)
     )
     assert respuesta_cliente.status_code == 403
+
+
+async def test_solo_administracion_ve_servicios_mas_consumidos(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    base = await _base(session)
+
+    respuesta = await client.get(
+        f"{URL}/service-consumption", headers=authorization_for(base.veterinario)
+    )
+    assert respuesta.status_code == 403
+
+    respuesta = await client.get(f"{URL}/service-consumption")
+    assert respuesta.status_code == 401
+
+
+async def test_cuenta_citas_por_servicio_sin_exponer_clientes(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    base = await _base(session)
+    await _appointment(session, base, HORA, AppointmentStatus.COMPLETED)
+    await _appointment(session, base, HORA + timedelta(days=1), AppointmentStatus.CANCELLED)
+
+    respuesta = await client.get(
+        f"{URL}/service-consumption", headers=authorization_for(base.admin)
+    )
+    assert respuesta.status_code == 200
+    items = respuesta.json()["items"]
+    general = next(item for item in items if item["appointment_type_id"] == GENERAL_TYPE_ID)
+    assert general["appointment_count"] == 2
+    assert general["estimated_revenue"] == "120.00"
+    assert "client_name" not in general
+    assert "owner_name" not in general
+
+    solo_completadas = await client.get(
+        f"{URL}/service-consumption",
+        params={"status": "completed"},
+        headers=authorization_for(base.admin),
+    )
+    general_filtrado = next(
+        item
+        for item in solo_completadas.json()["items"]
+        if item["appointment_type_id"] == GENERAL_TYPE_ID
+    )
+    assert general_filtrado["appointment_count"] == 1
+
+
+async def test_un_servicio_sin_citas_en_el_rango_aparece_en_cero(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    base = await _base(session)
+    await _appointment(session, base, HORA, AppointmentStatus.COMPLETED)
+
+    respuesta = await client.get(
+        f"{URL}/service-consumption", headers=authorization_for(base.admin)
+    )
+
+    items = respuesta.json()["items"]
+    cirugia = next(item for item in items if item["appointment_type_id"] == SURGERY_TYPE_ID)
+    assert cirugia["appointment_count"] == 0
+
+
+async def test_descarga_el_pdf_de_servicios_mas_consumidos(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    base = await _base(session)
+
+    respuesta = await client.get(
+        f"{URL}/service-consumption.pdf", headers=authorization_for(base.admin)
+    )
+
+    assert respuesta.status_code == 200
+    assert respuesta.headers["content-type"] == "application/pdf"
 
 
 async def test_un_veterinario_con_buena_reputacion_no_genera_alerta(

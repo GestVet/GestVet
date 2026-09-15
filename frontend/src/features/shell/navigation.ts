@@ -5,8 +5,11 @@ export interface NavEntry {
   readonly to: string
   readonly label: string
   readonly icon: IconName
-  /** Permiso que la muestra. Sin permiso, la ve toda cuenta. */
-  readonly permission?: PermissionCode
+  /**
+   * Permiso que la muestra, o una lista: con lista alcanza con tener
+   * cualquiera de ellos. Sin permiso, la ve toda cuenta.
+   */
+  readonly permission?: PermissionCode | readonly PermissionCode[]
 }
 
 /**
@@ -42,16 +45,21 @@ export const NAV_ENTRIES: readonly NavEntry[] = [
   { to: '/reclamos', label: 'Reclamos', icon: 'alerta', permission: 'complaints.read' },
   { to: '/indicadores', label: 'Indicadores', icon: 'indicadores', permission: 'insights.read' },
   {
-    to: '/panorama-mascotas',
-    label: 'Panorama de mascotas',
+    to: '/panorama-clinica',
+    label: 'Panorama de la clínica',
     icon: 'mascota',
-    permission: 'pets.overview_read',
+    permission: ['pets.overview_read', 'payments.report'],
   },
   { to: '/movimientos', label: 'Movimientos', icon: 'buscar', permission: 'activity.read' },
 ]
 
 export function entriesFor(permissions: readonly PermissionCode[]): readonly NavEntry[] {
-  return NAV_ENTRIES.filter(
-    (entry) => entry.permission === undefined || permissions.includes(entry.permission),
-  )
+  return NAV_ENTRIES.filter((entry) => {
+    if (entry.permission === undefined) {
+      return true
+    }
+    const exigidos =
+      typeof entry.permission === 'string' ? [entry.permission] : entry.permission
+    return exigidos.some((uno) => permissions.includes(uno))
+  })
 }

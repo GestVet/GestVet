@@ -52,6 +52,9 @@ from gestvet.modules.insights.adapters.api.pets_overview_router import (
     router as pets_overview_router,
 )
 from gestvet.modules.insights.adapters.api.router import router as insights_router
+from gestvet.modules.insights.adapters.api.service_consumption_router import (
+    router as service_consumption_router,
+)
 from gestvet.modules.medical_records.adapters.api.assistant_router import (
     router as clinical_assistant_router,
 )
@@ -249,6 +252,9 @@ def create_app() -> FastAPI:
     )
     app.include_router(insights_router, prefix=f"{API_PREFIX}/insights", tags=["insights"])
     app.include_router(pets_overview_router, prefix=f"{API_PREFIX}/insights", tags=["insights"])
+    app.include_router(
+        service_consumption_router, prefix=f"{API_PREFIX}/insights", tags=["insights"]
+    )
     return app
 
 

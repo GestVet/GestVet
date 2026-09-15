@@ -10,12 +10,14 @@ from gestvet.modules.insights.domain.entities import (
     PaymentRecord,
     PetCareRecord,
     PetOverviewRecord,
+    ServiceConsumptionRecord,
 )
 from gestvet.modules.insights.domain.rules import (
     build_care_reminders,
     build_no_show_risks,
     build_payment_anomalies,
     build_pet_overview,
+    build_service_consumption,
     build_veterinarian_alerts,
     vaccination_status,
 )
@@ -252,3 +254,32 @@ def test_construye_el_panorama_con_la_edad_calculada() -> None:
 
     assert panorama[0].age_years == 6
     assert panorama[0].vaccination_status == "no_vaccines"
+
+
+def _service_record(**overrides: object) -> ServiceConsumptionRecord:
+    valores: dict[str, object] = {
+        "appointment_type_id": 1,
+        "name": "Consulta general",
+        "is_emergency": False,
+        "price": Decimal("60"),
+        "appointment_count": 3,
+    }
+    valores.update(overrides)
+    return ServiceConsumptionRecord(**valores)  # type: ignore[arg-type]
+
+
+def test_calcula_el_ingreso_estimado_con_el_precio_de_catalogo() -> None:
+    servicio = _service_record(price=Decimal("60"), appointment_count=3)
+
+    resultado = build_service_consumption([servicio])
+
+    assert resultado[0].estimated_revenue == Decimal("180")
+
+
+def test_ordena_por_el_mas_consumido_primero() -> None:
+    poco_usado = _service_record(appointment_type_id=1, name="Baño", appointment_count=1)
+    muy_usado = _service_record(appointment_type_id=2, name="Consulta", appointment_count=5)
+
+    resultado = build_service_consumption([poco_usado, muy_usado])
+
+    assert [item.name for item in resultado] == ["Consulta", "Baño"]

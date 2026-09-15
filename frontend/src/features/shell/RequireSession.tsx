@@ -4,8 +4,20 @@ import type { PermissionCode } from '../../api/types'
 import { hasPermission, useSession } from '../../store/session'
 
 interface RequireSessionProps {
-  /** Permiso que exige la ruta. Sin el, basta con estar autenticado. */
-  readonly permission?: PermissionCode
+  /**
+   * Permiso que exige la ruta, o una lista: con lista alcanza con tener
+   * cualquiera de ellos (una pantalla con secciones para audiencias
+   * distintas). Sin nada, basta con estar autenticado.
+   */
+  readonly permission?: PermissionCode | readonly PermissionCode[]
+}
+
+function tienePermiso(
+  user: Parameters<typeof hasPermission>[0],
+  permission: PermissionCode | readonly PermissionCode[],
+): boolean {
+  const permisos = typeof permission === 'string' ? [permission] : permission
+  return permisos.some((uno) => hasPermission(user, uno))
 }
 
 /**
@@ -24,7 +36,7 @@ export default function RequireSession({ permission }: RequireSessionProps) {
   if (user === null) {
     return <Navigate to="/acceso" replace state={{ from: location.pathname }} />
   }
-  if (permission !== undefined && !hasPermission(user, permission)) {
+  if (permission !== undefined && !tienePermiso(user, permission)) {
     return <Navigate to="/panel" replace />
   }
   return <Outlet />
