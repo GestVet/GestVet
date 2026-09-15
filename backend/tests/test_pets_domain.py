@@ -139,7 +139,31 @@ def test_la_raza_es_obligatoria() -> None:
         )
 
 
-def test_actualizar_el_perfil_del_dueno_no_toca_los_datos_clinicos() -> None:
+def test_el_dueno_tambien_puede_cargar_los_datos_clinicos_al_editar_su_ficha() -> None:
+    mascota = _pet()
+
+    mascota.update_owner_profile(
+        breed="Mestizo",
+        sex=PetSex.FEMALE,
+        color="",
+        microchip_number="",
+        temperament="",
+        weight_kg=Decimal("10"),
+        height_cm=Decimal("30"),
+        is_sterilized=True,
+        allergies="Polen",
+    )
+
+    assert mascota.weight_kg == Decimal("10")
+    assert mascota.height_cm == Decimal("30")
+    assert mascota.is_sterilized is True
+    assert mascota.allergies == "Polen"
+
+
+def test_editar_la_ficha_conserva_lo_confirmado_por_el_veterinario_si_se_reenvia() -> None:
+    # El formulario del dueño siempre reenvía el estado clínico completo
+    # (igual que ya hace con sexo, color o temperamento), así que conservar
+    # un dato clínico es responsabilidad de quien llama, no del método.
     mascota = _pet()
     mascota.update_clinical_profile(
         birth_date=_BIRTH_DATE,
@@ -150,7 +174,15 @@ def test_actualizar_el_perfil_del_dueno_no_toca_los_datos_clinicos() -> None:
     )
 
     mascota.update_owner_profile(
-        breed="Mestizo", sex=PetSex.FEMALE, color="", microchip_number="", temperament=""
+        breed="Mestizo",
+        sex=PetSex.FEMALE,
+        color="",
+        microchip_number="",
+        temperament="",
+        weight_kg=mascota.weight_kg,
+        height_cm=mascota.height_cm,
+        is_sterilized=mascota.is_sterilized,
+        allergies=mascota.allergies,
     )
 
     assert mascota.weight_kg == Decimal("10")

@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 
 import { onSubmit } from '../hooks/formSubmit'
 import { usePetOwnerProfileUpdate } from '../hooks/usePetProfile'
+import { decimalParaApi } from './formRules'
 import FormMessage from './FormMessage'
 import Icon from './Icon'
 import PetOwnerProfileFields from './PetOwnerProfileFields'
@@ -18,9 +19,18 @@ interface PetOwnerProfileFormProps {
   readonly color: string
   readonly microchipNumber: string
   readonly temperament: string
+  readonly weightKg: string | null
+  readonly heightCm: string | null
+  readonly isSterilized: boolean | null
+  readonly allergies: string
 }
 
 type Cuerpo = Parameters<ReturnType<typeof usePetOwnerProfileUpdate>['mutate']>[0]
+
+function esterilizadoInicial(valor: boolean | null): '' | 'true' | 'false' {
+  if (valor === null) return ''
+  return valor ? 'true' : 'false'
+}
 
 function valoresIniciales(props: PetOwnerProfileFormProps): PetOwnerProfileValues {
   return {
@@ -31,6 +41,10 @@ function valoresIniciales(props: PetOwnerProfileFormProps): PetOwnerProfileValue
     color: props.color,
     microchip_number: props.microchipNumber,
     temperament: props.temperament,
+    weight_kg: props.weightKg ?? '',
+    height_cm: props.heightCm ?? '',
+    is_sterilized: esterilizadoInicial(props.isSterilized),
+    allergies: props.allergies,
   }
 }
 
@@ -51,10 +65,19 @@ function cuerpo(valores: PetOwnerProfileValues, props: PetOwnerProfileFormProps)
     species: cambiaEspecie ? valores.species : null,
     breed: cambiaEspecie ? valores.breed : null,
     birth_date: valores.birth_date === props.birthDate ? null : valores.birth_date,
+    weight_kg: decimalParaApi(valores.weight_kg),
+    height_cm: decimalParaApi(valores.height_cm),
+    is_sterilized: valores.is_sterilized === '' ? null : valores.is_sterilized === 'true',
+    allergies: valores.allergies,
   }
 }
 
-/** Datos que conoce el dueño: especie, raza, nacimiento, sexo, color, microchip y temperamento. */
+/**
+ * Datos que conoce el dueño: especie, raza, nacimiento, sexo, color, microchip,
+ * temperamento, y también peso, altura, esterilización y alergias si los sabe
+ * de memoria. El veterinario puede confirmarlos o corregirlos en consulta
+ * desde `PetClinicalProfileForm`.
+ */
 export default function PetOwnerProfileForm(props: PetOwnerProfileFormProps) {
   const formulario = useForm<PetOwnerProfileValues>({
     resolver: zodResolver(petOwnerProfileSchemaFor(props.microchipNumber)),

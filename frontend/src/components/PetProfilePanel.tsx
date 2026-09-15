@@ -30,8 +30,8 @@ interface PetProfilePanelProps {
  *
  * La ficha siempre se ve entera. Los formularios para editarla arrancan
  * cerrados: se consultan mucho más de lo que se editan, y abiertos estiraban
- * la pantalla. El dueño edita lo que conoce de memoria; el veterinario, lo que
- * mide o confirma en consulta.
+ * la pantalla. El dueño edita lo que conoce de memoria, peso y esterilización
+ * incluidos; el veterinario los confirma o corrige con lo que mide en consulta.
  */
 export default function PetProfilePanel({
   mascota,
@@ -47,7 +47,7 @@ export default function PetProfilePanel({
           <CollapsibleSection
             as="h4"
             title="Editar ficha"
-            description="Especie, raza, nacimiento, sexo, color, microchip y temperamento."
+            description="Especie, raza, nacimiento, sexo, color, microchip, temperamento, peso, altura, esterilización y alergias."
             defaultOpen={false}
           >
             <PetOwnerProfileForm
@@ -59,6 +59,10 @@ export default function PetProfilePanel({
               color={mascota.color}
               microchipNumber={mascota.microchip_number}
               temperament={mascota.temperament}
+              weightKg={mascota.weight_kg}
+              heightCm={mascota.height_cm}
+              isSterilized={mascota.is_sterilized}
+              allergies={mascota.allergies}
             />
           </CollapsibleSection>
         </>
@@ -69,7 +73,7 @@ export default function PetProfilePanel({
           <CollapsibleSection
             as="h4"
             title="Datos clínicos"
-            description="Nacimiento, peso, altura, esterilización y alergias, confirmados en consulta."
+            description="Nacimiento, peso, altura, esterilización y alergias, confirmados o corregidos en consulta."
             defaultOpen={false}
           >
             <PetClinicalProfileForm

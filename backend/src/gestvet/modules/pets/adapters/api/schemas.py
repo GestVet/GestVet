@@ -62,6 +62,12 @@ class UpdatePetOwnerProfileRequest(BaseModel):
     species: str | None = Field(default=None, min_length=1, max_length=MAX_SPECIES_LENGTH)
     breed: str | None = Field(default=None, min_length=1, max_length=MAX_BREED_LENGTH)
     birth_date: date | None = None
+    # El dueño los conoce de memoria; el veterinario igual puede confirmarlos
+    # o corregirlos en consulta desde `UpdatePetClinicalProfileRequest`.
+    weight_kg: Decimal | None = Field(default=None, gt=0)
+    height_cm: Decimal | None = Field(default=None, gt=0)
+    is_sterilized: bool | None = None
+    allergies: str = Field(default="", max_length=MAX_ALLERGIES_LENGTH)
 
 
 class UpdatePetClinicalProfileRequest(BaseModel):

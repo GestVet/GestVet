@@ -67,8 +67,8 @@ class Pet:
     color: str = ""
     microchip_number: str = ""
     temperament: str = ""
-    # Lo carga el veterinario: son datos clínicos, medidos o confirmados en
-    # consulta.
+    # El dueño puede cargarlos de entrada (peso o esterilización que ya sabe);
+    # el veterinario los confirma o corrige en consulta.
     weight_kg: Decimal | None = None
     height_cm: Decimal | None = None
     is_sterilized: bool | None = None
@@ -122,12 +122,21 @@ class Pet:
         species: str | None = None,
         breed: str | None = None,
         birth_date: date | None = None,
+        weight_kg: Decimal | None = None,
+        height_cm: Decimal | None = None,
+        is_sterilized: bool | None = None,
+        allergies: str = "",
     ) -> None:
         """Datos que conoce el dueño, no el consultorio.
 
         Especie, raza y fecha de nacimiento son opcionales: sin ellas se
         conservan. Sirven para completar una mascota dada de alta en una
         emergencia, que queda con la raza sin especificar.
+
+        Peso, altura, esterilización y alergias el dueño los conoce de
+        memoria y puede cargarlos de una vez, igual que el color o el
+        microchip; el veterinario los confirma o corrige en consulta desde
+        `UpdatePetClinicalProfile`.
         """
         # Se valida todo antes de tocar nada: un dato inválido no deja la ficha
         # a medio actualizar.
@@ -140,6 +149,11 @@ class Pet:
             else _require_text(species, "especie", MAX_SPECIES_LENGTH)
         )
         nueva_raza = self.breed if breed is None else _require_text(breed, "raza", MAX_BREED_LENGTH)
+        nuevas_alergias = _trim(allergies, "alergias", MAX_ALLERGIES_LENGTH)
+        if weight_kg is not None:
+            _require_plausible_weight(weight_kg)
+        if height_cm is not None:
+            _require_plausible_height(height_cm)
         if birth_date is not None:
             _require_plausible_birth_date(birth_date)
             self.birth_date = birth_date
@@ -149,6 +163,10 @@ class Pet:
         self.color = nuevo_color
         self.microchip_number = nuevo_microchip
         self.temperament = nuevo_temperamento
+        self.weight_kg = weight_kg
+        self.height_cm = height_cm
+        self.is_sterilized = is_sterilized
+        self.allergies = nuevas_alergias
 
     def update_clinical_profile(
         self,

@@ -1,10 +1,11 @@
 """Adaptador de entrada HTTP para mascotas.
 
 Un cliente administra las suyas y solo las suyas: el alta, la baja y los datos
-que conoce de memoria (sexo, color, microchip, temperamento). El personal de
-la clínica las consulta para atender una cita, y un veterinario además carga
-los datos clínicos (peso, altura, esterilización, alergias) de cualquier
-mascota: son datos que se confirman en consulta, no en el padrón del dueño.
+que conoce de memoria (sexo, color, microchip, temperamento, y también peso,
+altura, esterilización y alergias si los sabe). El personal de la clínica las
+consulta para atender una cita, y un veterinario además puede confirmar o
+corregir los datos clínicos de cualquier mascota: son datos que se validan en
+consulta, no solo lo que cargó el dueño en su padrón.
 """
 
 from __future__ import annotations
@@ -243,6 +244,10 @@ async def update_pet_owner_profile(
                 species=payload.species,
                 breed=payload.breed,
                 birth_date=payload.birth_date,
+                weight_kg=payload.weight_kg,
+                height_cm=payload.height_cm,
+                is_sterilized=payload.is_sterilized,
+                allergies=payload.allergies,
             )
         )
     except PetNotFound as error:

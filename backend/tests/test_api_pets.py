@@ -275,6 +275,35 @@ async def test_el_dueno_actualiza_el_perfil_que_conoce(
     assert body["temperament"] == "Juguetona"
 
 
+async def test_el_dueno_tambien_puede_cargar_los_datos_clinicos_que_conoce(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    ana = await _client_account(session)
+    pets = SqlAlchemyPetRepository(session)
+    propia = await pets.add(build_pet(owner_id=ana.id or 0))
+    await session.commit()
+
+    response = await client.patch(
+        f"{PETS_URL}/{propia.id}/owner-profile",
+        json={
+            "breed": "Mestizo",
+            "color": "Negro",
+            "weight_kg": "10.5",
+            "height_cm": "30",
+            "is_sterilized": True,
+            "allergies": "Polen",
+        },
+        headers=authorization_for(ana),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["weight_kg"] == "10.50"
+    assert body["height_cm"] == "30.00"
+    assert body["is_sterilized"] is True
+    assert body["allergies"] == "Polen"
+
+
 async def test_un_cliente_no_actualiza_el_perfil_de_una_mascota_ajena(
     client: AsyncClient, session: AsyncSession
 ) -> None:
