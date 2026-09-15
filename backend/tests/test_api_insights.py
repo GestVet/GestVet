@@ -202,6 +202,58 @@ async def test_alerta_un_veterinario_con_reclamos_recientes(
     )
 
 
+async def test_administracion_ve_todas_las_mascotas_veterinario_solo_las_que_atendio(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    base = await _base(session)
+    users = SqlAlchemyUserRepository(session)
+    otro_cliente = await users.add(build_user("otro@example.com"))
+    otro_veterinario = await users.add(build_user("otrovet@example.com", role=Role.VETERINARIAN))
+    await session.flush()
+
+    pets = SqlAlchemyPetRepository(session)
+    otra_mascota = await pets.add(build_pet(owner_id=otro_cliente.id or 0, name="Michi"))
+    await session.commit()
+
+    entries = SqlAlchemyClinicalEntryRepository(session)
+    await entries.add(
+        ClinicalEntry(
+            pet_id=base.pet_id,
+            veterinarian_id=base.veterinario.id or 0,
+            kind=EntryKind.CONSULTATION,
+            notes="Consulta inicial.",
+            occurred_at=HORA,
+        )
+    )
+    await session.commit()
+
+    respuesta_admin = await client.get(
+        f"{URL}/pets-overview", headers=authorization_for(base.admin)
+    )
+    assert respuesta_admin.status_code == 200
+    ids_admin = {item["pet_id"] for item in respuesta_admin.json()["items"]}
+    assert ids_admin == {base.pet_id, otra_mascota.id}
+
+    respuesta_vet = await client.get(
+        f"{URL}/pets-overview", headers=authorization_for(base.veterinario)
+    )
+    assert respuesta_vet.status_code == 200
+    items_vet = respuesta_vet.json()["items"]
+    assert {item["pet_id"] for item in items_vet} == {base.pet_id}
+    assert items_vet[0]["vaccination_status"] == "no_vaccines"
+
+    respuesta_otro_vet = await client.get(
+        f"{URL}/pets-overview", headers=authorization_for(otro_veterinario)
+    )
+    assert respuesta_otro_vet.status_code == 200
+    assert respuesta_otro_vet.json()["items"] == []
+
+    respuesta_cliente = await client.get(
+        f"{URL}/pets-overview", headers=authorization_for(base.cliente)
+    )
+    assert respuesta_cliente.status_code == 403
+
+
 async def test_un_veterinario_con_buena_reputacion_no_genera_alerta(
     client: AsyncClient, session: AsyncSession
 ) -> None:

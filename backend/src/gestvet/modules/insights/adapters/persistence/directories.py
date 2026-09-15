@@ -16,7 +16,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-from sqlalchemy import DateTime, bindparam, text
+from sqlalchemy import Date, DateTime, bindparam, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from gestvet.core.identity import Role
@@ -24,9 +24,11 @@ from gestvet.core.timestamps import as_utc
 from gestvet.modules.insights.ports.appointment_directory import AppointmentRecord
 from gestvet.modules.insights.ports.billing_directory import PaymentRecord
 from gestvet.modules.insights.ports.clinical_directory import PetCareRecord
+from gestvet.modules.insights.ports.pet_overview_directory import PetOverviewRecord
 from gestvet.modules.insights.ports.reputation_directory import VeterinarianSignal
 
 _MOMENT = DateTime(timezone=True)
+_DAY = Date()
 _CENTS = Decimal("0.01")
 
 _CARE_RECORDS = text(
@@ -97,6 +99,43 @@ _ACTIVE_VETERINARIANS = text(
     "SELECT id, first_name, last_name FROM users WHERE role = :vet_role AND is_active"
 )
 
+_PET_OVERVIEW_BASE = (
+    "SELECT pets.id AS pet_id, pets.name AS pet_name, pets.owner_id, "
+    "users.first_name, users.last_name, pets.species, pets.breed, pets.sex, "
+    "pets.birth_date, pets.weight_kg, pets.is_active, "
+    "MAX(pet_vaccinations.applied_on) AS last_vaccine_on, "
+    "MIN(pet_vaccinations.next_due_on) AS next_vaccine_due_on, "
+    "COUNT(pet_vaccinations.id) AS vaccine_count "
+    "FROM pets "
+    "JOIN users ON users.id = pets.owner_id "
+    "LEFT JOIN pet_vaccinations ON pet_vaccinations.pet_id = pets.id "
+    "{filter} "
+    "GROUP BY pets.id, pets.name, pets.owner_id, users.first_name, users.last_name, "
+    "pets.species, pets.breed, pets.sex, pets.birth_date, pets.weight_kg, pets.is_active"
+)
+
+_PET_OVERVIEW_RECORDS = text(_PET_OVERVIEW_BASE.format(filter="")).columns(
+    birth_date=_DAY,
+    last_vaccine_on=_DAY,
+    next_vaccine_due_on=_DAY,
+)
+
+_PET_OVERVIEW_RECORDS_FOR_VET = (
+    text(
+        _PET_OVERVIEW_BASE.format(
+            filter=(
+                "WHERE EXISTS (SELECT 1 FROM clinical_entries "
+                "WHERE clinical_entries.pet_id = pets.id "
+                "AND clinical_entries.veterinarian_id = :vet_id) "
+                "OR EXISTS (SELECT 1 FROM pet_vaccinations AS v "
+                "WHERE v.pet_id = pets.id AND v.veterinarian_id = :vet_id)"
+            )
+        )
+    )
+    .columns(birth_date=_DAY, last_vaccine_on=_DAY, next_vaccine_due_on=_DAY)
+    .bindparams(bindparam("vet_id"))
+)
+
 
 class SqlClinicalDirectory:
     def __init__(self, session: AsyncSession) -> None:
@@ -113,6 +152,37 @@ class SqlClinicalDirectory:
                 registered_at=as_utc(row.registered_at),
                 last_vaccine_at=as_utc(row.last_vaccine_at) if row.last_vaccine_at else None,
                 last_checkup_at=as_utc(row.last_checkup_at) if row.last_checkup_at else None,
+            )
+            for row in rows
+        ]
+
+
+class SqlPetOverviewDirectory:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def records(self, veterinarian_id: int | None) -> list[PetOverviewRecord]:
+        if veterinarian_id is None:
+            rows = await self._session.execute(_PET_OVERVIEW_RECORDS)
+        else:
+            rows = await self._session.execute(
+                _PET_OVERVIEW_RECORDS_FOR_VET, {"vet_id": veterinarian_id}
+            )
+        return [
+            PetOverviewRecord(
+                pet_id=row.pet_id,
+                pet_name=row.pet_name,
+                owner_id=row.owner_id,
+                owner_name=f"{row.first_name} {row.last_name}".strip(),
+                species=row.species,
+                breed=row.breed,
+                sex=row.sex,
+                birth_date=row.birth_date,
+                weight_kg=row.weight_kg,
+                is_active=bool(row.is_active),
+                last_vaccine_on=row.last_vaccine_on,
+                next_vaccine_due_on=row.next_vaccine_due_on,
+                vaccine_count=row.vaccine_count,
             )
             for row in rows
         ]

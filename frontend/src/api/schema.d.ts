@@ -742,6 +742,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/insights/pets-overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Panorama de mascotas: administración ve todas, veterinario solo las que atendió */
+        get: operations["list_pet_overview_api_v1_insights_pets_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/insights/veterinarian-alerts": {
         parameters: {
             query?: never;
@@ -2191,7 +2208,7 @@ export interface components {
          * Permission
          * @enum {string}
          */
-        Permission: "pets.manage_own" | "pets.register_for_owner" | "pets.read_any" | "pets.correct_status" | "pets.edit_clinical_profile" | "pets.manage_catalog" | "appointments.read" | "appointments.book" | "appointments.attend" | "appointments.cancel" | "emergencies.open" | "emergencies.open_walk_in" | "schedule.read" | "schedule.read_own" | "schedule.request_change" | "schedule.manage" | "veterinarians.read" | "clinical_records.read" | "clinical_records.write" | "hospitalizations.read" | "hospitalizations.manage" | "payments.read" | "payments.qr" | "payments.register" | "payments.void" | "payments.report" | "complaints.read" | "complaints.file" | "reviews.read" | "reviews.submit" | "clients.read" | "clients.register_walk_in" | "clients.update_contact" | "staff.read" | "staff.manage" | "users.change_status" | "activity.read" | "insights.read" | "roles.manage";
+        Permission: "pets.manage_own" | "pets.register_for_owner" | "pets.read_any" | "pets.correct_status" | "pets.edit_clinical_profile" | "pets.manage_catalog" | "pets.overview_read" | "appointments.read" | "appointments.book" | "appointments.attend" | "appointments.cancel" | "emergencies.open" | "emergencies.open_walk_in" | "schedule.read" | "schedule.read_own" | "schedule.request_change" | "schedule.manage" | "veterinarians.read" | "clinical_records.read" | "clinical_records.write" | "hospitalizations.read" | "hospitalizations.manage" | "payments.read" | "payments.qr" | "payments.register" | "payments.void" | "payments.report" | "complaints.read" | "complaints.file" | "reviews.read" | "reviews.submit" | "clients.read" | "clients.register_walk_in" | "clients.update_contact" | "staff.read" | "staff.manage" | "users.change_status" | "activity.read" | "insights.read" | "roles.manage";
         /** PermissionCatalogResponse */
         PermissionCatalogResponse: {
             /** Groups */
@@ -2216,6 +2233,36 @@ export interface components {
         PetCatalogResponse: {
             /** Species */
             species: components["schemas"]["SpeciesResponse"][];
+        };
+        /** PetOverviewListResponse */
+        PetOverviewListResponse: {
+            /** Items */
+            items: components["schemas"]["PetOverviewResponse"][];
+        };
+        /** PetOverviewResponse */
+        PetOverviewResponse: {
+            /** Age Years */
+            age_years: number;
+            /** Breed */
+            breed: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Owner Name */
+            owner_name: string;
+            /** Pet Id */
+            pet_id: number;
+            /** Pet Name */
+            pet_name: string;
+            /** Sex Label */
+            sex_label: string;
+            /** Species */
+            species: string;
+            /** Vaccination Status */
+            vaccination_status: string;
+            /** Vaccination Status Label */
+            vaccination_status_label: string;
+            /** Weight Kg */
+            weight_kg: string | null;
         };
         /** PetPageResponse */
         PetPageResponse: {
@@ -4431,6 +4478,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaymentAnomalyListResponse"];
+                };
+            };
+        };
+    };
+    list_pet_overview_api_v1_insights_pets_overview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PetOverviewListResponse"];
                 };
             };
         };

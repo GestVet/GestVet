@@ -2,19 +2,27 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
-from gestvet.modules.insights.domain.entities import AppointmentRecord, PaymentRecord, PetCareRecord
+from gestvet.modules.insights.domain.entities import (
+    AppointmentRecord,
+    PaymentRecord,
+    PetCareRecord,
+    PetOverviewRecord,
+)
 from gestvet.modules.insights.domain.rules import (
     build_care_reminders,
     build_no_show_risks,
     build_payment_anomalies,
+    build_pet_overview,
     build_veterinarian_alerts,
+    vaccination_status,
 )
 from gestvet.modules.insights.ports.reputation_directory import VeterinarianSignal
 
 NOW = datetime(2026, 9, 12, 12, 0, tzinfo=UTC)
+HOY = date(2026, 9, 12)
 
 
 def _pet(**overrides: object) -> PetCareRecord:
@@ -185,3 +193,62 @@ def test_sin_señales_suficientes_no_hay_alerta() -> None:
     señal = _signal(low_rating_count=1, complaint_count=1)
 
     assert build_veterinarian_alerts([señal]) == []
+
+
+def _pet_overview(**overrides: object) -> PetOverviewRecord:
+    valores: dict[str, object] = {
+        "pet_id": 1,
+        "pet_name": "Rocco",
+        "owner_id": 2,
+        "owner_name": "Ana Quispe",
+        "species": "Perro",
+        "breed": "Mestizo",
+        "sex": "male",
+        "birth_date": date(2022, 9, 12),
+        "weight_kg": Decimal("12.50"),
+        "is_active": True,
+        "last_vaccine_on": None,
+        "next_vaccine_due_on": None,
+        "vaccine_count": 0,
+    }
+    valores.update(overrides)
+    return PetOverviewRecord(**valores)  # type: ignore[arg-type]
+
+
+def test_sin_vacunas_el_estado_es_sin_vacunas() -> None:
+    mascota = _pet_overview(vaccine_count=0)
+
+    assert vaccination_status(mascota, HOY) == "no_vaccines"
+
+
+def test_proxima_dosis_vencida() -> None:
+    mascota = _pet_overview(vaccine_count=1, next_vaccine_due_on=HOY - timedelta(days=1))
+
+    assert vaccination_status(mascota, HOY) == "overdue"
+
+
+def test_proxima_dosis_dentro_de_30_dias_esta_por_vencer() -> None:
+    mascota = _pet_overview(vaccine_count=1, next_vaccine_due_on=HOY + timedelta(days=10))
+
+    assert vaccination_status(mascota, HOY) == "due_soon"
+
+
+def test_proxima_dosis_lejana_esta_al_dia() -> None:
+    mascota = _pet_overview(vaccine_count=1, next_vaccine_due_on=HOY + timedelta(days=200))
+
+    assert vaccination_status(mascota, HOY) == "up_to_date"
+
+
+def test_vacunas_sin_refuerzo_pendiente_estan_al_dia() -> None:
+    mascota = _pet_overview(vaccine_count=1, next_vaccine_due_on=None)
+
+    assert vaccination_status(mascota, HOY) == "up_to_date"
+
+
+def test_construye_el_panorama_con_la_edad_calculada() -> None:
+    mascota = _pet_overview(birth_date=date(2020, 1, 1))
+
+    panorama = build_pet_overview([mascota], date(2026, 1, 1))
+
+    assert panorama[0].age_years == 6
+    assert panorama[0].vaccination_status == "no_vaccines"

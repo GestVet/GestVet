@@ -8,7 +8,7 @@ una base de datos.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from gestvet.modules.insights.domain.entities import (
@@ -16,6 +16,7 @@ from gestvet.modules.insights.domain.entities import (
     CARE_VACCINE_REMINDER_DAYS,
     NO_SHOW_RISK_THRESHOLD,
     NO_SHOW_STALE_GRACE_HOURS,
+    OVERVIEW_DUE_SOON_DAYS,
     PAYMENT_ANOMALY_DEVIATION,
     PAYMENT_ANOMALY_MIN_SAMPLES,
     VETERINARIAN_ALERT_COMPLAINT_THRESHOLD,
@@ -26,6 +27,9 @@ from gestvet.modules.insights.domain.entities import (
     PaymentAnomaly,
     PaymentRecord,
     PetCareRecord,
+    PetOverview,
+    PetOverviewRecord,
+    VaccinationStatus,
     VeterinarianAlert,
     VeterinarianSignal,
 )
@@ -125,6 +129,43 @@ def build_payment_anomalies(records: list[PaymentRecord]) -> list[PaymentAnomaly
                 )
             )
     return sorted(anomalies, key=lambda anomaly: anomaly.paid_at, reverse=True)
+
+
+def _age_in_years(birth_date: date, today: date) -> int:
+    years = today.year - birth_date.year
+    if (today.month, today.day) < (birth_date.month, birth_date.day):
+        years -= 1
+    return max(years, 0)
+
+
+def vaccination_status(record: PetOverviewRecord, today: date) -> VaccinationStatus:
+    if record.vaccine_count == 0:
+        return "no_vaccines"
+    if record.next_vaccine_due_on is None:
+        return "up_to_date"
+    if record.next_vaccine_due_on < today:
+        return "overdue"
+    if (record.next_vaccine_due_on - today).days <= OVERVIEW_DUE_SOON_DAYS:
+        return "due_soon"
+    return "up_to_date"
+
+
+def build_pet_overview(records: list[PetOverviewRecord], today: date) -> list[PetOverview]:
+    return [
+        PetOverview(
+            pet_id=record.pet_id,
+            pet_name=record.pet_name,
+            owner_name=record.owner_name,
+            species=record.species,
+            breed=record.breed,
+            sex=record.sex,
+            age_years=_age_in_years(record.birth_date, today),
+            weight_kg=record.weight_kg,
+            is_active=record.is_active,
+            vaccination_status=vaccination_status(record, today),
+        )
+        for record in records
+    ]
 
 
 def build_veterinarian_alerts(signals: list[VeterinarianSignal]) -> list[VeterinarianAlert]:

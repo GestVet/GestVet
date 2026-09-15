@@ -11,11 +11,19 @@ from gestvet.modules.insights.domain.entities import (
     CareReminder,
     NoShowRisk,
     PaymentAnomaly,
+    PetOverview,
     VeterinarianAlert,
 )
 
 _REASON_LABELS = {"vacuna": "Vacuna vencida", "control": "Control vencido"}
 _CENTS = Decimal("0.01")
+_SEX_LABELS = {"male": "Macho", "female": "Hembra"}
+_VACCINATION_STATUS_LABELS = {
+    "up_to_date": "Al día",
+    "due_soon": "Vence pronto",
+    "overdue": "Vencida",
+    "no_vaccines": "Sin vacunas",
+}
 
 
 class CareReminderResponse(BaseModel):
@@ -114,3 +122,37 @@ class VeterinarianAlertResponse(BaseModel):
 
 class VeterinarianAlertListResponse(BaseModel):
     items: list[VeterinarianAlertResponse]
+
+
+class PetOverviewResponse(BaseModel):
+    pet_id: int
+    pet_name: str
+    owner_name: str
+    species: str
+    breed: str
+    sex_label: str
+    age_years: int
+    weight_kg: Decimal | None
+    is_active: bool
+    vaccination_status: str
+    vaccination_status_label: str
+
+    @classmethod
+    def from_entity(cls, overview: PetOverview) -> PetOverviewResponse:
+        return cls(
+            pet_id=overview.pet_id,
+            pet_name=overview.pet_name,
+            owner_name=overview.owner_name,
+            species=overview.species,
+            breed=overview.breed,
+            sex_label=_SEX_LABELS.get(overview.sex or "", "—"),
+            age_years=overview.age_years,
+            weight_kg=overview.weight_kg,
+            is_active=overview.is_active,
+            vaccination_status=overview.vaccination_status,
+            vaccination_status_label=_VACCINATION_STATUS_LABELS[overview.vaccination_status],
+        )
+
+
+class PetOverviewListResponse(BaseModel):
+    items: list[PetOverviewResponse]

@@ -8,8 +8,9 @@ información que este módulo posea o persista.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
 # Sin vacuna hace más de un año, o sin control hace más de medio año: son
 # umbrales genéricos, no un calendario de vacunación por especie, que sería
@@ -37,6 +38,11 @@ PAYMENT_ANOMALY_DEVIATION = Decimal("0.5")
 VETERINARIAN_ALERT_WINDOW_DAYS = 60
 VETERINARIAN_ALERT_LOW_RATING_THRESHOLD = 3
 VETERINARIAN_ALERT_COMPLAINT_THRESHOLD = 2
+
+# Redefinido a propósito en vez de importado de `medical_records`: ese módulo
+# no se puede importar acá (independencia entre módulos), y es el mismo
+# criterio que ya usa este archivo con CARE_VACCINE_REMINDER_DAYS.
+OVERVIEW_DUE_SOON_DAYS = 30
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,6 +100,40 @@ class PetCareRecord:
     registered_at: datetime
     last_vaccine_at: datetime | None
     last_checkup_at: datetime | None
+
+
+VaccinationStatus = Literal["up_to_date", "due_soon", "overdue", "no_vaccines"]
+
+
+@dataclass(frozen=True, slots=True)
+class PetOverviewRecord:
+    pet_id: int
+    pet_name: str
+    owner_id: int
+    owner_name: str
+    species: str
+    breed: str
+    sex: str | None
+    birth_date: date
+    weight_kg: Decimal | None
+    is_active: bool
+    last_vaccine_on: date | None
+    next_vaccine_due_on: date | None
+    vaccine_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class PetOverview:
+    pet_id: int
+    pet_name: str
+    owner_name: str
+    species: str
+    breed: str
+    sex: str | None
+    age_years: int
+    weight_kg: Decimal | None
+    is_active: bool
+    vaccination_status: VaccinationStatus
 
 
 @dataclass(frozen=True, slots=True)

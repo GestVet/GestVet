@@ -106,6 +106,8 @@ export type PaymentAnomalyResponse = components['schemas']['PaymentAnomalyRespon
 export type PaymentAnomalyListResponse = components['schemas']['PaymentAnomalyListResponse']
 export type VeterinarianAlertResponse = components['schemas']['VeterinarianAlertResponse']
 export type VeterinarianAlertListResponse = components['schemas']['VeterinarianAlertListResponse']
+export type PetOverviewResponse = components['schemas']['PetOverviewResponse']
+export type PetOverviewListResponse = components['schemas']['PetOverviewListResponse']
 
 export type UserRole = UserResponse['role']
 

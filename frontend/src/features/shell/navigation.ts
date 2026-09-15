@@ -41,6 +41,12 @@ export const NAV_ENTRIES: readonly NavEntry[] = [
   { to: '/pagos', label: 'Pagos', icon: 'pago', permission: 'payments.report' },
   { to: '/reclamos', label: 'Reclamos', icon: 'alerta', permission: 'complaints.read' },
   { to: '/indicadores', label: 'Indicadores', icon: 'indicadores', permission: 'insights.read' },
+  {
+    to: '/panorama-mascotas',
+    label: 'Panorama de mascotas',
+    icon: 'mascota',
+    permission: 'pets.overview_read',
+  },
   { to: '/movimientos', label: 'Movimientos', icon: 'buscar', permission: 'activity.read' },
 ]
 

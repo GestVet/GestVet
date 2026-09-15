@@ -3,6 +3,7 @@ import type {
   CareReminderListResponse,
   NoShowRiskListResponse,
   PaymentAnomalyListResponse,
+  PetOverviewListResponse,
   VeterinarianAlertListResponse,
 } from './types'
 
@@ -10,6 +11,7 @@ export const careRemindersQueryKey = ['insights', 'care-reminders'] as const
 export const noShowRisksQueryKey = ['insights', 'no-show-risks'] as const
 export const paymentAnomaliesQueryKey = ['insights', 'payment-anomalies'] as const
 export const veterinarianAlertsQueryKey = ['insights', 'veterinarian-alerts'] as const
+export const petsOverviewQueryKey = ['insights', 'pets-overview'] as const
 
 export async function fetchCareReminders(): Promise<CareReminderListResponse> {
   const { data } = await api.get<CareReminderListResponse>('/insights/care-reminders')
@@ -28,5 +30,10 @@ export async function fetchPaymentAnomalies(): Promise<PaymentAnomalyListRespons
 
 export async function fetchVeterinarianAlerts(): Promise<VeterinarianAlertListResponse> {
   const { data } = await api.get<VeterinarianAlertListResponse>('/insights/veterinarian-alerts')
+  return data
+}
+
+export async function fetchPetsOverview(): Promise<PetOverviewListResponse> {
+  const { data } = await api.get<PetOverviewListResponse>('/insights/pets-overview')
   return data
 }
