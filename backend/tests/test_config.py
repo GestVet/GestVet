@@ -43,3 +43,21 @@ def test_desarrollo_permite_sqlite_y_secret_por_defecto() -> None:
     assert settings.debug
     assert settings.database_url.startswith("sqlite")
     assert settings.jwt_secret_key == INSECURE_DEFAULT_SECRET
+
+
+def test_la_simulacion_del_qr_sigue_a_debug_si_no_se_define() -> None:
+    assert Settings(_env_file=None, debug=True).qr_simulation_enabled is True
+    produccion = Settings(
+        _env_file=None,
+        debug=False,
+        jwt_secret_key="x" * 40,
+        database_url="postgresql+asyncpg://u:p@h/db",
+    )
+    assert produccion.qr_simulation_enabled is False
+
+
+def test_la_simulacion_del_qr_se_puede_fijar_a_mano() -> None:
+    assert (
+        Settings(_env_file=None, debug=True, qr_simulation_enabled=False).qr_simulation_enabled
+        is False
+    )

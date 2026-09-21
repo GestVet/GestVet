@@ -2485,6 +2485,8 @@ export interface components {
             payment_id: number | null;
             /** Qr Image Data Url */
             qr_image_data_url: string;
+            /** Simulation Available */
+            simulation_available: boolean;
             status: components["schemas"]["QrChargeStatus"];
             /** Status Label */
             status_label: string;

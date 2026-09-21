@@ -83,6 +83,12 @@ services:
       - key: REMINDERS_CRON_TOKEN
         sync: false
 
+      # La confirmación simulada del cobro por QR queda apagada: con ella un
+      # cliente podría marcar como pagado su propio cobro. Ya la apaga
+      # DEBUG=false; se fija igual para que no dependa de eso.
+      - key: QR_SIMULATION_ENABLED
+        value: "false"
+
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: JWT_ALGORITHM

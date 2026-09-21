@@ -59,11 +59,22 @@ class Settings(BaseSettings):
     # (/api/v1/internal/reminders/run) invocado desde GitHub Actions.
     reminders_cron_token: str = ""
 
+    # Deja que la pantalla del cobro por QR simule la confirmación del banco.
+    # Sin definirla vale lo mismo que `debug`: en desarrollo está, en producción
+    # no, porque ahí un cliente podría marcar como pagado su propio cobro.
+    qr_simulation_enabled: bool | None = None
+
     # Consulta de DNI con Factiliza (https://factiliza.com). Sin clave, el
     # registro no verifica nombres y el alta exprés no ofrece autocompletar.
     factiliza_api_key: str = ""
     factiliza_base_url: str = "https://api.factiliza.com/v1"
     identity_registry_timeout_seconds: float = 10.0
+
+    @model_validator(mode="after")
+    def _default_qr_simulation(self) -> Settings:
+        if self.qr_simulation_enabled is None:
+            self.qr_simulation_enabled = self.debug
+        return self
 
     @model_validator(mode="after")
     def _validate_secret(self) -> Settings:

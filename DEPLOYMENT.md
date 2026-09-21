@@ -89,6 +89,9 @@ ACCESS_TOKEN_TTL_SECONDS=3600
 # Token secreto para el Cron de Recordatorios de WhatsApp (GitHub Actions)
 REMINDERS_CRON_TOKEN=tu_token_secreto_para_el_cron_de_recordatorios
 
+# Confirmación simulada del cobro por QR: siempre apagada en producción
+QR_SIMULATION_ENABLED=false
+
 # Integración con IA (OpenRouter)
 OPENROUTER_API_KEY=tu_openrouter_api_key_aqui
 OPENROUTER_MODEL=deepseek/deepseek-v4.1-flash

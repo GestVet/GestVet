@@ -6,12 +6,15 @@ de la pasarela de pago (no hay banco real de por medio).
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
+import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from gestvet.core.config import get_settings
 from gestvet.core.identity import Role
 from gestvet.modules.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
@@ -34,6 +37,20 @@ from tests.conftest import (
 PAYMENTS_URL = "/api/v1/payments"
 QR_URL = f"{PAYMENTS_URL}/qr-charges"
 HORA = datetime(2026, 9, 14, 10, 0, tzinfo=UTC)
+
+
+@pytest.fixture(autouse=True)
+def simulacion_del_banco(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    """Las pruebas de confirmación no dependen del `DEBUG` del `.env` local."""
+    monkeypatch.setenv("QR_SIMULATION_ENABLED", "true")
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
+def _apagar_simulacion(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("QR_SIMULATION_ENABLED", "false")
+    get_settings.cache_clear()
 
 
 class Escenario:
@@ -363,3 +380,44 @@ async def test_el_personal_ajusta_libremente_en_una_emergencia(
 
     assert response.status_code == 201
     assert Decimal(response.json()["amount"]) == Decimal("35.00")
+
+
+async def test_con_la_simulacion_apagada_confirmar_no_existe(
+    client: AsyncClient, session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    escenario = await montar(session)
+    cabeceras = authorization_for(escenario.cliente)
+    creado = await client.post(
+        QR_URL, json={"appointment_id": escenario.cita_id}, headers=cabeceras
+    )
+    charge_id = creado.json()["id"]
+    _apagar_simulacion(monkeypatch)
+
+    response = await client.post(f"{QR_URL}/{charge_id}/confirm", headers=cabeceras)
+
+    assert response.status_code == 404
+    estado = await client.get(f"{QR_URL}/{charge_id}", headers=cabeceras)
+    assert estado.json()["status"] == "pending"
+    assert estado.json()["simulation_available"] is False
+    # Ni siquiera sin sesión se distingue de una ruta inexistente.
+    assert (await client.post(f"{QR_URL}/{charge_id}/confirm")).status_code == 404
+
+
+async def test_con_la_simulacion_encendida_el_cobro_la_anuncia(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+
+    response = await client.post(
+        QR_URL,
+        json={"appointment_id": escenario.cita_id},
+        headers=authorization_for(escenario.cliente),
+    )
+
+    assert response.json()["simulation_available"] is True
+
+
+async def test_la_simulacion_no_figura_en_el_esquema(client: AsyncClient) -> None:
+    esquema = (await client.get("/api/v1/openapi.json")).json()
+
+    assert "/api/v1/payments/qr-charges/{charge_id}/confirm" not in esquema["paths"]
