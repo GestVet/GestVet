@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from gestvet.core.attachments import LocalDiskAttachmentStorage
+from gestvet.core.attachments import create_attachment_storage
 from gestvet.core.auth import SessionDep
 from gestvet.core.config import get_settings
 from gestvet.core.llm import LlmClient
@@ -45,10 +45,7 @@ def get_attachment_repository(session: SessionDep) -> AttachmentRepository:
 
 
 def get_attachment_storage() -> AttachmentStorage:
-    settings = get_settings()
-    return LocalDiskAttachmentStorage(
-        settings.attachments_storage_dir, f"{settings.api_base_url}/attachments"
-    )
+    return create_attachment_storage()
 
 
 def get_clinical_history_report_renderer() -> ClinicalHistoryReportRenderer:

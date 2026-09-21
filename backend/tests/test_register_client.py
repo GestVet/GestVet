@@ -18,6 +18,7 @@ from gestvet.modules.accounts.domain.exceptions import (
     InvalidDocumentId,
     InvalidEmail,
     RoleNotSelfAssignable,
+    TermsNotAccepted,
 )
 from gestvet.modules.accounts.ports.user_repository import UserQuery
 from gestvet.modules.accounts.use_cases.list_clients import (
@@ -142,6 +143,23 @@ async def test_registro_rechaza_un_dni_con_formato_invalido() -> None:
     )
 
     with pytest.raises(InvalidDocumentId):
+        await register(command)
+
+
+async def test_registro_rechaza_si_no_acepta_terminos() -> None:
+    users = InMemoryUserRepository()
+    register = RegisterClient(users, FakeHasher(), RecordingActivity(), DisabledIdentityRegistry())
+    command = RegisterClientCommand(
+        accepts_identity_check=True,
+        accepts_terms=False,
+        email="ana@example.com",
+        password="contrasena-larga",
+        first_name="Ana",
+        last_name="Quispe",
+        document_id="87654321",
+    )
+
+    with pytest.raises(TermsNotAccepted):
         await register(command)
 
 

@@ -1,0 +1,37 @@
+name: Recordatorios de WhatsApp (Cron)
+
+on:
+  schedule:
+    # Cada 30 minutos de lunes a viernes, hora de Lima (UTC-5); sábados y
+    # domingos no corre por ahora. GitHub evalúa el cron en UTC, por eso son dos
+    # líneas: lun-vie 00:00-18:59 Lima = lun-vie 05:00-23:59 UTC, y lun-vie
+    # 19:00-23:59 Lima = mar-sáb 00:00-04:59 UTC. Render Free entra en reposo a
+    # los 15 min: este cron lo despierta y despacha los avisos.
+    - cron: '*/30 5-23 * * 1-5'
+    - cron: '*/30 0-4 * * 2-6'
+  workflow_dispatch:
+
+concurrency:
+  group: reminders-cron
+  cancel-in-progress: false
+
+jobs:
+  trigger-reminders:
+    name: Despachar recordatorios pendientes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Invocar endpoint interno con reintento para arranque en frío
+        run: |
+          API_URL="${API_BASE_URL%/}/api/v1/internal/reminders/run"
+          echo "Disparando recordatorios en $API_URL..."
+          curl -f -s -S \
+            --max-time 90 \
+            --retry 3 \
+            --retry-delay 5 \
+            --retry-all-errors \
+            -X POST "$API_URL" \
+            -H "X-Reminders-Token: $REMINDERS_CRON_TOKEN" \
+            -H "Content-Type: application/json"
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          REMINDERS_CRON_TOKEN: ${{ secrets.REMINDERS_CRON_TOKEN }}

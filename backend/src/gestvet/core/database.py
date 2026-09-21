@@ -18,8 +18,26 @@ class Base(DeclarativeBase):
 
 _settings = get_settings()
 
-engine = create_async_engine(_settings.database_url, echo=False, future=True)
+if _settings.database_url.startswith("sqlite"):
+    engine = create_async_engine(_settings.database_url, echo=False, future=True)
+else:
+    # En PostgreSQL remoto (p.ej. Supabase tras el Session Pooler), las
+    # conexiones inactivas se cierran en minutos. `pool_pre_ping=True` descarta
+    # conexiones muertas antes de usarlas y `statement_cache_size: 0` evita
+    # conflictos con prepared statements al pasar por poolers.
+    engine = create_async_engine(
+        _settings.database_url,
+        echo=False,
+        future=True,
+        pool_pre_ping=True,
+        pool_recycle=300,
+        connect_args={"statement_cache_size": 0},
+    )
 SessionFactory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+
+
+def get_session_factory() -> async_sessionmaker[AsyncSession]:
+    return SessionFactory
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:

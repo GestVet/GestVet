@@ -4,9 +4,8 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from gestvet.core.attachments import LocalDiskAttachmentStorage
+from gestvet.core.attachments import create_attachment_storage
 from gestvet.core.auth import SessionDep
-from gestvet.core.config import get_settings
 from gestvet.modules.complaints.adapters.persistence.directories import SqlAppointmentDirectory
 from gestvet.modules.complaints.adapters.persistence.repositories import (
     SqlAlchemyComplaintRepository,
@@ -31,10 +30,7 @@ def get_appointment_directory(session: SessionDep) -> AppointmentDirectory:
 
 
 def get_evidence_storage() -> EvidenceStorage:
-    settings = get_settings()
-    return LocalDiskAttachmentStorage(
-        settings.attachments_storage_dir, f"{settings.api_base_url}/attachments"
-    )
+    return create_attachment_storage()
 
 
 ComplaintRepositoryDep = Annotated[ComplaintRepository, Depends(get_complaint_repository)]

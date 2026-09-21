@@ -17,15 +17,14 @@
 # Render no garantiza salida IPv6. Cambiar el prefijo de `postgresql://` a
 # `postgresql+asyncpg://` antes de pegarla (ver backend/src/gestvet/core/config.py).
 #
-# ADVERTENCIA sobre los adjuntos — leer antes de usar en producción real:
-# los adjuntos de la historia clínica se guardan en disco local
-# (`LocalDiskAttachmentStorage`), pero este servicio corre en el plan
-# **Free** de Render, que no admite disco persistente. Cualquier archivo
-# subido (fotos, PDFs, evidencia de un reclamo) se BORRA en el siguiente
-# redeploy o reinicio del contenedor — decisión consciente para mantener
-# todo en plan gratuito (ver DESPLIEGUE.md, sección 6, para las dos
-# alternativas: disco persistente en un plan pago, o un bucket
-# S3-compatible). Migrar antes de guardar datos reales de pacientes.
+# Nota sobre los adjuntos:
+# Los adjuntos de la historia clínica y evidencias de reclamos se guardan en
+# un bucket público de Supabase Storage (`SupabaseAttachmentStorage`), por lo que
+# no dependen del disco del servidor y persisten a través de despliegues y
+# suspensiones por inactividad en el plan Free de Render. Requiere configurar
+# SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY y SUPABASE_STORAGE_BUCKET.
+# En desarrollo local o si faltan esas variables, se usa almacenamiento local
+# (`LocalDiskAttachmentStorage`) en ATTACHMENTS_STORAGE_DIR.
 
 services:
   - type: web
@@ -67,12 +66,23 @@ services:
       - key: API_BASE_URL
         value: https://gestvet-api.onrender.com
 
-      # Sin disco persistente, tiene que ser una ruta escribible dentro del
-      # propio directorio del proyecto (no /data: ese path no existe y el
-      # proceso no tiene permiso para crearlo). Efímera: se pierde en cada
-      # deploy o reinicio, ver advertencia arriba.
+      # Almacenamiento persistente en Supabase Storage (bucket público).
+      # Evita la pérdida de datos en el plan Free de Render sin disco persistente.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: attachments
+
+      # Ruta local para adjuntos (solo se usa como respaldo o en local sin Supabase).
       - key: ATTACHMENTS_STORAGE_DIR
         value: ./var/attachments
+
+      # Token secreto para que GitHub Actions (.github/workflows/reminders-cron.yml)
+      # despierte al backend cada 30 min (lun-vie, hora de Lima) y ejecute los recordatorios de WhatsApp.
+      - key: REMINDERS_CRON_TOKEN
+        sync: false
 
       - key: JWT_SECRET_KEY
         generateValue: true

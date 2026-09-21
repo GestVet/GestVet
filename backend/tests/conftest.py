@@ -24,7 +24,7 @@ from sqlalchemy.pool import StaticPool
 from gestvet.core.activity import ActivityKind
 from gestvet.core.activity_log import ActivityRow
 from gestvet.core.auth import get_token_service
-from gestvet.core.database import Base, get_session
+from gestvet.core.database import Base, get_session, get_session_factory
 from gestvet.core.dni_factiliza import get_identity_registry
 from gestvet.core.identity import Role
 from gestvet.core.identity_registry import IdentityRegistryUnavailable, PersonName
@@ -297,6 +297,9 @@ async def client(
             sent_emails.append((to, reset_url))
 
     app.dependency_overrides[get_session] = override_session
+    app.dependency_overrides[get_session_factory] = lambda: async_sessionmaker(
+        session.bind, expire_on_commit=False, class_=AsyncSession
+    )
     app.dependency_overrides[get_password_hasher] = lambda: TEST_HASHER
     app.dependency_overrides[get_token_service] = lambda: TEST_TOKEN_SERVICE
     app.dependency_overrides[get_email_sender] = lambda: RecordingEmailSender()

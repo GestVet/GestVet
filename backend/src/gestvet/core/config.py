@@ -53,6 +53,16 @@ class Settings(BaseSettings):
     openrouter_fallback_model: str = "deepseek/deepseek-v4-flash-0731"
     openrouter_timeout_seconds: float = 45.0
 
+    # Almacenamiento en Supabase Storage (bucket público de Supabase). Sin URL
+    # y service role key, se usa el almacenamiento local en disco (`./var/attachments`).
+    supabase_url: str = ""
+    supabase_service_role_key: str = ""
+    supabase_storage_bucket: str = "attachments"
+
+    # Token secreto para proteger el endpoint interno del cron de recordatorios
+    # (/api/v1/internal/reminders/run) invocado desde GitHub Actions.
+    reminders_cron_token: str = ""
+
     # Consulta de DNI con Factiliza (https://factiliza.com). Sin clave, el
     # registro no verifica nombres y el alta exprés no ofrece autocompletar.
     factiliza_api_key: str = ""
@@ -67,6 +77,11 @@ class Settings(BaseSettings):
             raise ValueError(
                 "JWT_SECRET_KEY conserva el valor de desarrollo. "
                 "Define uno propio antes de desplegar con DEBUG=false."
+            )
+        if not self.debug and self.database_url.startswith("sqlite"):
+            raise ValueError(
+                "DATABASE_URL apunta a SQLite en producción. "
+                "Configura una base de datos PostgreSQL antes de desplegar con DEBUG=false."
             )
         return self
 
