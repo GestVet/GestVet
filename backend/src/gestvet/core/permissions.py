@@ -41,6 +41,7 @@ class Permission(StrEnum):
     SCHEDULE_REQUEST_CHANGE = "schedule.request_change"
     SCHEDULE_MANAGE = "schedule.manage"
     VETERINARIANS_READ = "veterinarians.read"
+    SPECIALTIES_MANAGE_CATALOG = "specialties.manage_catalog"
     CLINICAL_RECORDS_READ = "clinical_records.read"
     CLINICAL_RECORDS_WRITE = "clinical_records.write"
     HOSPITALIZATIONS_READ = "hospitalizations.read"
@@ -145,6 +146,9 @@ CATALOG: dict[Permission, PermissionInfo] = {
     ),
     Permission.VETERINARIANS_READ: PermissionInfo(
         "Ver el listado de veterinarios", _AGENDA, ALL_KINDS
+    ),
+    Permission.SPECIALTIES_MANAGE_CATALOG: PermissionInfo(
+        "Agregar y corregir especialidades veterinarias", _ADMINISTRACION, ADMIN_KIND
     ),
     Permission.CLINICAL_RECORDS_READ: PermissionInfo(
         "Ver la historia clínica y descargarla", _CLINICA, ALL_KINDS
@@ -257,6 +261,7 @@ SYSTEM_ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
         Permission.ROLES_MANAGE,
         Permission.PETS_MANAGE_CATALOG,
         Permission.PETS_OVERVIEW_READ,
+        Permission.SPECIALTIES_MANAGE_CATALOG,
     },
 }
 

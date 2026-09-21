@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from gestvet.core.timestamps import as_utc
 from gestvet.modules.accounts.adapters.persistence.models import (
     PasswordResetTokenRow,
+    SpecialtyRow,
     UserLayoutPreferenceRow,
     UserRow,
 )
@@ -21,6 +22,7 @@ from gestvet.modules.accounts.domain.entities import (
     User,
     UserLayoutPreference,
 )
+from gestvet.modules.accounts.domain.specialties import Specialty, SpecialtyCategory
 
 
 def row_to_entity(row: UserRow) -> User:
@@ -70,6 +72,16 @@ def reset_token_entity_to_row(token: PasswordResetToken) -> PasswordResetTokenRo
         expires_at=token.expires_at,
         used_at=token.used_at,
         created_at=token.created_at,
+    )
+
+
+def specialty_row_to_entity(row: SpecialtyRow) -> Specialty:
+    return Specialty(
+        id=row.id,
+        name=row.name,
+        category=SpecialtyCategory(row.category),
+        description=row.description,
+        is_active=row.is_active,
     )
 
 

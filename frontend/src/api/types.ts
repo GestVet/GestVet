@@ -22,6 +22,18 @@ export type VeterinarianListResponse = components['schemas']['VeterinarianListRe
 export type ActivityResponse = components['schemas']['ActivityResponse']
 export type ActivityPageResponse = components['schemas']['ActivityPageResponse']
 
+export type SpecialtyResponse = components['schemas']['SpecialtyResponse']
+export type SpecialtyListResponse = components['schemas']['SpecialtyListResponse']
+export type SpecialtyCategory = components['schemas']['SpecialtyCategory']
+export type AddSpecialtyRequest = components['schemas']['AddSpecialtyRequest']
+export type UpdateSpecialtyRequest = components['schemas']['UpdateSpecialtyRequest']
+export type AssignVeterinarianSpecialtiesRequest =
+  components['schemas']['AssignVeterinarianSpecialtiesRequest']
+export type VeterinarianSpecialtiesResponse =
+  components['schemas']['VeterinarianSpecialtiesResponse']
+export type VeterinarianSpecialtiesListResponse =
+  components['schemas']['VeterinarianSpecialtiesListResponse']
+
 export type SpeciesResponse = components['schemas']['SpeciesResponse']
 export type PetCatalogResponse = components['schemas']['PetCatalogResponse']
 export type ManagedCatalogResponse = components['schemas']['ManagedCatalogResponse']

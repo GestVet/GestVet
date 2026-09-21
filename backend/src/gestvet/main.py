@@ -29,6 +29,9 @@ from gestvet.modules.access.adapters.api.router import router as access_router
 from gestvet.modules.accounts.adapters.api.admin_router import router as admin_router
 from gestvet.modules.accounts.adapters.api.auth_router import router as auth_router
 from gestvet.modules.accounts.adapters.api.router import router as clients_router
+from gestvet.modules.accounts.adapters.api.specialties_router import (
+    router as specialties_router,
+)
 from gestvet.modules.accounts.adapters.api.veterinarians_router import (
     router as veterinarians_router,
 )
@@ -247,6 +250,7 @@ def create_app() -> FastAPI:
     app.include_router(
         veterinarians_router, prefix=f"{API_PREFIX}/veterinarians", tags=["veterinarians"]
     )
+    app.include_router(specialties_router, prefix=f"{API_PREFIX}/specialties", tags=["specialties"])
     # Antes que el de mascotas: "/pets/catalog" no es una mascota.
     app.include_router(pet_catalog_router, prefix=f"{API_PREFIX}/pets/catalog", tags=["pets"])
     app.include_router(pets_router, prefix=f"{API_PREFIX}/pets", tags=["pets"])

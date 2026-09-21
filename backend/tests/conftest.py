@@ -45,6 +45,7 @@ from gestvet.modules.accounts.adapters.api.dependencies import (
     get_password_hasher,
 )
 from gestvet.modules.accounts.adapters.persistence import models as accounts_models
+from gestvet.modules.accounts.adapters.persistence.models import SpecialtyRow
 from gestvet.modules.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
@@ -123,6 +124,10 @@ GENERAL_TYPE_ID = 1
 SURGERY_TYPE_ID = 2
 EMERGENCY_TYPE_ID = 3
 
+# La primera especialidad sembrada, para las pruebas que solo necesitan una
+# válida y no les importa cuál.
+DEFAULT_SPECIALTY_ID = 1
+
 # Un rol de sistema por tipo de cuenta, con identificador fijo para que las
 # pruebas puedan referirse a ellos.
 SYSTEM_ROLE_IDS: dict[Role, int] = {kind: index for index, kind in enumerate(Role, start=1)}
@@ -169,6 +174,30 @@ CATALOG_BREED_ROWS = _catalog_migration.filas_de_razas(
     {row["name"]: row["id"] for row in CATALOG_SPECIES_ROWS}
 )
 
+SPECIALTIES_MIGRATION = (
+    Path(__file__).resolve().parents[1]
+    / "alembic"
+    / "versions"
+    / "0025_agregar_las_especialidades_veterinarias.py"
+)
+
+
+def load_specialties_migration() -> ModuleType:
+    """La migración que siembra las especialidades: se lee de ahí para no copiar la lista."""
+    spec = importlib.util.spec_from_file_location("specialties_migration", SPECIALTIES_MIGRATION)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"No se pudo cargar {SPECIALTIES_MIGRATION}.")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_specialties_migration = load_specialties_migration()
+CATALOG_SPECIALTY_ROWS = [
+    {"id": index, **row}
+    for index, row in enumerate(_specialties_migration.filas_de_especialidades(), start=1)
+]
+
 
 @pytest.fixture
 async def session() -> AsyncIterator[AsyncSession]:
@@ -189,6 +218,8 @@ async def session() -> AsyncIterator[AsyncSession]:
         # El catálogo de especies y razas también: sin él no se registra ninguna mascota.
         await connection.execute(insert(PetSpeciesRow), CATALOG_SPECIES_ROWS)
         await connection.execute(insert(PetBreedRow), CATALOG_BREED_ROWS)
+        # Y el de especialidades: sin él no se puede dar de alta a un veterinario.
+        await connection.execute(insert(SpecialtyRow), CATALOG_SPECIALTY_ROWS)
 
     factory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     async with factory() as open_session:

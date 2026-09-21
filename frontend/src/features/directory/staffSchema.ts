@@ -17,6 +17,9 @@ export const staffSchema = z.object({
   password: passwordRule,
   // El alta de personal solo crea veterinarios: la guardia es un turno, no un rol.
   role: z.literal('veterinarian'),
+  // Con qué atiende: al menos una, para que aparezca en el filtro de
+  // especialidad al reservar.
+  specialty_ids: z.array(z.number()).min(1, 'Elige al menos una especialidad.'),
 })
 
 export type StaffFormValues = z.infer<typeof staffSchema>
@@ -28,4 +31,5 @@ export const EMPTY_STAFF_FORM: StaffFormValues = {
   phone: '',
   password: '',
   role: 'veterinarian',
+  specialty_ids: [],
 }
