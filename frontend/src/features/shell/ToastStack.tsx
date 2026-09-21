@@ -15,12 +15,15 @@ export default function ToastStack() {
   // haya en pantalla.
   return (
     <div
-      className="fixed right-24 bottom-4 z-50 flex w-[min(22rem,calc(100vw-8rem))] flex-col gap-2"
+      className="fixed right-24 bottom-4 z-50 flex w-[min(22rem,calc(100vw-8rem))] flex-col gap-2 pointer-events-none"
       role="status"
       aria-live="polite"
+      aria-label="Avisos del sistema"
     >
       {toasts.map((toast) => (
-        <ToastItem key={toast.id} id={toast.id} tone={toast.tone} message={toast.message} />
+        <div key={toast.id} className="pointer-events-auto">
+          <ToastItem id={toast.id} tone={toast.tone} message={toast.message} />
+        </div>
       ))}
     </div>
   )

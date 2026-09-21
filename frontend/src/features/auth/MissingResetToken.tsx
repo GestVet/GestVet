@@ -11,7 +11,7 @@ export default function MissingResetToken() {
       footer={
         <Link
           to="/olvide-contrasena"
-          className="font-medium text-primary underline underline-offset-4"
+          className="inline-flex items-center min-h-[32px] rounded-sm font-medium text-primary underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           Pedir un enlace nuevo
         </Link>

@@ -133,3 +133,39 @@
   --font-sans: var(--font-landing);
   --font-heading: var(--font-landing);
 }
+
+/*
+ * Ajustes de accesibilidad (WCAG 2.2 y directrices de diseno).
+ *
+ * - prefers-reduced-motion: anula animaciones y transiciones para personas
+ *   sensibles al movimiento o con dificultades vestibulares (WCAG 2.3).
+ * - scroll-margin en elementos enfocables: evita que encabezados y campos queden
+ *   ocultos detras de barras fijas o botones flotantes al navegar con teclado (WCAG 2.4.11).
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+:focus-visible {
+  scroll-margin-top: 80px;
+  scroll-margin-bottom: 80px;
+}
+
+@media (pointer: coarse) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}

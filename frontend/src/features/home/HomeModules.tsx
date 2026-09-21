@@ -54,7 +54,7 @@ export default function HomeModules() {
           El personal y los dueños de mascotas trabajan sobre la misma información.
         </p>
       </div>
-      <ul className="m-0 grid list-none gap-x-10 p-0 sm:grid-cols-2">
+      <ul className="m-0 grid list-none gap-x-10 p-0 sm:grid-cols-2" role="list">
         {MODULOS.map((modulo) => (
           <li key={modulo.title} className="flex gap-4 border-t border-border py-7">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-secondary text-primary">

@@ -34,7 +34,10 @@ export default function ForgotPasswordView() {
       title="Recuperar contraseña"
       description="Escribe el correo con el que te registraste. Si hay una cuenta con ese correo, te enviamos un enlace para elegir una contraseña nueva."
       footer={
-        <Link to="/acceso" className="font-medium text-primary underline underline-offset-4">
+        <Link
+          to="/acceso"
+          className="inline-flex items-center min-h-[32px] rounded-sm font-medium text-primary underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
           Volver a iniciar sesión
         </Link>
       }

@@ -25,7 +25,7 @@ export default function AuthAside({ title, items, note }: AuthAsideProps) {
     <aside className="flex flex-col gap-8 rounded-xl bg-primary p-6 text-primary-foreground sm:p-8">
       <div className="flex flex-col gap-6">
         <h2 className="m-0 font-heading text-2xl leading-tight font-bold text-balance">{title}</h2>
-        <ul className="m-0 flex list-none flex-col gap-4 p-0">
+        <ul className="m-0 flex list-none flex-col gap-4 p-0" role="list">
           {items.map((item) => (
             <li key={item.text} className="flex items-start gap-3 text-base leading-relaxed">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/10">

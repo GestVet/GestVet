@@ -32,7 +32,7 @@ export default function TermsView() {
       </SectionCard>
 
       <SectionCard title="2. Tu cuenta">
-        <ul className="m-0 flex list-disc flex-col gap-1.5 pl-5 text-sm text-muted-foreground">
+        <ul className="m-0 flex list-disc flex-col gap-1.5 pl-5 text-sm text-muted-foreground" role="list">
           <li>Eres responsable de mantener tu contraseña en secreto y de la actividad de tu cuenta.</li>
           <li>Los datos que registras (nombre, DNI, teléfono, mascotas) deben ser reales y tuyos.</li>
           <li>
@@ -44,7 +44,7 @@ export default function TermsView() {
       </SectionCard>
 
       <SectionCard title="3. Citas, pagos y cancelaciones">
-        <ul className="m-0 flex list-disc flex-col gap-1.5 pl-5 text-sm text-muted-foreground">
+        <ul className="m-0 flex list-disc flex-col gap-1.5 pl-5 text-sm text-muted-foreground" role="list">
           <li>Reservar una cita no garantiza atención si no te presentas dentro del margen de tolerancia.</li>
           <li>
             Los pagos por QR se confirman de forma automática; ante cualquier discrepancia, contáctanos
@@ -73,7 +73,7 @@ export default function TermsView() {
 
       <div id="privacidad" className="scroll-mt-20">
         <SectionCard title="6. Privacidad de tus datos">
-        <ul className="m-0 flex list-disc flex-col gap-1.5 pl-5 text-sm text-muted-foreground">
+        <ul className="m-0 flex list-disc flex-col gap-1.5 pl-5 text-sm text-muted-foreground" role="list">
           <li>Usamos tus datos únicamente para operar la clínica: citas, historia clínica, pagos y notificaciones.</li>
           <li>No vendemos tus datos personales ni los de tu mascota a terceros.</li>
           <li>

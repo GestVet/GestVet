@@ -38,7 +38,7 @@ export default function IdentityConsentField({ control, error }: IdentityConsent
           aria-invalid={error !== undefined}
           aria-describedby={error === undefined ? undefined : ID_ERROR}
         />
-        <Label htmlFor={ID} className="leading-snug font-normal text-muted-foreground">
+        <Label htmlFor={ID} className="cursor-pointer leading-snug font-normal text-muted-foreground">
           Autorizo a la clínica a verificar mi DNI para confirmar mi identidad. Solo se comprueba
           que el nombre coincida.
         </Label>

@@ -13,6 +13,7 @@ interface HomeHeroProps {
 export default function HomeHero({ bleed }: HomeHeroProps) {
   return (
     <section
+      aria-label="Presentación de GestVet"
       className={cn(
         bleed ? '-mx-4 -mt-6 sm:-mx-6' : 'rounded-xl bg-card px-4 py-8 sm:px-8',
       )}
