@@ -254,3 +254,69 @@ async def test_el_listado_dice_quien_reclama_de_que_mascota_y_en_que_cita(
     assert reclamo["pet_name"] == "Rocco"
     assert reclamo["appointment_type"] == "Consulta general"
     assert reclamo["appointment_at"].startswith("2026-09-14T10:00")
+
+
+async def _reclamo_con_evidencia(client: AsyncClient, escenario: Escenario) -> int:
+    cabeceras = authorization_for(escenario.cliente)
+    creado = await client.post(
+        URL, json={**RECLAMO, "appointment_id": escenario.cita_id}, headers=cabeceras
+    )
+    subida = await client.post(
+        f"{URL}/{creado.json()['id']}/evidence", files=_archivo(), headers=cabeceras
+    )
+    assert "url" not in subida.json()
+    return subida.json()["id"]
+
+
+async def test_quien_reclama_ve_su_evidencia(client: AsyncClient, session: AsyncSession) -> None:
+    escenario = await montar(session)
+    evidencia_id = await _reclamo_con_evidencia(client, escenario)
+
+    response = await client.get(
+        f"{URL}/evidence/{evidencia_id}/file", headers=authorization_for(escenario.cliente)
+    )
+
+    assert response.status_code == 200
+    assert response.content == b"contenido-de-prueba"
+    assert response.headers["content-type"] == "image/jpeg"
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert response.headers["content-disposition"].startswith('inline; filename="foto.jpg"')
+
+
+async def test_el_personal_ve_la_evidencia(client: AsyncClient, session: AsyncSession) -> None:
+    escenario = await montar(session)
+    evidencia_id = await _reclamo_con_evidencia(client, escenario)
+    admin = await SqlAlchemyUserRepository(session).add(
+        build_user("jefa@example.com", role=Role.ADMIN)
+    )
+    await session.commit()
+
+    response = await client.get(
+        f"{URL}/evidence/{evidencia_id}/file", headers=authorization_for(admin)
+    )
+
+    assert response.status_code == 200
+    assert response.content == b"contenido-de-prueba"
+
+
+async def test_otro_cliente_no_ve_la_evidencia(client: AsyncClient, session: AsyncSession) -> None:
+    escenario = await montar(session)
+    evidencia_id = await _reclamo_con_evidencia(client, escenario)
+    otro = await SqlAlchemyUserRepository(session).add(build_user("beto@example.com"))
+    await session.commit()
+
+    response = await client.get(
+        f"{URL}/evidence/{evidencia_id}/file", headers=authorization_for(otro)
+    )
+
+    assert response.status_code == 404
+
+
+async def test_la_evidencia_no_se_sirve_sin_credencial(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+    evidencia_id = await _reclamo_con_evidencia(client, escenario)
+
+    assert (await client.get(f"{URL}/evidence/{evidencia_id}/file")).status_code == 401
+    assert (await client.get(f"/attachments/complaints/1/{evidencia_id}.jpg")).status_code == 404

@@ -47,9 +47,7 @@ class UploadEvidence:
             storage_key=_storage_key(command.complaint_id, command.filename),
             uploaded_by=command.requester_id,
         )
-        draft.url = await self._storage.save(
-            draft.storage_key, command.content, command.content_type
-        )
+        await self._storage.save(draft.storage_key, command.content, command.content_type)
         return await self._evidence.add(draft)
 
 

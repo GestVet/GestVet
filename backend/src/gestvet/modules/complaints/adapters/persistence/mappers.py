@@ -38,7 +38,6 @@ def evidence_row_to_entity(row: ComplaintEvidenceRow) -> ComplaintEvidence:
         content_type=row.content_type,
         size_bytes=row.size_bytes,
         storage_key=row.storage_key,
-        url=row.url,
         uploaded_by=row.uploaded_by,
         created_at=as_utc(row.created_at),
     )
@@ -51,7 +50,7 @@ def evidence_entity_to_row(evidence: ComplaintEvidence) -> ComplaintEvidenceRow:
         content_type=evidence.content_type,
         size_bytes=evidence.size_bytes,
         storage_key=evidence.storage_key,
-        url=evidence.url,
+        url="",
         uploaded_by=evidence.uploaded_by,
         created_at=evidence.created_at,
     )

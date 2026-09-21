@@ -607,6 +607,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/complaints/evidence/{evidence_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ver el archivo de una evidencia */
+        get: operations["read_evidence_api_v1_complaints_evidence__evidence_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/complaints/{complaint_id}/evidence": {
         parameters: {
             query?: never;
@@ -876,6 +893,23 @@ export interface paths {
         post?: never;
         /** Quitar un adjunto de la historia clínica */
         delete: operations["delete_attachment_api_v1_medical_records_attachments__attachment_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/medical-records/attachments/{attachment_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ver el archivo de un adjunto de la historia clínica */
+        get: operations["read_attachment_api_v1_medical_records_attachments__attachment_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1601,8 +1635,6 @@ export interface components {
             size_bytes: number;
             /** Uploaded By */
             uploaded_by: number;
-            /** Url */
-            url: string;
         };
         /** Body_upload_attachment_api_v1_medical_records__entry_id__attachments_post */
         Body_upload_attachment_api_v1_medical_records__entry_id__attachments_post: {
@@ -1978,8 +2010,6 @@ export interface components {
             size_bytes: number;
             /** Uploaded By */
             uploaded_by: number;
-            /** Url */
-            url: string;
         };
         /** FileComplaintRequest */
         FileComplaintRequest: {
@@ -4420,6 +4450,37 @@ export interface operations {
             };
         };
     };
+    read_evidence_api_v1_complaints_evidence__evidence_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                evidence_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     upload_evidence_api_v1_complaints__complaint_id__evidence_post: {
         parameters: {
             query?: never;
@@ -4923,6 +4984,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_attachment_api_v1_medical_records_attachments__attachment_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attachment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": unknown;
+                };
             };
             /** @description Validation Error */
             422: {

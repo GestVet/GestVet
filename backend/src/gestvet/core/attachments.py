@@ -4,12 +4,17 @@ Vive en el núcleo por la misma razón que `email.py`: no conoce ningún tipo de
 negocio, solo recibe una clave y bytes. Satisface el puerto `AttachmentStorage`
 de `medical_records` y `EvidenceStorage` de `complaints` por estructura.
 
-Ofrece dos adaptadores:
-- `LocalDiskAttachmentStorage`: guarda el archivo en disco local y lo sirve
-  como archivo estático. Útil en desarrollo y pruebas locales.
-- `SupabaseAttachmentStorage`: sube los archivos directamente a un bucket
-  público de Supabase Storage mediante su API REST usando `httpx`, devolviendo
-  la URL pública del archivo. Ideal para Render Free u entornos sin disco persistente.
+Ninguno de los dos adaptadores publica el archivo: se lee de vuelta con `read`
+y lo entrega la API después de comprobar quién lo pide. Una radiografía o la
+evidencia de un reclamo no pueden quedar al alcance de cualquiera que tenga el
+enlace.
+
+- `LocalDiskAttachmentStorage`: guarda el archivo en el disco local. Sirve en
+  desarrollo y en pruebas locales.
+- `SupabaseAttachmentStorage`: guarda el archivo en un bucket privado de
+  Supabase Storage por su API REST con `httpx`, autenticado con la clave de
+  rol de servicio. Sirve en Render Free y en cualquier entorno sin disco
+  persistente.
 """
 
 from __future__ import annotations
@@ -25,35 +30,47 @@ if TYPE_CHECKING:
 
 
 class AttachmentStorageProtocol(Protocol):
-    async def save(self, key: str, content: bytes, content_type: str) -> str: ...
+    async def save(self, key: str, content: bytes, content_type: str) -> None: ...
+    async def read(self, key: str) -> bytes: ...
     async def delete(self, key: str) -> None: ...
 
 
 class LocalDiskAttachmentStorage:
-    def __init__(self, storage_dir: str, public_base_url: str) -> None:
+    def __init__(self, storage_dir: str) -> None:
         self._storage_dir = Path(storage_dir)
-        self._public_base_url = public_base_url.rstrip("/")
 
-    async def save(self, key: str, content: bytes, content_type: str) -> str:
-        del content_type  # el disco no distingue tipos; lo hace el navegador al leerlo
+    async def save(self, key: str, content: bytes, content_type: str) -> None:
+        del content_type  # el disco no distingue tipos; lo guarda la referencia en la base
         await asyncio.to_thread(self._write, key, content)
-        return f"{self._public_base_url}/{key.lstrip('/')}"
+
+    async def read(self, key: str) -> bytes:
+        return await asyncio.to_thread(self._path(key).read_bytes)
 
     async def delete(self, key: str) -> None:
-        await asyncio.to_thread((self._storage_dir / key).unlink, True)
+        await asyncio.to_thread(self._path(key).unlink, True)
 
     def _write(self, key: str, content: bytes) -> None:
-        destination = self._storage_dir / key
+        destination = self._path(key)
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(content)
+
+    def _path(self, key: str) -> Path:
+        # La clave la arma el servidor, pero si alguna vez llegara con `..` no
+        # debe poder salir del directorio de adjuntos.
+        root = self._storage_dir.resolve()
+        destination = (root / key.lstrip("/")).resolve()
+        if not destination.is_relative_to(root):
+            raise FileNotFoundError(key)
+        return destination
 
 
 class SupabaseAttachmentStorage:
     """Almacenamiento de archivos en Supabase Storage vía API REST.
 
     Usa `httpx` directamente para interactuar con el bucket sin agregar el SDK
-    pesado de Supabase. Requiere la clave de rol de servicio (`service_role_key`)
-    para tener permisos de escritura y borrado directos.
+    pesado de Supabase. La clave de rol de servicio (`service_role_key`) da
+    permiso para subir, leer y borrar en un bucket privado, así que el bucket
+    no necesita ninguna política pública.
     """
 
     def __init__(
@@ -78,32 +95,36 @@ class SupabaseAttachmentStorage:
             headers["x-upsert"] = "true"
         return headers
 
-    async def save(self, key: str, content: bytes, content_type: str) -> str:
-        clean_key = key.lstrip("/")
-        url = f"{self._supabase_url}/storage/v1/object/{self._bucket}/{clean_key}"
+    def _object_url(self, key: str) -> str:
+        return f"{self._supabase_url}/storage/v1/object/{self._bucket}/{key.lstrip('/')}"
+
+    async def _send(
+        self, method: str, key: str, *, content_type: str | None = None, content: bytes = b""
+    ) -> httpx.Response:
+        url = self._object_url(key)
         headers = self._headers(content_type)
+        body = content or None
         if self._client is not None:
-            response = await self._client.post(url, content=content, headers=headers)
-            response.raise_for_status()
-        else:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(url, content=content, headers=headers)
-                response.raise_for_status()
-        return f"{self._supabase_url}/storage/v1/object/public/{self._bucket}/{clean_key}"
+            return await self._client.request(method, url, content=body, headers=headers)
+        async with httpx.AsyncClient() as client:
+            return await client.request(method, url, content=body, headers=headers)
+
+    async def save(self, key: str, content: bytes, content_type: str) -> None:
+        response = await self._send("POST", key, content_type=content_type, content=content)
+        response.raise_for_status()
+
+    async def read(self, key: str) -> bytes:
+        response = await self._send("GET", key)
+        # Supabase responde 400 con "Object not found" además de 404, según la versión.
+        if response.status_code in (400, 404):
+            raise FileNotFoundError(key)
+        response.raise_for_status()
+        return response.content
 
     async def delete(self, key: str) -> None:
-        clean_key = key.lstrip("/")
-        url = f"{self._supabase_url}/storage/v1/object/{self._bucket}/{clean_key}"
-        headers = self._headers()
-        if self._client is not None:
-            response = await self._client.delete(url, headers=headers)
-            if response.status_code not in (200, 204, 404):
-                response.raise_for_status()
-        else:
-            async with httpx.AsyncClient() as client:
-                response = await client.delete(url, headers=headers)
-                if response.status_code not in (200, 204, 404):
-                    response.raise_for_status()
+        response = await self._send("DELETE", key)
+        if response.status_code not in (200, 204, 404):
+            response.raise_for_status()
 
 
 def create_attachment_storage(settings: Settings | None = None) -> AttachmentStorageProtocol:
@@ -117,7 +138,4 @@ def create_attachment_storage(settings: Settings | None = None) -> AttachmentSto
             service_role_key=cfg.supabase_service_role_key,
             bucket=cfg.supabase_storage_bucket,
         )
-    return LocalDiskAttachmentStorage(
-        storage_dir=cfg.attachments_storage_dir,
-        public_base_url=f"{cfg.api_base_url}/attachments",
-    )
+    return LocalDiskAttachmentStorage(storage_dir=cfg.attachments_storage_dir)

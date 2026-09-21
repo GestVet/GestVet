@@ -1,6 +1,6 @@
 """Puerto de persistencia de los adjuntos.
 
-Guarda solo la referencia (nombre, tipo, tamaño, URL): el archivo en sí lo
+Guarda solo la referencia (nombre, tipo, tamaño, clave): el archivo en sí lo
 guarda `AttachmentStorage`.
 """
 

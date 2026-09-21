@@ -70,6 +70,10 @@ class SqlAlchemyEvidenceRepository:
         await self._session.refresh(row)
         return evidence_row_to_entity(row)
 
+    async def get(self, evidence_id: int) -> ComplaintEvidence | None:
+        row = await self._session.get(ComplaintEvidenceRow, evidence_id)
+        return evidence_row_to_entity(row) if row else None
+
     async def list_for_complaint(self, complaint_id: int) -> list[ComplaintEvidence]:
         rows = await self._session.execute(
             select(ComplaintEvidenceRow)

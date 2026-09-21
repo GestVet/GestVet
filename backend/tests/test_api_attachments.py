@@ -72,7 +72,7 @@ async def test_un_veterinario_adjunta_un_archivo(
     assert body["filename"] == "radiografia.jpg"
     assert body["content_type"] == "image/jpeg"
     assert body["size_bytes"] == len(b"contenido-de-prueba")
-    assert body["url"] != ""
+    assert "url" not in body
 
 
 async def test_un_cliente_no_puede_adjuntar_un_archivo(
@@ -198,3 +198,83 @@ async def test_un_cliente_no_puede_quitar_un_adjunto(
 async def test_sin_credencial_no_se_llega_a_ninguna_parte(client: AsyncClient) -> None:
     assert (await client.post(f"{URL}/1/attachments", files=_archivo())).status_code == 401
     assert (await client.delete(f"{URL}/attachments/1")).status_code == 401
+
+
+async def _subir(client: AsyncClient, escenario: Escenario) -> int:
+    subida = await client.post(
+        f"{URL}/{escenario.entrada_id}/attachments",
+        files=_archivo("radiografía de Rocco.jpg"),
+        headers=authorization_for(escenario.veterinario),
+    )
+    return subida.json()["id"]
+
+
+async def test_el_dueno_ve_el_archivo_de_su_mascota(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+    adjunto_id = await _subir(client, escenario)
+
+    response = await client.get(
+        f"{URL}/attachments/{adjunto_id}/file", headers=authorization_for(escenario.cliente)
+    )
+
+    assert response.status_code == 200
+    assert response.content == b"contenido-de-prueba"
+    assert response.headers["content-type"] == "image/jpeg"
+    assert response.headers["x-content-type-options"] == "nosniff"
+    disposition = response.headers["content-disposition"]
+    assert disposition.startswith("inline;")
+    assert 'filename="radiograf_a_de_Rocco.jpg"' in disposition
+    assert "filename*=UTF-8''radiograf%C3%ADa%20de%20Rocco.jpg" in disposition
+
+
+async def test_el_personal_ve_el_archivo_de_cualquier_mascota(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+    adjunto_id = await _subir(client, escenario)
+    admin = await SqlAlchemyUserRepository(session).add(
+        build_user("jefa@example.com", role=Role.ADMIN)
+    )
+    await session.commit()
+
+    for quien in (escenario.veterinario, admin):
+        response = await client.get(
+            f"{URL}/attachments/{adjunto_id}/file", headers=authorization_for(quien)
+        )
+        assert response.status_code == 200
+        assert response.content == b"contenido-de-prueba"
+
+
+async def test_otro_cliente_no_ve_el_archivo(client: AsyncClient, session: AsyncSession) -> None:
+    escenario = await montar(session)
+    adjunto_id = await _subir(client, escenario)
+    otro = await SqlAlchemyUserRepository(session).add(build_user("beto@example.com"))
+    await session.commit()
+
+    response = await client.get(
+        f"{URL}/attachments/{adjunto_id}/file", headers=authorization_for(otro)
+    )
+
+    assert response.status_code == 404
+
+
+async def test_el_archivo_no_se_sirve_sin_credencial(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+    adjunto_id = await _subir(client, escenario)
+
+    assert (await client.get(f"{URL}/attachments/{adjunto_id}/file")).status_code == 401
+
+
+async def test_la_ruta_publica_de_adjuntos_ya_no_existe(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+    await _subir(client, escenario)
+
+    response = await client.get(f"/attachments/clinical-entries/{escenario.entrada_id}/x.jpg")
+
+    assert response.status_code == 404

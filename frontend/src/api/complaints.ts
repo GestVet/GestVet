@@ -34,3 +34,11 @@ export async function uploadEvidence(
   )
   return data
 }
+
+/** El archivo de una evidencia. No tiene dirección pública: se pide con la sesión. */
+export async function fetchEvidenceFile(evidenceId: number): Promise<Blob> {
+  const { data } = await api.get<Blob>(`/complaints/evidence/${String(evidenceId)}/file`, {
+    responseType: 'blob',
+  })
+  return data
+}

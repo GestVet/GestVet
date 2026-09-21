@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, Up
 
 from gestvet.core.activity_log import ActivityRecorderDep
 from gestvet.core.auth import require_permission
+from gestvet.core.file_response import inline_file_response
 from gestvet.core.identity import STAFF_ROLES, Principal
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from gestvet.core.permissions import Permission
@@ -51,6 +52,7 @@ from gestvet.modules.medical_records.use_cases.delete_attachment import (
     DeleteAttachmentCommand,
 )
 from gestvet.modules.medical_records.use_cases.list_clinical_entries import ListClinicalEntries
+from gestvet.modules.medical_records.use_cases.read_attachment import ReadAttachment
 from gestvet.modules.medical_records.use_cases.upload_attachment import (
     UploadAttachment,
     UploadAttachmentCommand,
@@ -189,6 +191,33 @@ async def upload_attachment(
     except InvalidAttachment as error:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
     return AttachmentResponse.from_entity(attachment)
+
+
+@router.get(
+    "/attachments/{attachment_id}/file",
+    summary="Ver el archivo de un adjunto de la historia clínica",
+    response_class=Response,
+    responses={200: {"content": {"application/octet-stream": {}}}},
+)
+async def read_attachment(
+    attachment_id: int,
+    principal: ClinicalReaderDep,
+    attachments: AttachmentRepositoryDep,
+    storage: AttachmentStorageDep,
+    entries: ClinicalEntryRepositoryDep,
+    pets: PetDirectoryDep,
+) -> Response:
+    try:
+        found = await ReadAttachment(attachments, storage, entries, pets)(
+            attachment_id,
+            requester_id=principal.user_id,
+            is_staff=principal.role in STAFF_ROLES,
+        )
+    except AttachmentNotFound as error:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    return inline_file_response(
+        found.content, found.attachment.content_type, found.attachment.filename
+    )
 
 
 @router.delete(

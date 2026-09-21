@@ -20,3 +20,12 @@ export async function uploadAttachment(
 export async function deleteAttachment(attachmentId: number): Promise<void> {
   await api.delete(`/medical-records/attachments/${String(attachmentId)}`)
 }
+
+/** El archivo de un adjunto. No tiene dirección pública: se pide con la sesión. */
+export async function fetchAttachmentFile(attachmentId: number): Promise<Blob> {
+  const { data } = await api.get<Blob>(
+    `/medical-records/attachments/${String(attachmentId)}/file`,
+    { responseType: 'blob' },
+  )
+  return data
+}

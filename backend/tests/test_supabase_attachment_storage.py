@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import httpx
 import pytest
 
@@ -29,7 +31,7 @@ async def test_supabase_storage_save_exitoso() -> None:
             bucket="attachments",
             client=client,
         )
-        url = await storage.save(
+        await storage.save(
             key="clinical-entries/1/foto.png",
             content=b"bytes-de-imagen",
             content_type="image/png",
@@ -46,10 +48,70 @@ async def test_supabase_storage_save_exitoso() -> None:
     assert captured_request.headers["content-type"] == "image/png"
     assert captured_request.headers["x-upsert"] == "true"
     assert captured_request.read() == b"bytes-de-imagen"
+
+
+async def test_supabase_storage_lee_con_la_clave_de_servicio() -> None:
+    captured_request: httpx.Request | None = None
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal captured_request
+        captured_request = request
+        return httpx.Response(200, content=b"bytes-de-imagen")
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        storage = SupabaseAttachmentStorage(
+            supabase_url="https://testproject.supabase.co",
+            service_role_key="service-role-secret-token",
+            bucket="attachments",
+            client=client,
+        )
+        content = await storage.read("clinical-entries/1/foto.png")
+
+    assert content == b"bytes-de-imagen"
+    assert captured_request is not None
+    assert captured_request.method == "GET"
+    # Nunca la ruta `/public/`: el bucket es privado.
     assert (
-        url
-        == "https://testproject.supabase.co/storage/v1/object/public/attachments/clinical-entries/1/foto.png"
+        str(captured_request.url)
+        == "https://testproject.supabase.co/storage/v1/object/attachments/clinical-entries/1/foto.png"
     )
+    assert captured_request.headers["authorization"] == "Bearer service-role-secret-token"
+
+
+@pytest.mark.parametrize("status_code", [400, 404])
+async def test_supabase_storage_lee_un_archivo_inexistente(status_code: int) -> None:
+    def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(status_code, json={"error": "Object not found"})
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        storage = SupabaseAttachmentStorage(
+            supabase_url="https://testproject.supabase.co",
+            service_role_key="service-role-secret-token",
+            client=client,
+        )
+        with pytest.raises(FileNotFoundError):
+            await storage.read("clinical-entries/1/nada.png")
+
+
+async def test_disco_local_guarda_lee_y_borra(tmp_path: Path) -> None:
+    storage = LocalDiskAttachmentStorage(storage_dir=str(tmp_path))
+
+    await storage.save("clinical-entries/1/foto.png", b"bytes", "image/png")
+    assert await storage.read("clinical-entries/1/foto.png") == b"bytes"
+
+    await storage.delete("clinical-entries/1/foto.png")
+    with pytest.raises(FileNotFoundError):
+        await storage.read("clinical-entries/1/foto.png")
+
+
+async def test_disco_local_no_sale_de_su_directorio(tmp_path: Path) -> None:
+    (tmp_path / "secreto.txt").write_bytes(b"no")
+    storage = LocalDiskAttachmentStorage(storage_dir=str(tmp_path / "adjuntos"))
+
+    with pytest.raises(FileNotFoundError):
+        await storage.read("../secreto.txt")
 
 
 async def test_supabase_storage_save_falla_si_api_retorna_error() -> None:
@@ -133,7 +195,6 @@ def test_fabrica_create_attachment_storage() -> None:
         supabase_url="",
         supabase_service_role_key="",
         attachments_storage_dir="./var/custom_attachments",
-        api_base_url="https://api.ejemplo.com",
     )
     storage_local = create_attachment_storage(settings_local)
     assert isinstance(storage_local, LocalDiskAttachmentStorage)

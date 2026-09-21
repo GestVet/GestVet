@@ -34,7 +34,6 @@ class AttachmentResponse(BaseModel):
     filename: str
     content_type: str
     size_bytes: int
-    url: str
     uploaded_by: int
     created_at: datetime
 
@@ -46,7 +45,6 @@ class AttachmentResponse(BaseModel):
             filename=attachment.filename,
             content_type=attachment.content_type,
             size_bytes=attachment.size_bytes,
-            url=attachment.url,
             uploaded_by=attachment.uploaded_by,
             created_at=attachment.created_at,
         )
