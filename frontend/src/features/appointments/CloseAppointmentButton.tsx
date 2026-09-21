@@ -2,7 +2,7 @@ import ConfirmDialog from '../../components/ConfirmDialog'
 import Icon from '../../components/Icon'
 import type { IconName } from '../../components/icons'
 import { Button } from '../../components/ui/button'
-import { horaDeHabilitacion } from './appointmentSummary'
+import { fechaYHora } from './appointmentSummary'
 
 interface CloseAppointmentButtonProps {
   readonly label: string
@@ -48,7 +48,7 @@ export default function CloseAppointmentButton({
           {contenido}
         </Button>
         <span className="text-xs text-muted-foreground">
-          Desde el {horaDeHabilitacion(availableFrom)}
+          Desde el {fechaYHora(availableFrom)}
         </span>
       </span>
     )

@@ -1,13 +1,13 @@
 import type { AppointmentResponse } from '../../api/types'
 import { formatearDiaDeInstante, formatearHora } from '../../services/clinicTime'
 
-/** "la cita del lunes 22 de septiembre a las 10:00", para una confirmación. */
-export function resumenDeCita(cita: AppointmentResponse): string {
-  const cuando = `${formatearDiaDeInstante(cita.scheduled_at)} a las ${formatearHora(cita.scheduled_at)}`
-  return `la cita del ${cuando}`
+/** "lunes, 22 de septiembre, 10:00", en la hora de la clínica. */
+export function fechaYHora(instante: string): string {
+  return `${formatearDiaDeInstante(instante)}, ${formatearHora(instante)}`
 }
 
-/** La hora desde la que se habilita una acción, en la hora de la clínica. */
-export function horaDeHabilitacion(instante: string): string {
-  return `${formatearDiaDeInstante(instante)}, ${formatearHora(instante)}`
+/** "la cita de Rocco del lunes, 22 de septiembre, 10:00", para una confirmación. */
+export function resumenDeCita(cita: AppointmentResponse): string {
+  const mascota = cita.pet_name === '' ? '' : ` de ${cita.pet_name}`
+  return `la cita${mascota} del ${fechaYHora(cita.scheduled_at)}`
 }

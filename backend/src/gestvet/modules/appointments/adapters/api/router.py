@@ -24,6 +24,7 @@ from gestvet.core.permissions import Permission
 from gestvet.core.realtime import APPOINTMENTS_TOPIC, EventPublisher, RealtimeEvent
 from gestvet.core.realtime_broker import EventPublisherDep
 from gestvet.modules.appointments.adapters.api.dependencies import (
+    AppointmentLabelsDep,
     AppointmentRepositoryDep,
     AppointmentTypeRepositoryDep,
     ChangeStatusDep,
@@ -54,6 +55,7 @@ from gestvet.modules.appointments.domain.exceptions import (
     StatusChangeTooEarly,
     VeterinarianUnavailable,
 )
+from gestvet.modules.appointments.ports.appointment_labels import AppointmentLabelDirectory
 from gestvet.modules.appointments.ports.repositories import AppointmentQuery
 from gestvet.modules.appointments.use_cases.book_appointment import (
     BookAppointment,
@@ -98,7 +100,9 @@ _CONFLICT_ERRORS = (
 )
 
 
-def _notify_change(events: EventPublisher, appointment: Appointment) -> AppointmentResponse:
+async def _notify_change(
+    events: EventPublisher, appointment: Appointment, labels: AppointmentLabelDirectory
+) -> AppointmentResponse:
     events.publish(
         RealtimeEvent(
             topic=APPOINTMENTS_TOPIC,
@@ -107,7 +111,8 @@ def _notify_change(events: EventPublisher, appointment: Appointment) -> Appointm
             reference_id=appointment.id,
         )
     )
-    return AppointmentResponse.from_entity(appointment)
+    found = await labels.labels_for([appointment.id or 0])
+    return AppointmentResponse.from_entity(appointment, found.get(appointment.id or 0))
 
 
 @router.get(
@@ -172,6 +177,7 @@ async def book_appointment(
     schedule: ScheduleDirectoryDep,
     activity: ActivityRecorderDep,
     events: EventPublisherDep,
+    labels: AppointmentLabelsDep,
 ) -> AppointmentResponse:
     use_case = BookAppointment(appointments, types, pets, schedule, activity)
     try:
@@ -191,7 +197,7 @@ async def book_appointment(
         raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
     except InvalidAppointment as error:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
-    return _notify_change(events, appointment)
+    return await _notify_change(events, appointment, labels)
 
 
 @router.post(
@@ -209,6 +215,7 @@ async def open_emergency(
     schedule: ScheduleDirectoryDep,
     activity: ActivityRecorderDep,
     events: EventPublisherDep,
+    labels: AppointmentLabelsDep,
 ) -> AppointmentResponse:
     use_case = OpenEmergency(appointments, types, pets, schedule, activity)
     try:
@@ -223,7 +230,7 @@ async def open_emergency(
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
     except NoEmergencyVeterinarian as error:
         raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
-    return _notify_change(events, appointment)
+    return await _notify_change(events, appointment, labels)
 
 
 @router.post(
@@ -241,6 +248,7 @@ async def open_walk_in_emergency(
     schedule: ScheduleDirectoryDep,
     activity: ActivityRecorderDep,
     events: EventPublisherDep,
+    labels: AppointmentLabelsDep,
 ) -> AppointmentResponse:
     use_case = OpenEmergency(appointments, types, pets, schedule, activity)
     try:
@@ -255,13 +263,14 @@ async def open_walk_in_emergency(
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
     except NoEmergencyVeterinarian as error:
         raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
-    return _notify_change(events, appointment)
+    return await _notify_change(events, appointment, labels)
 
 
 @router.get("", response_model=AppointmentPageResponse, summary="Listar citas")
 async def list_appointments(
     principal: ReaderDep,
     appointments: AppointmentRepositoryDep,
+    labels: AppointmentLabelsDep,
     status_filter: Annotated[
         list[AppointmentStatus] | None, Query(alias="status", description="Filtra por estado")
     ] = None,
@@ -287,8 +296,11 @@ async def list_appointments(
         ),
     )
     page = await ListAppointments(appointments)(query)
+    found = await labels.labels_for([item.id or 0 for item in page.items])
     return AppointmentPageResponse(
-        items=[AppointmentResponse.from_entity(item) for item in page.items],
+        items=[
+            AppointmentResponse.from_entity(item, found.get(item.id or 0)) for item in page.items
+        ],
         total=page.total,
     )
 
@@ -298,6 +310,7 @@ async def _change_status(
     principal: Principal,
     change_status: ChangeAppointmentStatus,
     events: EventPublisher,
+    labels: AppointmentLabelDirectory,
     target: AppointmentStatus,
     reason: str = "",
 ) -> AppointmentResponse:
@@ -317,7 +330,7 @@ async def _change_status(
         raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
     except InvalidAppointment as error:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
-    return _notify_change(events, appointment)
+    return await _notify_change(events, appointment, labels)
 
 
 @router.post(
@@ -330,9 +343,10 @@ async def confirm_appointment(
     veterinarian: AttendantDep,
     change_status: ChangeStatusDep,
     events: EventPublisherDep,
+    labels: AppointmentLabelsDep,
 ) -> AppointmentResponse:
     return await _change_status(
-        appointment_id, veterinarian, change_status, events, AppointmentStatus.CONFIRMED
+        appointment_id, veterinarian, change_status, events, labels, AppointmentStatus.CONFIRMED
     )
 
 
@@ -346,9 +360,10 @@ async def complete_appointment(
     veterinarian: AttendantDep,
     change_status: ChangeStatusDep,
     events: EventPublisherDep,
+    labels: AppointmentLabelsDep,
 ) -> AppointmentResponse:
     return await _change_status(
-        appointment_id, veterinarian, change_status, events, AppointmentStatus.COMPLETED
+        appointment_id, veterinarian, change_status, events, labels, AppointmentStatus.COMPLETED
     )
 
 
@@ -362,9 +377,10 @@ async def mark_appointment_no_show(
     veterinarian: AttendantDep,
     change_status: ChangeStatusDep,
     events: EventPublisherDep,
+    labels: AppointmentLabelsDep,
 ) -> AppointmentResponse:
     return await _change_status(
-        appointment_id, veterinarian, change_status, events, AppointmentStatus.NO_SHOW
+        appointment_id, veterinarian, change_status, events, labels, AppointmentStatus.NO_SHOW
     )
 
 
@@ -379,6 +395,7 @@ async def cancel_appointment(
     principal: CancelerDep,
     change_status: ChangeStatusDep,
     events: EventPublisherDep,
+    labels: AppointmentLabelsDep,
 ) -> AppointmentResponse:
     # Cancelar lo pueden hacer las dos partes: el caso de uso comprueba que
     # quien cancela participe en esa cita.
@@ -387,6 +404,7 @@ async def cancel_appointment(
         principal,
         change_status,
         events,
+        labels,
         AppointmentStatus.CANCELLED,
         reason=payload.reason,
     )

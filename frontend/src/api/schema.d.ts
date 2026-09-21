@@ -1531,10 +1531,14 @@ export interface components {
         AppointmentResponse: {
             /** Appointment Type Id */
             appointment_type_id: number;
+            /** Appointment Type Name */
+            appointment_type_name: string;
             /** Cancellation Reason */
             cancellation_reason: string;
             /** Client Id */
             client_id: number;
+            /** Client Name */
+            client_name: string;
             /**
              * Completable From
              * Format: date-time
@@ -1556,6 +1560,8 @@ export interface components {
             ends_at: string;
             /** Id */
             id: number;
+            /** Is Emergency */
+            is_emergency: boolean;
             /**
              * No Show From
              * Format: date-time
@@ -1563,6 +1569,8 @@ export interface components {
             no_show_from: string;
             /** Pet Id */
             pet_id: number;
+            /** Pet Name */
+            pet_name: string;
             /**
              * Scheduled At
              * Format: date-time
@@ -1575,6 +1583,8 @@ export interface components {
             updated_by: number | null;
             /** Veterinarian Id */
             veterinarian_id: number;
+            /** Veterinarian Name */
+            veterinarian_name: string;
         };
         /**
          * AppointmentStatus

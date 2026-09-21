@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import {
   type AppointmentsFilter,
@@ -17,6 +17,7 @@ import { useCan } from '../../store/session'
 import AppointmentActions from './AppointmentActions'
 import AppointmentDetails from './AppointmentDetails'
 import AppointmentsFilters from './AppointmentsFilters'
+import AppointmentTypeCell from './AppointmentTypeCell'
 
 // El tono de la etiqueta sale del estado, y el estado viene del contrato: si
 // el backend agrega uno nuevo, este mapa deja de compilar.
@@ -37,8 +38,26 @@ function esEstado(valor: string): valor is AppointmentStatus {
 }
 
 const COLUMNAS: readonly DataColumn<AppointmentResponse>[] = [
-  { id: 'fecha', header: 'Fecha', cell: (cita) => FORMATO.format(new Date(cita.scheduled_at)) },
-  { id: 'duracion', header: 'Duración', cell: (cita) => `${String(cita.duration_minutes)} min` },
+  {
+    id: 'fecha',
+    header: 'Fecha',
+    cell: (cita) => (
+      <div className="flex flex-col">
+        <span>{FORMATO.format(new Date(cita.scheduled_at))}</span>
+        <span className="text-xs text-muted-foreground">{`${String(cita.duration_minutes)} min`}</span>
+      </div>
+    ),
+  },
+  { id: 'mascota', header: 'Mascota', cell: (cita) => cita.pet_name || '—' },
+  { id: 'cliente', header: 'Cliente', cell: (cita) => cita.client_name || '—' },
+  { id: 'veterinario', header: 'Veterinario', cell: (cita) => cita.veterinarian_name || '—' },
+  {
+    id: 'tipo',
+    header: 'Tipo',
+    cell: (cita) => (
+      <AppointmentTypeCell name={cita.appointment_type_name} isEmergency={cita.is_emergency} />
+    ),
+  },
   {
     id: 'estado',
     header: 'Estado',
@@ -75,8 +94,30 @@ const COLUMNAS: readonly DataColumn<AppointmentResponse>[] = [
   },
 ]
 
+/**
+ * Las columnas que ve cada quien.
+ *
+ * El cliente ya sabe que la cita es suya: ve al veterinario. Quien atiende ya
+ * sabe que es suya: ve al cliente. La administración ve a los dos.
+ */
+function useColumnas(): readonly DataColumn<AppointmentResponse>[] {
+  const verCliente = useCan('clients.read')
+  const verVeterinario = !useCan('appointments.attend')
+  return useMemo(() => {
+    const ocultas = new Set<string>()
+    if (!verCliente) {
+      ocultas.add('cliente')
+    }
+    if (!verVeterinario) {
+      ocultas.add('veterinario')
+    }
+    return COLUMNAS.filter((columna) => !ocultas.has(columna.id))
+  }, [verCliente, verVeterinario])
+}
+
 export default function AppointmentsView() {
   const atiende = useCan('appointments.attend')
+  const columnas = useColumnas()
   const [estado, setEstado] = useState('')
   const [desde, setDesde] = useState('')
   const [hasta, setHasta] = useState('')
@@ -118,7 +159,7 @@ export default function AppointmentsView() {
       </Card>
 
       <DataTable
-        columns={COLUMNAS}
+        columns={columnas}
         data={citas.data?.items ?? []}
         isLoading={citas.isPending}
         emptyMessage="No hay citas para mostrar."

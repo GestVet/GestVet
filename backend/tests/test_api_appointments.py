@@ -643,3 +643,56 @@ async def test_la_cita_dice_desde_cuando_se_puede_cerrar(
     body = creada.json()
     assert datetime.fromisoformat(body["completable_from"]) == HORA - timedelta(minutes=30)
     assert datetime.fromisoformat(body["no_show_from"]) == HORA
+
+
+async def test_la_cita_trae_los_nombres_para_mostrarla(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+
+    creada = await client.post(
+        URL, json=escenario.reserva(), headers=authorization_for(escenario.cliente)
+    )
+
+    body = creada.json()
+    assert body["pet_name"] == "Rocco"
+    assert body["client_name"] == "Ana Quispe"
+    assert body["veterinarian_name"] == "Ana Quispe"
+    assert body["appointment_type_name"] == "Consulta general"
+    assert body["is_emergency"] is False
+
+
+async def test_el_listado_trae_los_nombres_de_cada_cita(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+    await client.post(URL, json=escenario.reserva(), headers=authorization_for(escenario.cliente))
+    await client.post(
+        URL,
+        json=escenario.reserva(scheduled_at=(HORA + timedelta(hours=2)).isoformat()),
+        headers=authorization_for(escenario.cliente),
+    )
+
+    for quien in (escenario.cliente, escenario.veterinario):
+        response = await client.get(URL, headers=authorization_for(quien))
+        items = response.json()["items"]
+        assert len(items) == 2
+        assert {item["pet_name"] for item in items} == {"Rocco"}
+        assert {item["appointment_type_name"] for item in items} == {"Consulta general"}
+        assert all(item["client_name"] == "Ana Quispe" for item in items)
+
+
+async def test_la_emergencia_se_muestra_como_tal(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session, con_agenda=False)
+    await _guardia_ahora(session, escenario.veterinario.id or 0, datetime.now(UTC))
+
+    response = await client.post(
+        f"{URL}/emergency",
+        json={"pet_id": escenario.mascota.id},
+        headers=authorization_for(escenario.cliente),
+    )
+
+    assert response.json()["is_emergency"] is True
+    assert response.json()["appointment_type_name"] == "Emergencia"
