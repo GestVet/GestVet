@@ -40,6 +40,8 @@ class ComplaintEvidenceRow(Base):
     content_type: Mapped[str] = mapped_column(String(100))
     size_bytes: Mapped[int] = mapped_column(BigInteger)
     storage_key: Mapped[str] = mapped_column(String(300))
+    # Guardaba la URL pública del archivo. Ya no se usa: el archivo lo entrega
+    # la API después de autorizar, y las filas nuevas la dejan vacía.
     url: Mapped[str] = mapped_column(String(500))
     uploaded_by: Mapped[int] = mapped_column(
         ForeignKey("users.id", name="fk_complaint_evidence_uploaded_by", ondelete="RESTRICT")

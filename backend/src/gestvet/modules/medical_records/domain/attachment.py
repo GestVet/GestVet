@@ -36,9 +36,6 @@ class Attachment:
     size_bytes: int
     storage_key: str
     uploaded_by: int
-    # Se completa después de guardar el archivo en el almacenamiento: no es
-    # un dato del usuario y no tiene regla de negocio que validar.
-    url: str = ""
     id: int | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 

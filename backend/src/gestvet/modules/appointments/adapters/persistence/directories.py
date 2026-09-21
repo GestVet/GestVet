@@ -22,6 +22,7 @@ from sqlalchemy import DateTime, Integer, bindparam, column, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from gestvet.core.identity import Role
+from gestvet.modules.appointments.ports.appointment_labels import AppointmentLabels
 from gestvet.modules.appointments.ports.client_directory import ClientContact
 from gestvet.modules.appointments.ports.repositories import ScheduleSlot
 
@@ -82,6 +83,21 @@ _BOOKABLE_SLOTS = text(
     bindparam("ends_at", type_=_MOMENT),
 )
 
+# Una sola consulta para toda la página de citas, no una por fila. Los
+# `LEFT JOIN` dejan la cita en la respuesta aunque falte un dato ajeno.
+_LABELS = text(
+    "SELECT a.id, p.name AS pet_name, "
+    "c.first_name AS client_first, c.last_name AS client_last, "
+    "v.first_name AS vet_first, v.last_name AS vet_last, "
+    "t.name AS type_name, t.is_emergency "
+    "FROM appointments a "
+    "LEFT JOIN pets p ON p.id = a.pet_id "
+    "LEFT JOIN users c ON c.id = a.client_id "
+    "LEFT JOIN users v ON v.id = a.veterinarian_id "
+    "LEFT JOIN appointment_types t ON t.id = a.appointment_type_id "
+    "WHERE a.id IN :ids"
+).bindparams(bindparam("ids", expanding=True))
+
 _IS_BOOKABLE = text(
     "SELECT 1 FROM users WHERE id = :veterinarian_id AND role = :role AND is_active = :active"
 )
@@ -103,6 +119,30 @@ class SqlPetDirectory:
     async def find_name(self, pet_id: int) -> str | None:
         row = (await self._session.execute(_PET_NAME, {"pet_id": pet_id})).first()
         return row.name if row else None
+
+
+def _full_name(first: str | None, last: str | None) -> str:
+    return f"{first or ''} {last or ''}".strip()
+
+
+class SqlAppointmentLabelDirectory:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def labels_for(self, appointment_ids: list[int]) -> dict[int, AppointmentLabels]:
+        if not appointment_ids:
+            return {}
+        rows = await self._session.execute(_LABELS, {"ids": sorted(set(appointment_ids))})
+        return {
+            int(row.id): AppointmentLabels(
+                pet_name=row.pet_name or "",
+                client_name=_full_name(row.client_first, row.client_last),
+                veterinarian_name=_full_name(row.vet_first, row.vet_last),
+                appointment_type_name=row.type_name or "",
+                is_emergency=bool(row.is_emergency),
+            )
+            for row in rows
+        }
 
 
 class SqlClientDirectory:

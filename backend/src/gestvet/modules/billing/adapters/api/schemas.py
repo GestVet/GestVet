@@ -123,9 +123,12 @@ class QrChargeResponse(BaseModel):
     confirmed_at: datetime | None
     payment_id: int | None
     created_at: datetime
+    # Si este servidor deja simular la confirmación del banco. La interfaz
+    # muestra el botón de prueba solo cuando vale `true`.
+    simulation_available: bool
 
     @classmethod
-    def from_entity(cls, charge: QrCharge) -> QrChargeResponse:
+    def from_entity(cls, charge: QrCharge, *, simulation_available: bool) -> QrChargeResponse:
         status = charge.effective_status()
         return cls(
             id=charge.id or 0,
@@ -139,4 +142,5 @@ class QrChargeResponse(BaseModel):
             confirmed_at=charge.confirmed_at,
             payment_id=charge.payment_id,
             created_at=charge.created_at,
+            simulation_available=simulation_available,
         )

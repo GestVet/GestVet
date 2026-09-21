@@ -12,8 +12,15 @@ from typing import Protocol
 
 
 class AttachmentStorage(Protocol):
-    async def save(self, key: str, content: bytes, content_type: str) -> str:
-        """Guarda el archivo y devuelve la URL desde la que se puede leer."""
+    async def save(self, key: str, content: bytes, content_type: str) -> None: ...
+
+    async def read(self, key: str) -> bytes:
+        """Devuelve el archivo guardado bajo la clave.
+
+        Lanza `FileNotFoundError` si no existe. El almacenamiento no publica
+        nada: quien pide el archivo lo recibe por la API, después de que el
+        caso de uso comprobó que puede verlo.
+        """
         ...
 
     async def delete(self, key: str) -> None: ...

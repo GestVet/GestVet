@@ -19,7 +19,7 @@
 #
 # Nota sobre los adjuntos:
 # Los adjuntos de la historia clínica y evidencias de reclamos se guardan en
-# un bucket público de Supabase Storage (`SupabaseAttachmentStorage`), por lo que
+# un bucket PRIVADO de Supabase Storage (`SupabaseAttachmentStorage`), por lo que
 # no dependen del disco del servidor y persisten a través de despliegues y
 # suspensiones por inactividad en el plan Free de Render. Requiere configurar
 # SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY y SUPABASE_STORAGE_BUCKET.
@@ -63,10 +63,9 @@ services:
         value: '["https://gestvet-pi.vercel.app"]'
       - key: FRONTEND_BASE_URL
         value: https://gestvet-pi.vercel.app
-      - key: API_BASE_URL
-        value: https://gestvet-api.onrender.com
 
-      # Almacenamiento persistente en Supabase Storage (bucket público).
+      # Almacenamiento persistente en Supabase Storage. El bucket debe ser
+      # privado: la API entrega cada archivo después de autorizar a quien lo pide.
       # Evita la pérdida de datos en el plan Free de Render sin disco persistente.
       - key: SUPABASE_URL
         sync: false
@@ -83,6 +82,12 @@ services:
       # despierte al backend cada 30 min (lun-vie, hora de Lima) y ejecute los recordatorios de WhatsApp.
       - key: REMINDERS_CRON_TOKEN
         sync: false
+
+      # La confirmación simulada del cobro por QR queda apagada: con ella un
+      # cliente podría marcar como pagado su propio cobro. Ya la apaga
+      # DEBUG=false; se fija igual para que no dependa de eso.
+      - key: QR_SIMULATION_ENABLED
+        value: "false"
 
       - key: JWT_SECRET_KEY
         generateValue: true

@@ -12,11 +12,11 @@ Por módulo, lo que el sistema resuelve hoy:
 
 **Agenda** (`availability`) — la clínica asigna los turnos de cada veterinario, y la guardia es un tipo de turno más; una cita solo se agenda dentro de un turno asignado.
 
-**Citas** (`appointments`) — reserva, confirmación, finalización, cancelación (con motivo obligatorio) y marca de inasistencia, a mano o calculada sola al leer una cita que quedó vencida sin cerrar (no hace falta un proceso en segundo plano para eso). Apertura de emergencias sin elegir veterinario ni hora: el sistema asigna al veterinario de guardia menos cargado o, si no hay ninguno libre, a uno en turno de atención con el resto del día libre. El motivo de consulta muestra un aviso de "precio estimado, sujeto a variar según la atención".
+**Citas** (`appointments`) — reserva, confirmación, finalización, cancelación (con motivo obligatorio) y marca de inasistencia, a mano o calculada sola al leer una cita que quedó vencida sin cerrar (no hace falta un proceso en segundo plano para eso). Completar una cita se acepta desde 30 minutos antes de su hora (quien llega temprano) y la inasistencia a mano, desde la hora misma; antes el servidor responde 409 y la interfaz muestra el botón deshabilitado con la hora en que se habilita. Las dos acciones piden confirmación. Apertura de emergencias sin elegir veterinario ni hora: el sistema asigna al veterinario de guardia menos cargado o, si no hay ninguno libre, a uno en turno de atención con el resto del día libre. El motivo de consulta muestra un aviso de "precio estimado, sujeto a variar según la atención".
 
-**Historia clínica** (`medical_records`) — entradas por tipo (consulta, vacuna, cirugía, control, carta de consentimiento, otro), adjuntos por entrada, reporte en PDF de la historia completa de una mascota. La carta de consentimiento o el acuerdo de responsabilidad firmado en papel se escanea y se sube como un adjunto más: no hace falta ninguna pantalla aparte.
+**Historia clínica** (`medical_records`) — entradas por tipo (consulta, vacuna, cirugía, control, carta de consentimiento, otro), adjuntos por entrada (ver "Adjuntos" más abajo), reporte en PDF de la historia completa de una mascota. La carta de consentimiento o el acuerdo de responsabilidad firmado en papel se escanea y se sube como un adjunto más: no hace falta ninguna pantalla aparte.
 
-**Pagos** (`billing`) — registro manual de pagos (efectivo, Yape, transferencia, otro), anulación con motivo, cobro por QR con el monto de catálogo o un monto libre que fija el personal (con un margen acotado sobre citas normales, sin margen en emergencias, porque el costo real recién se sabe al terminar la atención), reporte de ingresos por medio de pago. La confirmación de un cobro por QR avisa al cliente por WhatsApp.
+**Pagos** (`billing`) — registro manual de pagos (efectivo, Yape, transferencia, otro), anulación con motivo, cobro por QR con el monto de catálogo o un monto libre que fija el personal (con un margen acotado sobre citas normales, sin margen en emergencias, porque el costo real recién se sabe al terminar la atención), reporte de ingresos por medio de pago. La confirmación de un cobro por QR avisa al cliente por WhatsApp. Mientras no haya un banco conectado, la pantalla del QR ofrece "Simular confirmación del banco" solo si `QR_SIMULATION_ENABLED` está encendida; sin definirla vale lo mismo que `DEBUG`. Apagada, `POST /api/v1/payments/qr-charges/{id}/confirm` responde 404 y el botón no aparece (`simulation_available` del cobro). En producción debe quedar apagada: con ella un cliente marcaría como pagado su propio cobro.
 
 **Reseñas** (`reviews`) — calificación y comentario de un cliente sobre el veterinario que lo atendió, solo tras una cita completada, con un filtro básico de lenguaje ofensivo. El promedio queda visible al elegir veterinario para reservar.
 
@@ -491,6 +491,21 @@ Detalles:
 - **Alta exprés de emergencia.** Con la autorización del cliente, el personal completa nombre y apellido desde el DNI con un botón. Cada consulta queda en *Movimientos* con quién la hizo y el DNI enmascarado.
 - **Proveedor.** Hoy Factiliza (`FACTILIZA_API_KEY`, 100 consultas gratis para empezar). De su respuesta se usan solo nombres y apellidos; dirección y ubigeo se descartan en el adaptador y no llegan a los logs. Apis.net.pe y Decolecta dejaron de ofrecer DNI al público por la Ley 29733.
 - **Para producción.** Conviene el convenio con RENIEC (servicio de verificación de identidad, S/ 0.40 a S/ 1.60 por consulta): los proveedores privados no documentan el origen de los datos y el riesgo legal es de la clínica. Cambiar de proveedor es un adaptador nuevo que satisfaga `core/identity_registry.py` y una línea en `get_identity_registry`; ningún caso de uso cambia.
+
+## Adjuntos
+
+Los adjuntos de la historia clínica y la evidencia de los reclamos no tienen dirección pública. Se guardan en el disco del servidor (`ATTACHMENTS_STORAGE_DIR`) o, en producción, en un bucket **privado** de Supabase Storage, y solo los entrega la API:
+
+| Endpoint | Quién |
+| --- | --- |
+| `GET /api/v1/medical-records/attachments/{id}/file` | el dueño de la mascota, o el personal con `clinical_records.read` |
+| `GET /api/v1/complaints/evidence/{id}/file` | quien presentó el reclamo, o el personal con `complaints.read` |
+
+Un archivo ajeno responde 404, igual que uno inexistente. La respuesta lleva el tipo que se validó al subirlo, `Content-Disposition: inline` con un nombre saneado y `X-Content-Type-Options: nosniff`.
+
+El token vive en el navegador y un enlace común no lo manda, así que el frontend pide el archivo por el cliente HTTP y lo abre desde memoria (`services/descargas.ts`).
+
+**Paso manual en producción:** si el bucket de Supabase se creó público, hay que pasarlo a privado desde el Dashboard (Storage → `attachments` → Edit bucket → desmarcar *Public bucket*). El backend lo lee con la clave de servicio, así que nada deja de funcionar.
 
 ## Carnet de vacunas
 

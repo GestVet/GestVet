@@ -61,9 +61,3 @@ def test_el_tamano_maximo_se_acepta() -> None:
     adjunto = _adjunto(size_bytes=MAX_ATTACHMENT_SIZE_BYTES)
 
     assert adjunto.size_bytes == MAX_ATTACHMENT_SIZE_BYTES
-
-
-def test_la_url_queda_vacia_hasta_que_se_guarda_el_archivo() -> None:
-    adjunto = _adjunto()
-
-    assert adjunto.url == ""

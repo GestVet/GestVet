@@ -11,11 +11,12 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile, status
 
 from gestvet.core.activity_log import ActivityRecorderDep
 from gestvet.core.auth import require_permission
-from gestvet.core.identity import Principal
+from gestvet.core.file_response import inline_file_response
+from gestvet.core.identity import Principal, Role
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from gestvet.core.permissions import Permission
 from gestvet.modules.complaints.adapters.api.dependencies import (
@@ -33,11 +34,13 @@ from gestvet.modules.complaints.adapters.api.schemas import (
 from gestvet.modules.complaints.domain.exceptions import (
     AppointmentNotFound,
     ComplaintNotFound,
+    EvidenceNotFound,
     InvalidEvidence,
 )
 from gestvet.modules.complaints.ports.complaint_repository import ComplaintQuery
 from gestvet.modules.complaints.use_cases.file_complaint import FileComplaint, FileComplaintCommand
 from gestvet.modules.complaints.use_cases.list_complaints import ListComplaints, scope_to
+from gestvet.modules.complaints.use_cases.read_evidence import ReadEvidence
 from gestvet.modules.complaints.use_cases.upload_evidence import (
     UploadEvidence,
     UploadEvidenceCommand,
@@ -135,3 +138,27 @@ async def upload_evidence(
     except InvalidEvidence as error:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
     return EvidenceResponse.from_entity(guardada)
+
+
+@router.get(
+    "/evidence/{evidence_id}/file",
+    summary="Ver el archivo de una evidencia",
+    response_class=Response,
+    responses={200: {"content": {"application/octet-stream": {}}}},
+)
+async def read_evidence(
+    evidence_id: int,
+    principal: ComplaintsReaderDep,
+    evidence: EvidenceRepositoryDep,
+    storage: EvidenceStorageDep,
+    complaints: ComplaintRepositoryDep,
+) -> Response:
+    try:
+        found = await ReadEvidence(evidence, storage, complaints)(
+            evidence_id,
+            requester_id=principal.user_id,
+            only_own=principal.role is Role.CLIENT,
+        )
+    except EvidenceNotFound as error:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    return inline_file_response(found.content, found.evidence.content_type, found.evidence.filename)

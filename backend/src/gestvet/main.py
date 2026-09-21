@@ -11,12 +11,10 @@ import contextlib
 import secrets
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Header, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -200,16 +198,6 @@ def create_app() -> FastAPI:
     # Se agrega al final para quedar por fuera de CORS: así también se
     # registran las respuestas que CORS corta antes de llegar a un router.
     app.add_middleware(RequestLoggingMiddleware)
-
-    # El directorio puede no existir todavía en un clon nuevo: recién se crea
-    # cuando se guarda el primer adjunto. `StaticFiles` exige que exista al
-    # montarse, así que se garantiza acá.
-    Path(settings.attachments_storage_dir).mkdir(parents=True, exist_ok=True)
-    app.mount(
-        "/attachments",
-        StaticFiles(directory=settings.attachments_storage_dir),
-        name="attachments",
-    )
 
     @app.get(f"{API_PREFIX}/health", tags=["system"], summary="Sondeo de vida")
     async def health() -> HealthResponse:

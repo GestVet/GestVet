@@ -12,7 +12,6 @@ const FORMATO = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyl
 interface AttachmentLike {
   readonly id: number
   readonly filename: string
-  readonly url: string
 }
 
 /**

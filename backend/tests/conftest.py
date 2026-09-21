@@ -303,8 +303,10 @@ async def client(
     app.dependency_overrides[get_password_hasher] = lambda: TEST_HASHER
     app.dependency_overrides[get_token_service] = lambda: TEST_TOKEN_SERVICE
     app.dependency_overrides[get_email_sender] = lambda: RecordingEmailSender()
-    app.dependency_overrides[get_attachment_storage] = lambda: InMemoryAttachmentStorage()
-    app.dependency_overrides[get_evidence_storage] = lambda: InMemoryAttachmentStorage()
+    # Una sola instancia por prueba: lo que sube una petición lo lee la siguiente.
+    storage = InMemoryAttachmentStorage()
+    app.dependency_overrides[get_attachment_storage] = lambda: storage
+    app.dependency_overrides[get_evidence_storage] = lambda: storage
     app.dependency_overrides[get_broker] = lambda: broker
     app.dependency_overrides[get_llm_client] = lambda: llm
     app.dependency_overrides[get_identity_registry] = lambda: identity_registry
@@ -365,16 +367,20 @@ class InMemoryAttachmentStorage:
     """Guarda los bytes en un diccionario en vez de en disco.
 
     Ninguna prueba necesita que el archivo sobreviva al proceso; le alcanza
-    con que `save` y `delete` se comporten como el adaptador real.
+    con que `save`, `read` y `delete` se comporten como el adaptador real.
     """
 
     def __init__(self) -> None:
         self.saved: dict[str, bytes] = {}
 
-    async def save(self, key: str, content: bytes, content_type: str) -> str:
+    async def save(self, key: str, content: bytes, content_type: str) -> None:
         del content_type
         self.saved[key] = content
-        return f"http://test/attachments/{key}"
+
+    async def read(self, key: str) -> bytes:
+        if key not in self.saved:
+            raise FileNotFoundError(key)
+        return self.saved[key]
 
     async def delete(self, key: str) -> None:
         self.saved.pop(key, None)

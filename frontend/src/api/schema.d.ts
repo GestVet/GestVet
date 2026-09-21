@@ -607,6 +607,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/complaints/evidence/{evidence_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ver el archivo de una evidencia */
+        get: operations["read_evidence_api_v1_complaints_evidence__evidence_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/complaints/{complaint_id}/evidence": {
         parameters: {
             query?: never;
@@ -881,6 +898,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/medical-records/attachments/{attachment_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ver el archivo de un adjunto de la historia clínica */
+        get: operations["read_attachment_api_v1_medical_records_attachments__attachment_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/medical-records/report": {
         parameters: {
             query?: never;
@@ -1013,23 +1047,6 @@ export interface paths {
         get: operations["get_qr_charge_api_v1_payments_qr_charges__charge_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/payments/qr-charges/{charge_id}/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Simular la confirmación del banco (modo de prueba) */
-        post: operations["confirm_qr_charge_api_v1_payments_qr_charges__charge_id__confirm_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1497,10 +1514,19 @@ export interface components {
         AppointmentResponse: {
             /** Appointment Type Id */
             appointment_type_id: number;
+            /** Appointment Type Name */
+            appointment_type_name: string;
             /** Cancellation Reason */
             cancellation_reason: string;
             /** Client Id */
             client_id: number;
+            /** Client Name */
+            client_name: string;
+            /**
+             * Completable From
+             * Format: date-time
+             */
+            completable_from: string;
             /**
              * Created At
              * Format: date-time
@@ -1517,8 +1543,17 @@ export interface components {
             ends_at: string;
             /** Id */
             id: number;
+            /** Is Emergency */
+            is_emergency: boolean;
+            /**
+             * No Show From
+             * Format: date-time
+             */
+            no_show_from: string;
             /** Pet Id */
             pet_id: number;
+            /** Pet Name */
+            pet_name: string;
             /**
              * Scheduled At
              * Format: date-time
@@ -1531,6 +1566,8 @@ export interface components {
             updated_by: number | null;
             /** Veterinarian Id */
             veterinarian_id: number;
+            /** Veterinarian Name */
+            veterinarian_name: string;
         };
         /**
          * AppointmentStatus
@@ -1601,8 +1638,6 @@ export interface components {
             size_bytes: number;
             /** Uploaded By */
             uploaded_by: number;
-            /** Url */
-            url: string;
         };
         /** Body_upload_attachment_api_v1_medical_records__entry_id__attachments_post */
         Body_upload_attachment_api_v1_medical_records__entry_id__attachments_post: {
@@ -1978,8 +2013,6 @@ export interface components {
             size_bytes: number;
             /** Uploaded By */
             uploaded_by: number;
-            /** Url */
-            url: string;
         };
         /** FileComplaintRequest */
         FileComplaintRequest: {
@@ -2455,6 +2488,8 @@ export interface components {
             payment_id: number | null;
             /** Qr Image Data Url */
             qr_image_data_url: string;
+            /** Simulation Available */
+            simulation_available: boolean;
             status: components["schemas"]["QrChargeStatus"];
             /** Status Label */
             status_label: string;
@@ -4420,6 +4455,37 @@ export interface operations {
             };
         };
     };
+    read_evidence_api_v1_complaints_evidence__evidence_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                evidence_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     upload_evidence_api_v1_complaints__complaint_id__evidence_post: {
         parameters: {
             query?: never;
@@ -4935,6 +5001,37 @@ export interface operations {
             };
         };
     };
+    read_attachment_api_v1_medical_records_attachments__attachment_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attachment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     download_clinical_history_report_api_v1_medical_records_report_get: {
         parameters: {
             query: {
@@ -5239,37 +5336,6 @@ export interface operations {
         };
     };
     get_qr_charge_api_v1_payments_qr_charges__charge_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                charge_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QrChargeResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    confirm_qr_charge_api_v1_payments_qr_charges__charge_id__confirm_post: {
         parameters: {
             query?: never;
             header?: never;

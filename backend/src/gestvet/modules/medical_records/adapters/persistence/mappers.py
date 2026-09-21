@@ -53,7 +53,6 @@ def attachment_row_to_entity(row: AttachmentRow) -> Attachment:
         content_type=row.content_type,
         size_bytes=row.size_bytes,
         storage_key=row.storage_key,
-        url=row.url,
         uploaded_by=row.uploaded_by,
         created_at=as_utc(row.created_at),
     )
@@ -66,7 +65,7 @@ def attachment_entity_to_row(attachment: Attachment) -> AttachmentRow:
         content_type=attachment.content_type,
         size_bytes=attachment.size_bytes,
         storage_key=attachment.storage_key,
-        url=attachment.url,
+        url="",
         uploaded_by=attachment.uploaded_by,
         created_at=attachment.created_at,
     )

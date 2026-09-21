@@ -17,6 +17,7 @@ from gestvet.modules.appointments.domain.entities import (
     AppointmentStatus,
     AppointmentType,
 )
+from gestvet.modules.appointments.ports.appointment_labels import AppointmentLabels
 from gestvet.modules.appointments.use_cases.list_open_times import DayOpenTimes, SlotStatus
 
 
@@ -88,9 +89,21 @@ class AppointmentResponse(BaseModel):
     cancellation_reason: str
     updated_by: int | None
     created_at: datetime
+    # Desde cuándo el servidor acepta completarla o marcar la inasistencia. La
+    # interfaz los usa para no ofrecer antes de tiempo lo que igual rechazaría.
+    completable_from: datetime
+    no_show_from: datetime
+    # Para leer la cita sin ir a buscar a quién corresponde cada número.
+    pet_name: str
+    client_name: str
+    veterinarian_name: str
+    appointment_type_name: str
+    is_emergency: bool
 
     @classmethod
-    def from_entity(cls, appointment: Appointment) -> AppointmentResponse:
+    def from_entity(
+        cls, appointment: Appointment, labels: AppointmentLabels | None = None
+    ) -> AppointmentResponse:
         status = appointment.effective_status()
         return cls(
             id=appointment.id or 0,
@@ -107,6 +120,13 @@ class AppointmentResponse(BaseModel):
             cancellation_reason=appointment.cancellation_reason,
             updated_by=appointment.updated_by,
             created_at=appointment.created_at,
+            completable_from=appointment.completable_from,
+            no_show_from=appointment.no_show_from,
+            pet_name=labels.pet_name if labels else "",
+            client_name=labels.client_name if labels else "",
+            veterinarian_name=labels.veterinarian_name if labels else "",
+            appointment_type_name=labels.appointment_type_name if labels else "",
+            is_emergency=labels.is_emergency if labels else False,
         )
 
 

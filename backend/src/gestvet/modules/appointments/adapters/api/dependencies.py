@@ -9,6 +9,7 @@ from gestvet.core.auth import SessionDep
 from gestvet.core.whatsapp import WhatsAppSender
 from gestvet.core.whatsapp_console import ConsoleWhatsAppSender
 from gestvet.modules.appointments.adapters.persistence.directories import (
+    SqlAppointmentLabelDirectory,
     SqlClientDirectory,
     SqlPetDirectory,
     SqlScheduleDirectory,
@@ -17,6 +18,7 @@ from gestvet.modules.appointments.adapters.persistence.repositories import (
     SqlAlchemyAppointmentRepository,
     SqlAlchemyAppointmentTypeRepository,
 )
+from gestvet.modules.appointments.ports.appointment_labels import AppointmentLabelDirectory
 from gestvet.modules.appointments.ports.client_directory import ClientDirectory
 from gestvet.modules.appointments.ports.repositories import (
     AppointmentRepository,
@@ -47,6 +49,10 @@ def get_client_directory(session: SessionDep) -> ClientDirectory:
     return SqlClientDirectory(session)
 
 
+def get_appointment_label_directory(session: SessionDep) -> AppointmentLabelDirectory:
+    return SqlAppointmentLabelDirectory(session)
+
+
 def get_whatsapp_sender() -> WhatsAppSender:
     return ConsoleWhatsAppSender()
 
@@ -59,6 +65,9 @@ PetDirectoryDep = Annotated[PetDirectory, Depends(get_pet_directory)]
 ScheduleDirectoryDep = Annotated[ScheduleDirectory, Depends(get_schedule_directory)]
 ClientDirectoryDep = Annotated[ClientDirectory, Depends(get_client_directory)]
 WhatsAppSenderDep = Annotated[WhatsAppSender, Depends(get_whatsapp_sender)]
+AppointmentLabelsDep = Annotated[
+    AppointmentLabelDirectory, Depends(get_appointment_label_directory)
+]
 
 
 def get_change_status(

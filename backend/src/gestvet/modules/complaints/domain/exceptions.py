@@ -32,3 +32,9 @@ class ComplaintNotFound(ComplaintsError):
     def __init__(self, complaint_id: int) -> None:
         super().__init__(f"No existe el reclamo {complaint_id}.")
         self.complaint_id = complaint_id
+
+
+class EvidenceNotFound(ComplaintsError):
+    def __init__(self, evidence_id: int) -> None:
+        super().__init__(f"No existe la evidencia {evidence_id}.")
+        self.evidence_id = evidence_id

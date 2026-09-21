@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-import { deleteAttachment, uploadAttachment } from '../api/attachments'
+import { deleteAttachment, fetchAttachmentFile, uploadAttachment } from '../api/attachments'
 import { clinicalEntriesQueryKey } from '../api/medicalRecords'
 import { errorMessage } from '../services/api'
+import { useFileOpener } from './useFileOpener'
 
 interface UploadArgs {
   readonly clinicalEntryId: number
@@ -55,4 +56,8 @@ export function useAttachmentDelete(petId: number) {
       ? errorMessage(mutation.error, 'No se pudo quitar el adjunto.')
       : '',
   }
+}
+
+export function useAttachmentOpener() {
+  return useFileOpener(fetchAttachmentFile)
 }

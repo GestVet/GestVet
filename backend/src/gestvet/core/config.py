@@ -33,10 +33,6 @@ class Settings(BaseSettings):
     # por correo. No es lo mismo que CORS: ese protege al servidor, este es
     # simplemente dónde vive el frontend que va a atender el enlace.
     frontend_base_url: str = "http://localhost:5173"
-    # Con qué origen arma la URL de un adjunto. Se reemplaza junto con el
-    # adaptador de almacenamiento el día que un archivo termine en un bucket
-    # en vez de en el disco del propio servidor.
-    api_base_url: str = "http://localhost:8000"
     attachments_storage_dir: str = "./var/attachments"
 
     jwt_secret_key: str = INSECURE_DEFAULT_SECRET
@@ -53,8 +49,8 @@ class Settings(BaseSettings):
     openrouter_fallback_model: str = "deepseek/deepseek-v4-flash-0731"
     openrouter_timeout_seconds: float = 45.0
 
-    # Almacenamiento en Supabase Storage (bucket público de Supabase). Sin URL
-    # y service role key, se usa el almacenamiento local en disco (`./var/attachments`).
+    # Almacenamiento en un bucket privado de Supabase Storage. Sin URL y
+    # service role key, se usa el almacenamiento local en disco (`./var/attachments`).
     supabase_url: str = ""
     supabase_service_role_key: str = ""
     supabase_storage_bucket: str = "attachments"
@@ -63,11 +59,22 @@ class Settings(BaseSettings):
     # (/api/v1/internal/reminders/run) invocado desde GitHub Actions.
     reminders_cron_token: str = ""
 
+    # Deja que la pantalla del cobro por QR simule la confirmación del banco.
+    # Sin definirla vale lo mismo que `debug`: en desarrollo está, en producción
+    # no, porque ahí un cliente podría marcar como pagado su propio cobro.
+    qr_simulation_enabled: bool | None = None
+
     # Consulta de DNI con Factiliza (https://factiliza.com). Sin clave, el
     # registro no verifica nombres y el alta exprés no ofrece autocompletar.
     factiliza_api_key: str = ""
     factiliza_base_url: str = "https://api.factiliza.com/v1"
     identity_registry_timeout_seconds: float = 10.0
+
+    @model_validator(mode="after")
+    def _default_qr_simulation(self) -> Settings:
+        if self.qr_simulation_enabled is None:
+            self.qr_simulation_enabled = self.debug
+        return self
 
     @model_validator(mode="after")
     def _validate_secret(self) -> Settings:

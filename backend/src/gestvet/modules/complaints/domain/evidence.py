@@ -1,7 +1,7 @@
 """Entidad de dominio: evidencia adjunta a un reclamo.
 
 El archivo en sí lo guarda `EvidenceStorage`, un puerto aparte: acá solo vive
-la referencia (nombre, tipo, tamaño, URL), igual que hace `Attachment` en
+la referencia (nombre, tipo, tamaño, clave), igual que hace `Attachment` en
 `medical_records`. No se comparte código entre los dos módulos -son
 independientes-, pero sí el criterio.
 """
@@ -34,7 +34,6 @@ class ComplaintEvidence:
     size_bytes: int
     storage_key: str
     uploaded_by: int
-    url: str = ""
     id: int | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 

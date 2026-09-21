@@ -6,6 +6,7 @@ interface QrChargeLike {
   readonly status_label: string
   readonly qr_image_data_url: string
   readonly amount: string
+  readonly simulation_available: boolean
 }
 
 interface QrChargeDisplayProps {
@@ -51,15 +52,17 @@ export default function QrChargeDisplay({
         Escanea el código con tu app de pagos. Monto: S/ {charge.amount}
       </p>
       {confirmError !== '' ? <FormMessage tone="error">{confirmError}</FormMessage> : null}
-      <Button
-        type="button"
-        variant="outline"
-        className="whitespace-normal"
-        disabled={isConfirming}
-        onClick={onConfirm}
-      >
-        {isConfirming ? 'Confirmando…' : 'Simular confirmación del banco (modo de prueba)'}
-      </Button>
+      {charge.simulation_available ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="whitespace-normal"
+          disabled={isConfirming}
+          onClick={onConfirm}
+        >
+          {isConfirming ? 'Confirmando…' : 'Simular confirmación del banco (modo de prueba)'}
+        </Button>
+      ) : null}
     </div>
   )
 }

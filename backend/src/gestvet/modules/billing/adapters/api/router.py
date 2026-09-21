@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from gestvet.core.activity_log import ActivityRecorderDep
 from gestvet.core.auth import require_permission
+from gestvet.core.config import get_settings
 from gestvet.core.identity import STAFF_ROLES, Principal
 from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from gestvet.core.permissions import Permission
@@ -212,7 +213,7 @@ async def create_qr_charge(
         raise HTTPException(status.HTTP_403_FORBIDDEN, str(error)) from error
     except InvalidPayment as error:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
-    return QrChargeResponse.from_entity(charge)
+    return QrChargeResponse.from_entity(charge, simulation_available=_qr_simulation_enabled())
 
 
 @router.get(
@@ -231,13 +232,28 @@ async def get_qr_charge(
         )
     except QrChargeNotFound as error:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
-    return QrChargeResponse.from_entity(charge)
+    return QrChargeResponse.from_entity(charge, simulation_available=_qr_simulation_enabled())
+
+
+def _qr_simulation_enabled() -> bool:
+    return bool(get_settings().qr_simulation_enabled)
+
+
+def _require_qr_simulation() -> None:
+    # Apagada responde como una ruta que no existe, antes incluso de mirar la
+    # sesión: en producción no hay nada que descubrir acá.
+    if not _qr_simulation_enabled():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not Found")
 
 
 @router.post(
     "/qr-charges/{charge_id}/confirm",
     response_model=QrChargeResponse,
     summary="Simular la confirmación del banco (modo de prueba)",
+    dependencies=[Depends(_require_qr_simulation)],
+    # Es una herramienta de prueba, no parte del contrato: el esquema no
+    # puede depender de cómo esté configurado el servidor que lo exporta.
+    include_in_schema=False,
 )
 async def confirm_qr_charge(
     charge_id: int,
@@ -260,4 +276,4 @@ async def confirm_qr_charge(
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
     except QrChargeNotPending as error:
         raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
-    return QrChargeResponse.from_entity(charge)
+    return QrChargeResponse.from_entity(charge, simulation_available=_qr_simulation_enabled())

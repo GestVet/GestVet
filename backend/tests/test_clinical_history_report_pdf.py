@@ -77,7 +77,6 @@ def test_un_reporte_con_entradas_y_adjuntos_produce_un_pdf() -> None:
         size_bytes=1024,
         storage_key="clinical-entries/1/a.jpg",
         uploaded_by=2,
-        url="http://test/attachments/clinical-entries/1/a.jpg",
     )
 
     pdf = RENDERER.render(PET, [entrada], {1: [adjunto]})

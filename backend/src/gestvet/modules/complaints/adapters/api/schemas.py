@@ -22,7 +22,6 @@ class EvidenceResponse(BaseModel):
     filename: str
     content_type: str
     size_bytes: int
-    url: str
     uploaded_by: int
     created_at: datetime
 
@@ -34,7 +33,6 @@ class EvidenceResponse(BaseModel):
             filename=evidence.filename,
             content_type=evidence.content_type,
             size_bytes=evidence.size_bytes,
-            url=evidence.url,
             uploaded_by=evidence.uploaded_by,
             created_at=evidence.created_at,
         )

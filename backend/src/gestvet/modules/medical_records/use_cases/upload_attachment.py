@@ -53,9 +53,7 @@ class UploadAttachment:
             uploaded_by=command.uploaded_by,
         )
 
-        draft.url = await self._storage.save(
-            draft.storage_key, command.content, command.content_type
-        )
+        await self._storage.save(draft.storage_key, command.content, command.content_type)
         guardado = await self._attachments.add(draft)
         await self._activity.record(
             command.uploaded_by, ActivityKind.ATTACHMENT_UPLOADED, guardado.filename

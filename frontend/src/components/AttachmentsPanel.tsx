@@ -1,6 +1,10 @@
 import { useRef } from 'react'
 
-import { useAttachmentDelete, useAttachmentUpload } from '../hooks/useAttachments'
+import {
+  useAttachmentDelete,
+  useAttachmentOpener,
+  useAttachmentUpload,
+} from '../hooks/useAttachments'
 import FormMessage from './FormMessage'
 import Icon from './Icon'
 import { Button } from './ui/button'
@@ -10,7 +14,6 @@ const TIPOS_ACEPTADOS = 'image/jpeg,image/png,image/webp,application/pdf'
 interface AttachmentLike {
   readonly id: number
   readonly filename: string
-  readonly url: string
 }
 
 interface AttachmentsPanelProps {
@@ -39,6 +42,7 @@ export default function AttachmentsPanel({
 }: AttachmentsPanelProps) {
   const subir = useAttachmentUpload(petId)
   const borrar = useAttachmentDelete(petId)
+  const abrir = useAttachmentOpener()
   const selector = useRef<HTMLInputElement>(null)
 
   return (
@@ -49,14 +53,16 @@ export default function AttachmentsPanel({
         <ul className="m-0 flex list-none flex-col gap-2 p-0">
           {attachments.map((adjunto) => (
             <li key={adjunto.id} className="flex flex-wrap items-center justify-between gap-2">
-              <a
-                href={adjunto.url}
-                target="_blank"
-                rel="noreferrer"
-                className="font-medium text-primary underline underline-offset-4"
+              <button
+                type="button"
+                className="cursor-pointer rounded-sm text-left font-medium text-primary underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                onClick={() => {
+                  abrir.abrir(adjunto.id, adjunto.filename)
+                }}
               >
                 {adjunto.filename}
-              </a>
+                <span className="sr-only"> (se abre en otra pestaña)</span>
+              </button>
               {canManage ? (
                 <Button
                   type="button"
@@ -75,6 +81,7 @@ export default function AttachmentsPanel({
         </ul>
       )}
 
+      {abrir.isError ? <FormMessage tone="error">{abrir.errorMessage}</FormMessage> : null}
       {subir.isError ? <FormMessage tone="error">{subir.errorMessage}</FormMessage> : null}
       {borrar.isError ? <FormMessage tone="error">{borrar.errorMessage}</FormMessage> : null}
 

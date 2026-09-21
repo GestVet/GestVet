@@ -11,7 +11,11 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from enum import StrEnum
 
-from gestvet.modules.appointments.domain.exceptions import IllegalStatusChange, InvalidAppointment
+from gestvet.modules.appointments.domain.exceptions import (
+    IllegalStatusChange,
+    InvalidAppointment,
+    StatusChangeTooEarly,
+)
 
 # Margen entre dos citas del mismo veterinario. Viene del sistema original y
 # existe para que una consulta que se estira no arrastre a la siguiente.
@@ -63,6 +67,16 @@ _FINAL_STATUSES = frozenset(
 # asistida sola, sin que nadie la haya cerrado. El margen evita marcar así una
 # cita que el personal todavía no tuvo tiempo de completar.
 NO_SHOW_GRACE = timedelta(hours=3)
+
+# Cuánto antes de su hora se puede dar por completada una cita. Cubre al
+# cliente que llega temprano y se atiende antes; más temprano que eso, completar
+# es un clic equivocado sobre una cita que todavía no pasó.
+EARLY_COMPLETION_WINDOW = timedelta(minutes=30)
+
+# Desde cuándo, pasada la hora de la cita, se puede marcar la inasistencia a
+# mano. Ni el código ni los términos fijan hoy un margen de tolerancia en
+# minutos, así que se puede desde la hora misma de la cita.
+NO_SHOW_TOLERANCE = timedelta(0)
 
 # El original dejaba pasar cualquier estado a cualquier otro, así que una cita
 # cancelada podía revivir como completada. Acá las transiciones son explícitas.
@@ -163,10 +177,33 @@ class Appointment:
     def confirm(self, actor_id: int) -> None:
         self._move_to(AppointmentStatus.CONFIRMED, actor_id)
 
-    def complete(self, actor_id: int) -> None:
+    @property
+    def completable_from(self) -> datetime:
+        return self.scheduled_at - EARLY_COMPLETION_WINDOW
+
+    @property
+    def no_show_from(self) -> datetime:
+        return self.scheduled_at + NO_SHOW_TOLERANCE
+
+    def complete(self, actor_id: int, now: datetime | None = None) -> None:
+        # Primero si el paso es posible, después si es su momento: una cita
+        # cancelada no se completa nunca, no "todavía no".
+        self._require_transition(AppointmentStatus.COMPLETED)
+        # Una emergencia nace con la hora de apertura, así que ya está dentro.
+        if (now or datetime.now(UTC)) < self.completable_from:
+            raise StatusChangeTooEarly(
+                "La cita todavía no empezó: se puede completar desde "
+                f"{_minutes(EARLY_COMPLETION_WINDOW)} minutos antes de su hora."
+            )
         self._move_to(AppointmentStatus.COMPLETED, actor_id)
 
-    def mark_no_show(self, actor_id: int) -> None:
+    def mark_no_show(self, actor_id: int, now: datetime | None = None) -> None:
+        self._require_transition(AppointmentStatus.NO_SHOW)
+        if (now or datetime.now(UTC)) < self.no_show_from:
+            raise StatusChangeTooEarly(
+                "La cita todavía no empezó: la inasistencia se marca recién "
+                "después de la hora de la cita."
+            )
         self._move_to(AppointmentStatus.NO_SHOW, actor_id)
 
     def mark_reminder_sent(self, now: datetime | None = None) -> None:
@@ -201,11 +238,18 @@ class Appointment:
     def involves(self, user_id: int) -> bool:
         return user_id in (self.client_id, self.veterinarian_id)
 
-    def _move_to(self, target: AppointmentStatus, actor_id: int) -> None:
+    def _require_transition(self, target: AppointmentStatus) -> None:
         if target not in _ALLOWED_TRANSITIONS[self.status]:
             raise IllegalStatusChange(self.status.label, target.label)
+
+    def _move_to(self, target: AppointmentStatus, actor_id: int) -> None:
+        self._require_transition(target)
         self.status = target
         self.updated_by = actor_id
+
+
+def _minutes(span: timedelta) -> int:
+    return int(span.total_seconds() // 60)
 
 
 def _trim(raw: str, field_name: str, max_length: int) -> str:

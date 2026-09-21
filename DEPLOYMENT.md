@@ -33,8 +33,10 @@ Dado que el backend corre en el plan Free de Render (sin disco persistente), los
 1. En el Dashboard de Supabase, ingresa a **Storage**.
 2. Haz clic en **New bucket**.
 3. Nombre del bucket: `attachments`.
-4. Marca la opción **Public bucket** (indispensable para que las URLs públicas generadas por el backend puedan ser visualizadas y descargadas por los navegadores sin firmas temporales).
-5. Las operaciones de subida y borrado las realiza el backend autenticado con `SUPABASE_SERVICE_ROLE_KEY` (con bypass de RLS), manteniendo seguro el acceso de escritura sin requerir políticas públicas adicionales.
+4. **Deja desmarcada** la opción **Public bucket**: el bucket debe ser **privado**. Los adjuntos son datos clínicos y evidencia de reclamos; con un bucket público cualquiera que tenga el enlace puede verlos.
+5. Subir, leer y borrar lo hace solo el backend, autenticado con `SUPABASE_SERVICE_ROLE_KEY` (con bypass de RLS). El navegador nunca pide el archivo a Supabase: lo pide a la API (`/api/v1/medical-records/attachments/{id}/file` y `/api/v1/complaints/evidence/{id}/file`), que comprueba quién lo pide antes de entregarlo. No hace falta ninguna política de RLS.
+
+> **Si el bucket ya existía como público** (despliegues anteriores a este cambio): en el Dashboard de Supabase, **Storage → `attachments` → Edit bucket**, desmarca **Public bucket** y guarda. Es un paso manual; ningún despliegue lo hace solo. Los archivos ya subidos siguen funcionando, porque la API los lee con la clave de servicio.
 
 ---
 
@@ -70,9 +72,8 @@ DATABASE_URL=postgresql+asyncpg://postgres.[ref-proyecto]:[password]@aws-0-us-ea
 # Orígenes autorizados por CORS y URLs base
 CORS_ALLOWED_ORIGINS=["https://gestvet-pi.vercel.app"]
 FRONTEND_BASE_URL=https://gestvet-pi.vercel.app
-API_BASE_URL=https://gestvet-api.onrender.com
 
-# Almacenamiento persistente en Supabase Storage
+# Almacenamiento persistente en Supabase Storage (bucket PRIVADO)
 SUPABASE_URL=https://[ref-proyecto].supabase.co
 SUPABASE_SERVICE_ROLE_KEY=tu_service_role_secret_key_de_supabase
 SUPABASE_STORAGE_BUCKET=attachments
@@ -87,6 +88,9 @@ ACCESS_TOKEN_TTL_SECONDS=3600
 
 # Token secreto para el Cron de Recordatorios de WhatsApp (GitHub Actions)
 REMINDERS_CRON_TOKEN=tu_token_secreto_para_el_cron_de_recordatorios
+
+# Confirmación simulada del cobro por QR: siempre apagada en producción
+QR_SIMULATION_ENABLED=false
 
 # Integración con IA (OpenRouter)
 OPENROUTER_API_KEY=tu_openrouter_api_key_aqui
@@ -142,6 +146,6 @@ El widget de accesibilidad es [Sienna](https://github.com/bennyluk/Sienna-Access
 - [x] Aceptación obligatoria de **Términos y Condiciones** requerida en el registro.
 - [x] Asistente de IA (OpenRouter) configurado con fallback automático.
 - [ ] Base de datos PostgreSQL configurada en Supabase con Session Pooler (puerto 5432).
-- [ ] Bucket público `attachments` creado en Supabase Storage.
+- [ ] Bucket **privado** `attachments` creado en Supabase Storage (o el existente pasado a privado).
 - [ ] Migraciones de base de datos aplicadas en el despliegue de Render (`uv run alembic upgrade head`).
 - [ ] Secretos `API_BASE_URL` y `REMINDERS_CRON_TOKEN` configurados en GitHub Actions.
