@@ -1,16 +1,20 @@
 import { Outlet } from 'react-router'
 
 import AccessibilityWidget from '../../components/AccessibilityWidget'
+import { useLayoutStore } from '../../store/layout'
 import { useSession } from '../../store/session'
 import AppFooter from './AppFooter'
 import Brand from './Brand'
 import GuestHeader from './GuestHeader'
+import LayoutEditControls from './LayoutEditControls'
 import MobileMenu from './MobileMenu'
-import { entriesFor } from './navigation'
+import { entriesFor, orderNavEntries } from './navigation'
 import NavList from './NavList'
+import NavListEditable from './NavListEditable'
 import SessionActions from './SessionActions'
 import ToastStack from './ToastStack'
 import { useClientAppointmentAlerts } from './useClientAppointmentAlerts'
+import { useLayoutPreferences } from './useLayoutPreferences'
 import { useRealtimeUpdates } from './useRealtimeUpdates'
 import { useVeterinarianEmergencyAlerts } from './useVeterinarianEmergencyAlerts'
 
@@ -25,6 +29,9 @@ import { useVeterinarianEmergencyAlerts } from './useVeterinarianEmergencyAlerts
  */
 export default function AppShell() {
   const user = useSession((state) => state.user)
+  const sidebarOrder = useLayoutStore((state) => state.sidebarOrder)
+  const editMode = useLayoutStore((state) => state.editMode)
+  useLayoutPreferences()
   useRealtimeUpdates()
   useClientAppointmentAlerts()
   useVeterinarianEmergencyAlerts()
@@ -68,7 +75,7 @@ export default function AppShell() {
     )
   }
 
-  const entries = entriesFor(user.permissions)
+  const entries = orderNavEntries(entriesFor(user.permissions), sidebarOrder)
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[15rem_1fr]">
@@ -79,8 +86,9 @@ export default function AppShell() {
         <div className="px-1 pt-1">
           <Brand to="/panel" />
         </div>
+        <LayoutEditControls />
         <nav aria-label="Navegación principal" className="flex-1 overflow-y-auto">
-          <NavList entries={entries} />
+          {editMode ? <NavListEditable entries={entries} /> : <NavList entries={entries} />}
         </nav>
         <SessionActions firstName={user.first_name} />
       </aside>
@@ -89,7 +97,10 @@ export default function AppShell() {
       <div className="flex min-h-screen min-w-0 flex-col">
         <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b bg-card px-4 py-1.5 lg:hidden">
           <Brand to="/panel" />
-          <MobileMenu entries={entries} firstName={user.first_name} />
+          <div className="flex items-center gap-1">
+            <LayoutEditControls variant="toolbar" />
+            <MobileMenu entries={entries} firstName={user.first_name} />
+          </div>
         </header>
         {content}
       </div>

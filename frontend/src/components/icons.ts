@@ -10,6 +10,8 @@
 
 import {
   AlignLeft,
+  ArrowDown,
+  ArrowUp,
   Banknote,
   Calendar,
   CalendarCheck2,
@@ -29,6 +31,7 @@ import {
   Eye,
   EyeOff,
   FolderHeart,
+  GripVertical,
   Hash,
   HeartPulse,
   House,
@@ -50,11 +53,13 @@ import {
   Pill,
   Plus,
   Repeat,
+  RotateCcw,
   Ruler,
   Search,
   Settings,
   ShieldAlert,
   ShieldCheck,
+  SlidersHorizontal,
   Smile,
   Sparkles,
   Star,
@@ -104,6 +109,11 @@ export const ICONS = {
   anterior: ChevronLeft,
   siguiente: ChevronRight,
   desplegar: ChevronsUpDown,
+  personalizar: SlidersHorizontal,
+  arrastrar: GripVertical,
+  subir: ArrowUp,
+  bajar: ArrowDown,
+  restablecer: RotateCcw,
 
   // Estado.
   activo: Circle,
