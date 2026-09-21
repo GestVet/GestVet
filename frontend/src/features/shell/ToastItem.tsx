@@ -38,8 +38,9 @@ export default function ToastItem({ id, tone, message }: ToastItemProps) {
       <Button
         type="button"
         variant="ghost"
-        size="icon-sm"
-        aria-label="Descartar"
+        size="icon"
+        className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
+        aria-label="Descartar notificación"
         onClick={() => {
           dismiss(id)
         }}

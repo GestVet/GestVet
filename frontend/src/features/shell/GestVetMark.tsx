@@ -23,6 +23,7 @@ export default function GestVetMark({ size = 36, className = '', alt = '' }: Ges
       aria-hidden={decorativo}
       width={size}
       height={size}
+      decoding="async"
       className={`rounded-xl object-contain shadow-sm ${className}`}
       style={{ width: sizePx, height: sizePx }}
     />

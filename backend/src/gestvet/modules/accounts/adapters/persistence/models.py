@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from gestvet.core.database import Base
@@ -39,5 +40,19 @@ class PasswordResetTokenRow(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+
+
+class UserLayoutPreferenceRow(Base):
+    __tablename__ = "user_layout_preferences"
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", name="fk_user_layout_preferences_user", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    sidebar_order: Mapped[list[str]] = mapped_column(JSON, default=list)
+    dashboard_blocks: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )

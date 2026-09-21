@@ -66,7 +66,10 @@ export default function RegisterView() {
       footer={
         <p className="m-0 text-muted-foreground">
           ¿Ya tienes cuenta?{' '}
-          <Link to="/acceso" className="font-medium text-primary underline underline-offset-4">
+          <Link
+            to="/acceso"
+            className="inline-flex items-center min-h-[32px] rounded-sm font-medium text-primary underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
             Inicia sesión
           </Link>
         </p>

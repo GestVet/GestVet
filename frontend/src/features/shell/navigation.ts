@@ -63,3 +63,32 @@ export function entriesFor(permissions: readonly PermissionCode[]): readonly Nav
     return exigidos.some((uno) => permissions.includes(uno))
   })
 }
+
+/**
+ * Aplica el orden guardado sin perder entradas.
+ *
+ * Las rutas que ya no existen o que el rol no alcanza se descartan; las
+ * entradas que el menu sumo despues quedan al final, en su orden por defecto.
+ * Sin orden guardado, el menu se ve tal como esta definido.
+ */
+export function orderNavEntries(
+  entries: readonly NavEntry[],
+  order: readonly string[],
+): readonly NavEntry[] {
+  if (order.length === 0) {
+    return entries
+  }
+  const porRuta = new Map(entries.map((entry) => [entry.to, entry]))
+  const vistas = new Set<string>()
+  const ordenadas: NavEntry[] = []
+  for (const ruta of order) {
+    const entry = porRuta.get(ruta)
+    if (entry === undefined || vistas.has(ruta)) {
+      continue
+    }
+    vistas.add(ruta)
+    ordenadas.push(entry)
+  }
+  const nuevas = entries.filter((entry) => !vistas.has(entry.to))
+  return [...ordenadas, ...nuevas]
+}

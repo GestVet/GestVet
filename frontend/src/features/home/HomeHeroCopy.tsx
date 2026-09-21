@@ -30,13 +30,13 @@ export default function HomeHeroCopy() {
           <Link to="/acceso">Iniciar sesión</Link>
         </Button>
       </div>
-      <ul className="m-0 flex list-none flex-wrap gap-x-6 gap-y-3 border-t border-border p-0 pt-5 text-sm text-foreground">
+      <ul className="m-0 flex list-none flex-wrap gap-x-6 gap-y-3 border-t border-border p-0 pt-5 text-sm text-foreground" role="list">
         <li className="flex items-center gap-2">
-          <Icon className="text-primary" name="horario" size={18} />
+          <Icon className="text-primary shrink-0" name="horario" size={18} />
           Las 24 horas del día
         </li>
         <li className="flex items-center gap-2">
-          <Icon className="text-primary" name="ubicacion" size={18} />
+          <Icon className="text-primary shrink-0" name="ubicacion" size={18} />
           Víctor Larco Herrera, Trujillo
         </li>
       </ul>

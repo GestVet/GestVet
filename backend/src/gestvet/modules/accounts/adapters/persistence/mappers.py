@@ -5,9 +5,22 @@ Este archivo es la razón por la que el dominio puede ignorar SQLAlchemy.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from gestvet.core.timestamps import as_utc
-from gestvet.modules.accounts.adapters.persistence.models import PasswordResetTokenRow, UserRow
-from gestvet.modules.accounts.domain.entities import PasswordResetToken, Role, User
+from gestvet.modules.accounts.adapters.persistence.models import (
+    PasswordResetTokenRow,
+    UserLayoutPreferenceRow,
+    UserRow,
+)
+from gestvet.modules.accounts.domain.entities import (
+    DashboardBlockPreference,
+    LayoutPreferences,
+    PasswordResetToken,
+    Role,
+    User,
+    UserLayoutPreference,
+)
 
 
 def row_to_entity(row: UserRow) -> User:
@@ -57,4 +70,29 @@ def reset_token_entity_to_row(token: PasswordResetToken) -> PasswordResetTokenRo
         expires_at=token.expires_at,
         used_at=token.used_at,
         created_at=token.created_at,
+    )
+
+
+def layout_row_to_entity(row: UserLayoutPreferenceRow) -> UserLayoutPreference:
+    blocks = tuple(
+        DashboardBlockPreference(
+            id=str(b.get("id", "")),
+            visible=bool(b.get("visible", True)),
+        )
+        for b in (row.dashboard_blocks or [])
+    )
+    prefs = LayoutPreferences(
+        sidebar_order=tuple(row.sidebar_order or []),
+        dashboard_blocks=blocks,
+        updated_at=as_utc(row.updated_at),
+    )
+    return UserLayoutPreference(user_id=row.user_id, preferences=prefs)
+
+
+def layout_entity_to_row(layout: UserLayoutPreference) -> UserLayoutPreferenceRow:
+    return UserLayoutPreferenceRow(
+        user_id=layout.user_id,
+        sidebar_order=list(layout.sidebar_order),
+        dashboard_blocks=[{"id": b.id, "visible": b.visible} for b in layout.dashboard_blocks],
+        updated_at=layout.updated_at or datetime.now(UTC),
     )

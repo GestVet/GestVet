@@ -7,18 +7,21 @@ auditoría.
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from gestvet.core.permissions import Permission
-from gestvet.modules.accounts.domain.entities import Role, User
+from gestvet.modules.accounts.domain.entities import LayoutPreferences, Role, User
 
 MIN_PASSWORD_LENGTH = 10
 MAX_PASSWORD_LENGTH = 128
 DOCUMENT_ID_PATTERN = r"^\d{8}$"
+LAYOUT_ID_PATTERN = r"^[a-z0-9/_-]{1,64}$"
+MAX_LAYOUT_ITEMS = 50
 _KNOWN = frozenset(permission.value for permission in Permission)
 
 
@@ -218,3 +221,57 @@ class DocumentLookupResponse(BaseModel):
 
     first_names: str
     last_names: str
+
+
+class DashboardBlockPreferenceSchema(BaseModel):
+    id: str = Field(pattern=LAYOUT_ID_PATTERN)
+    visible: bool = True
+
+
+class LayoutPreferencesRequest(BaseModel):
+    sidebar_order: list[str] = Field(default_factory=list, max_length=MAX_LAYOUT_ITEMS)
+    dashboard_blocks: list[DashboardBlockPreferenceSchema] = Field(
+        default_factory=list, max_length=MAX_LAYOUT_ITEMS
+    )
+
+    @field_validator("sidebar_order")
+    @classmethod
+    def validate_sidebar_order(cls, items: list[str]) -> list[str]:
+        pattern = re.compile(LAYOUT_ID_PATTERN)
+        seen: set[str] = set()
+        for item in items:
+            if not pattern.fullmatch(item):
+                raise ValueError(f"Identificador de ruta inválido: {item!r}")
+            if item in seen:
+                raise ValueError(f"Identificador duplicado en sidebar_order: {item!r}")
+            seen.add(item)
+        return items
+
+    @field_validator("dashboard_blocks")
+    @classmethod
+    def validate_dashboard_blocks(
+        cls, blocks: list[DashboardBlockPreferenceSchema]
+    ) -> list[DashboardBlockPreferenceSchema]:
+        seen: set[str] = set()
+        for b in blocks:
+            if b.id in seen:
+                raise ValueError(f"Identificador de bloque duplicado: {b.id!r}")
+            seen.add(b.id)
+        return blocks
+
+
+class LayoutPreferencesResponse(BaseModel):
+    sidebar_order: list[str]
+    dashboard_blocks: list[DashboardBlockPreferenceSchema]
+    updated_at: datetime | None
+
+    @classmethod
+    def from_entity(cls, entity: LayoutPreferences) -> LayoutPreferencesResponse:
+        return cls(
+            sidebar_order=list(entity.sidebar_order),
+            dashboard_blocks=[
+                DashboardBlockPreferenceSchema(id=b.id, visible=b.visible)
+                for b in entity.dashboard_blocks
+            ],
+            updated_at=entity.updated_at,
+        )

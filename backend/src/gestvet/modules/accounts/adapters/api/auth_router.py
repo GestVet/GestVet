@@ -10,7 +10,7 @@ uso porque escribir un log es tecnología, y el dominio no la conoce.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from gestvet.core.activity_log import ActivityRecorderDep
@@ -26,6 +26,7 @@ from gestvet.core.logs import get_logger, mask_email
 from gestvet.modules.accounts.adapters.api.dependencies import (
     EmailSenderDep,
     IdentityRegistryDep,
+    LayoutRepositoryDep,
     PasswordHasherDep,
     PasswordResetRepositoryDep,
     UserRepositoryDep,
@@ -34,6 +35,8 @@ from gestvet.modules.accounts.adapters.api.schemas import (
     AccessTokenResponse,
     CurrentUserResponse,
     ForgotPasswordRequest,
+    LayoutPreferencesRequest,
+    LayoutPreferencesResponse,
     LoginRequest,
     MessageResponse,
     RegisterClientRequest,
@@ -41,7 +44,7 @@ from gestvet.modules.accounts.adapters.api.schemas import (
     UpdateProfileRequest,
     UserResponse,
 )
-from gestvet.modules.accounts.domain.entities import User
+from gestvet.modules.accounts.domain.entities import DashboardBlockPreference, User
 from gestvet.modules.accounts.domain.exceptions import (
     DocumentIdRequired,
     DocumentNotFoundInRegistry,
@@ -52,6 +55,7 @@ from gestvet.modules.accounts.domain.exceptions import (
     InvalidCredentials,
     InvalidDocumentId,
     InvalidEmail,
+    InvalidLayoutPreferences,
     InvalidResetToken,
     TermsNotAccepted,
     UserNotFound,
@@ -61,6 +65,12 @@ from gestvet.modules.accounts.use_cases.authenticate_user import (
     AuthenticateUserCommand,
 )
 from gestvet.modules.accounts.use_cases.manage_accounts import UpdateProfile, UpdateProfileCommand
+from gestvet.modules.accounts.use_cases.manage_layout import (
+    GetLayoutPreferences,
+    ResetLayoutPreferences,
+    SaveLayoutPreferences,
+    SaveLayoutPreferencesCommand,
+)
 from gestvet.modules.accounts.use_cases.register_client import RegisterClient, RegisterClientCommand
 from gestvet.modules.accounts.use_cases.request_password_reset import (
     RequestPasswordReset,
@@ -206,6 +216,61 @@ async def update_current_user(
     if payload.new_password is not None:
         logger.info("auth.password_changed", user_id=principal.user_id)
     return UserResponse.from_entity(user)
+
+
+@router.get(
+    "/me/layout",
+    response_model=LayoutPreferencesResponse,
+    summary="Preferencias de orden del sidebar y bloques del panel principal",
+)
+async def read_my_layout(
+    principal: PrincipalDep,
+    layout_repo: LayoutRepositoryDep,
+) -> LayoutPreferencesResponse:
+    use_case = GetLayoutPreferences(layout_repo)
+    preferences = await use_case(principal.user_id)
+    return LayoutPreferencesResponse.from_entity(preferences)
+
+
+@router.put(
+    "/me/layout",
+    response_model=LayoutPreferencesResponse,
+    summary="Guardar o actualizar preferencias de interfaz",
+)
+async def update_my_layout(
+    payload: LayoutPreferencesRequest,
+    principal: PrincipalDep,
+    layout_repo: LayoutRepositoryDep,
+) -> LayoutPreferencesResponse:
+    use_case = SaveLayoutPreferences(layout_repo)
+    try:
+        preferences = await use_case(
+            SaveLayoutPreferencesCommand(
+                user_id=principal.user_id,
+                sidebar_order=payload.sidebar_order,
+                dashboard_blocks=[
+                    DashboardBlockPreference(id=b.id, visible=b.visible)
+                    for b in payload.dashboard_blocks
+                ],
+            )
+        )
+    except InvalidLayoutPreferences as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
+    return LayoutPreferencesResponse.from_entity(preferences)
+
+
+@router.delete(
+    "/me/layout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Restablecer preferencias de interfaz a los valores por defecto",
+)
+async def reset_my_layout(
+    principal: PrincipalDep,
+    layout_repo: LayoutRepositoryDep,
+) -> Response:
+    use_case = ResetLayoutPreferences(layout_repo)
+    await use_case(principal.user_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(

@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import re
 import secrets
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
@@ -17,8 +18,12 @@ from datetime import UTC, datetime, timedelta
 # para autorizar, y si lo poseyera `accounts` todos tendrían que importarlo.
 from gestvet.core.identity import Role
 from gestvet.modules.accounts.domain.exceptions import (
+    DuplicateLayoutIdentifier,
     InvalidDocumentId,
     InvalidEmail,
+    InvalidLayoutIdentifier,
+    InvalidLayoutPreferences,
+    LayoutLimitExceeded,
     RoleNotAssignable,
     RoleNotSelfAssignable,
 )
@@ -133,3 +138,92 @@ def ensure_role_is_self_assignable(role: Role) -> None:
 def ensure_role_is_staff_assignable(role: Role) -> None:
     if role not in STAFF_ASSIGNABLE_ROLES:
         raise RoleNotAssignable(role.value)
+
+
+LAYOUT_ID_PATTERN = re.compile(r"^[a-z0-9/_-]{1,64}$")
+MAX_LAYOUT_ITEMS = 50
+
+
+@dataclass(frozen=True, slots=True)
+class DashboardBlockPreference:
+    """Preferencia de visualización de un bloque del panel principal.
+
+    El identificador representa la ruta o tarjeta del bloque, y `visible`
+    indica si el usuario desea mostrarlo u ocultarlo.
+    """
+
+    id: str
+    visible: bool = True
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.id, str) or not LAYOUT_ID_PATTERN.fullmatch(self.id):
+            raise InvalidLayoutIdentifier(str(self.id))
+        if not isinstance(self.visible, bool):
+            raise InvalidLayoutPreferences("El campo 'visible' debe ser un valor booleano.")
+
+
+@dataclass(frozen=True, slots=True)
+class LayoutPreferences:
+    """Disposición personalizada del sidebar y el panel principal.
+
+    Value object inmutable con validación estricta: hasta 50 elementos por lista,
+    identificadores con formato de ruta segura y sin elementos repetidos.
+    """
+
+    sidebar_order: tuple[str, ...] = ()
+    dashboard_blocks: tuple[DashboardBlockPreference, ...] = ()
+    updated_at: datetime | None = None
+
+    def __post_init__(self) -> None:
+        validate_layout_preferences(self.sidebar_order, self.dashboard_blocks)
+
+    @classmethod
+    def empty(cls) -> LayoutPreferences:
+        return cls(sidebar_order=(), dashboard_blocks=(), updated_at=None)
+
+
+def validate_layout_preferences(
+    sidebar_order: Sequence[str],
+    dashboard_blocks: Sequence[DashboardBlockPreference],
+) -> None:
+    if len(sidebar_order) > MAX_LAYOUT_ITEMS:
+        raise LayoutLimitExceeded(MAX_LAYOUT_ITEMS)
+
+    seen_sidebar: set[str] = set()
+    for item in sidebar_order:
+        if not isinstance(item, str) or not LAYOUT_ID_PATTERN.fullmatch(item):
+            raise InvalidLayoutIdentifier(str(item))
+        if item in seen_sidebar:
+            raise DuplicateLayoutIdentifier(item)
+        seen_sidebar.add(item)
+
+    if len(dashboard_blocks) > MAX_LAYOUT_ITEMS:
+        raise LayoutLimitExceeded(MAX_LAYOUT_ITEMS)
+
+    seen_blocks: set[str] = set()
+    for block in dashboard_blocks:
+        if not isinstance(block, DashboardBlockPreference):
+            raise InvalidLayoutPreferences("Cada bloque debe ser una preferencia válida.")
+        if block.id in seen_blocks:
+            raise DuplicateLayoutIdentifier(block.id)
+        seen_blocks.add(block.id)
+
+
+@dataclass(slots=True)
+class UserLayoutPreference:
+    """Entidad que vincula a un usuario con sus preferencias de interfaz."""
+
+    user_id: int
+    preferences: LayoutPreferences
+
+    @property
+    def sidebar_order(self) -> tuple[str, ...]:
+        return self.preferences.sidebar_order
+
+    @property
+    def dashboard_blocks(self) -> tuple[DashboardBlockPreference, ...]:
+        return self.preferences.dashboard_blocks
+
+    @property
+    def updated_at(self) -> datetime | None:
+        return self.preferences.updated_at

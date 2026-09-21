@@ -55,12 +55,17 @@ export default function HomeSteps() {
         </p>
       </div>
 
-      <ol className="m-0 grid list-none gap-8 p-0 md:grid-cols-3 md:gap-6">
-        {PASOS.map((paso) => (
+      <ol className="m-0 grid list-none gap-8 p-0 md:grid-cols-3 md:gap-6" role="list">
+        {PASOS.map((paso, index) => (
           <li key={paso.title} className="flex flex-col gap-4 border-t border-white/25 pt-6">
-            <span className="flex size-11 items-center justify-center rounded-full bg-white text-primary">
-              <Icon name={paso.icon} size={22} />
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="flex size-11 items-center justify-center rounded-full bg-white text-primary shadow-xs">
+                <Icon name={paso.icon} size={22} />
+              </span>
+              <span className="text-xs font-semibold tracking-wider text-primary-foreground/85">
+                Paso {index + 1}
+              </span>
+            </div>
             <div className="flex flex-col gap-1.5">
               <h3 className="m-0 font-heading text-lg font-bold">{paso.title}</h3>
               <p className="m-0 text-sm leading-relaxed text-primary-foreground/85">
@@ -72,7 +77,12 @@ export default function HomeSteps() {
       </ol>
 
       <div>
-        <Button asChild size="lg" variant="secondary" className="h-11 px-6">
+        <Button
+          asChild
+          size="lg"
+          variant="secondary"
+          className="h-11 px-6 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+        >
           <Link to="/registro">Crear una cuenta</Link>
         </Button>
       </div>

@@ -39,24 +39,26 @@ export default function TermsConsentField({ control, error }: TermsConsentFieldP
           aria-invalid={error !== undefined}
           aria-describedby={error === undefined ? undefined : ID_ERROR}
         />
-        <Label htmlFor={ID} className="leading-snug font-normal text-muted-foreground">
+        <Label htmlFor={ID} className="cursor-pointer leading-snug font-normal text-muted-foreground">
           Acepto los{' '}
           <Link
             to="/terminos"
             target="_blank"
             rel="noreferrer"
-            className="font-medium text-primary underline underline-offset-4"
+            className="rounded-sm font-medium text-primary underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             términos y condiciones
+            <span className="sr-only"> (se abre en una pestaña nueva)</span>
           </Link>{' '}
           y la{' '}
           <Link
             to="/terminos#privacidad"
             target="_blank"
             rel="noreferrer"
-            className="font-medium text-primary underline underline-offset-4"
+            className="rounded-sm font-medium text-primary underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             política de privacidad
+            <span className="sr-only"> (se abre en una pestaña nueva)</span>
           </Link>
           .
         </Label>

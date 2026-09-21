@@ -9,6 +9,8 @@ export default function HomeHeroVisual() {
   return (
     <img
       alt={ALT_HEROE}
+      fetchPriority="high"
+      decoding="async"
       className="h-72 w-full rounded-xl object-cover object-[78%_center] sm:h-[24rem] lg:h-[28rem]"
       height={1200}
       src="/landing/hero-veterinario.png"

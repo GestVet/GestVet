@@ -314,6 +314,25 @@ export interface paths {
         patch: operations["update_current_user_api_v1_auth_me_patch"];
         trace?: never;
     };
+    "/api/v1/auth/me/layout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preferencias de orden del sidebar y bloques del panel principal */
+        get: operations["read_my_layout_api_v1_auth_me_layout_get"];
+        /** Guardar o actualizar preferencias de interfaz */
+        put: operations["update_my_layout_api_v1_auth_me_layout_put"];
+        post?: never;
+        /** Restablecer preferencias de interfaz a los valores por defecto */
+        delete: operations["reset_my_layout_api_v1_auth_me_layout_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/register": {
         parameters: {
             query?: never;
@@ -1884,6 +1903,16 @@ export interface components {
             phone: string;
             role: components["schemas"]["Role"];
         };
+        /** DashboardBlockPreferenceSchema */
+        DashboardBlockPreferenceSchema: {
+            /** Id */
+            id: string;
+            /**
+             * Visible
+             * @default true
+             */
+            visible: boolean;
+        };
         /**
          * DayOpenTimesResponse
          * @description Un día con turnos publicados. `day` es la fecha en el calendario de la clínica.
@@ -2030,6 +2059,22 @@ export interface components {
             status: string;
             /** Status Label */
             status_label: string;
+        };
+        /** LayoutPreferencesRequest */
+        LayoutPreferencesRequest: {
+            /** Dashboard Blocks */
+            dashboard_blocks?: components["schemas"]["DashboardBlockPreferenceSchema"][];
+            /** Sidebar Order */
+            sidebar_order?: string[];
+        };
+        /** LayoutPreferencesResponse */
+        LayoutPreferencesResponse: {
+            /** Dashboard Blocks */
+            dashboard_blocks: components["schemas"]["DashboardBlockPreferenceSchema"][];
+            /** Sidebar Order */
+            sidebar_order: string[];
+            /** Updated At */
+            updated_at: string | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -3711,6 +3756,77 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    read_my_layout_api_v1_auth_me_layout_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LayoutPreferencesResponse"];
+                };
+            };
+        };
+    };
+    update_my_layout_api_v1_auth_me_layout_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LayoutPreferencesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LayoutPreferencesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_my_layout_api_v1_auth_me_layout_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

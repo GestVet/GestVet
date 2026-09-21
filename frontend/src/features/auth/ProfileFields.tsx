@@ -57,6 +57,7 @@ export default function ProfileFields({ register, control, errors }: ProfileFiel
           placeholder="12345678"
           icon="documento"
           inputMode="numeric"
+          autoComplete="off"
           maxLength={LARGO_DNI}
           sanitize={soloDigitos}
           field={register('document_id')}
