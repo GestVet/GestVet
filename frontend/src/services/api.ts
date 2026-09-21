@@ -169,3 +169,8 @@ export function errorMessage(error: unknown, fallback: string): string {
   }
   return detail?.[0]?.msg ?? fallback
 }
+
+/** El código HTTP de un error del servidor, o `undefined` si ni siquiera llegó a responder. */
+export function errorStatus(error: unknown): number | undefined {
+  return axios.isAxiosError(error) ? error.response?.status : undefined
+}

@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { appointmentsQueryKey } from '../../api/appointments'
 import { availabilityQueryKey } from '../../api/availability'
 import { fetchCurrentUser } from '../../api/auth'
+import { consentsQueryKey } from '../../api/consents'
 import { petCatalogQueryKey } from '../../api/pets'
 import { api } from '../../services/api'
 import { EventStreamError, readEventStream } from '../../services/eventStream'
@@ -24,6 +25,7 @@ const CONSULTAS_POR_TEMA: Readonly<Partial<Record<string, QueryKey>>> = {
   appointments: appointmentsQueryKey,
   schedule: availabilityQueryKey,
   'pet-catalog': petCatalogQueryKey,
+  consents: consentsQueryKey,
 }
 
 function invalidarTodo(queryClient: QueryClient): void {
