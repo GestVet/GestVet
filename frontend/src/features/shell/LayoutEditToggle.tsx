@@ -7,9 +7,9 @@ interface LayoutEditToggleProps {
   readonly variant?: 'sidebar' | 'toolbar'
 }
 
-function varianteDe(enBarra: boolean, editMode: boolean): 'secondary' | 'ghost' | 'outline' {
+function varianteDe(enBarra: boolean, editMode: boolean): 'default' | 'ghost' | 'outline' {
   if (editMode) {
-    return 'secondary'
+    return 'default'
   }
   return enBarra ? 'ghost' : 'outline'
 }
@@ -18,14 +18,17 @@ function varianteDe(enBarra: boolean, editMode: boolean): 'secondary' | 'ghost' 
  * El interruptor de personalizacion.
  *
  * Es un boton de alternancia: `aria-pressed` dice si el modo de edicion esta
- * activo, asi que el lector de pantalla lo anuncia como encendido o apagado y
- * no hay que adivinar por el color.
+ * activo, asi que el lector de pantalla lo anuncia como encendido o apagado.
+ * La etiqueta no cambia con el estado: con `aria-pressed` presente, un texto
+ * que va y viene ("Personalizar" / "Personalizando") se anunciaria como un
+ * nombre distinto y rompe la consistencia. El estado lo dice el color
+ * (`bg-primary`, el azul de la marca) y, para quien no lo ve, `aria-pressed`.
  */
 export default function LayoutEditToggle({ variant = 'sidebar' }: LayoutEditToggleProps) {
   const editMode = useLayoutStore((state) => state.editMode)
   const toggleEditMode = useLayoutStore((state) => state.toggleEditMode)
   const enBarra = variant === 'toolbar'
-  const etiqueta = editMode ? 'Personalizando' : 'Personalizar'
+  const etiqueta = 'Personalizar'
 
   return (
     <Button

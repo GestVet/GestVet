@@ -1,19 +1,22 @@
-import type { ReactNode } from 'react'
+import { Suspense, lazy, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import EmptyState from '../../components/EmptyState'
 import Icon from '../../components/Icon'
 import PageHeader from '../../components/PageHeader'
+import SortableSkeleton from '../../components/SortableSkeleton'
 import { Button } from '../../components/ui/button'
 import { useLayoutStore } from '../../store/layout'
 import { useSession } from '../../store/session'
 import DashboardAccesoCard from './DashboardAccesoCard'
-import DashboardBlocksEditable from './DashboardBlocksEditable'
 import {
   reorderDashboardBlocks,
   resolveDashboardBlocks,
   toggleDashboardBlock,
 } from './dashboardAccesos'
+
+// La rejilla editable trae @dnd-kit, que no hace falta hasta entrar en modo edicion.
+const DashboardBlocksEditable = lazy(() => import('./DashboardBlocksEditable'))
 
 export default function DashboardView() {
   const user = useSession((state) => state.user)
@@ -35,15 +38,17 @@ export default function DashboardView() {
         <p className="m-0 text-sm text-muted-foreground">
           Arrastra las tarjetas para ordenarlas y usa el ojo para mostrarlas u ocultarlas.
         </p>
-        <DashboardBlocksEditable
-          blocks={bloques}
-          onReorder={(ids) => {
-            setDashboardBlocks(reorderDashboardBlocks(bloques, ids))
-          }}
-          onToggleVisible={(id) => {
-            setDashboardBlocks(toggleDashboardBlock(bloques, id))
-          }}
-        />
+        <Suspense fallback={<SortableSkeleton rows={bloques.length} shape="grid" />}>
+          <DashboardBlocksEditable
+            blocks={bloques}
+            onReorder={(ids) => {
+              setDashboardBlocks(reorderDashboardBlocks(bloques, ids))
+            }}
+            onToggleVisible={(id) => {
+              setDashboardBlocks(toggleDashboardBlock(bloques, id))
+            }}
+          />
+        </Suspense>
       </div>
     )
   } else if (visibles.length === 0) {

@@ -6,10 +6,10 @@ import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import Icon from './Icon'
 
 const BOTON_FLECHA =
-  'flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-40'
+  'flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-40 pointer-coarse:size-11 max-lg:size-11'
 
 const ASA =
-  'flex w-7 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 active:cursor-grabbing'
+  'flex w-7 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 active:cursor-grabbing pointer-coarse:w-11 pointer-coarse:rounded-xl max-lg:w-11'
 
 interface SortableListItemProps {
   readonly id: string
@@ -29,7 +29,9 @@ interface SortableListItemProps {
  * El asa es lo unico que levanta el elemento: los controles de subir y bajar
  * conviven con el contenido y son la alternativa de un solo puntero que pide
  * el criterio 2.5.7 de WCAG. La posicion va en texto oculto para que el lector
- * de pantalla la lea al recorrer la lista.
+ * de pantalla la lea al recorrer la lista. Con puntero fino los controles miden
+ * 28px; en puntero grueso, o en pantalla angosta, pasan a 44px para poder
+ * tocarlos sin apuntar con precision.
  */
 export default function SortableListItem({
   id,
@@ -72,7 +74,7 @@ export default function SortableListItem({
 
       <div className={cn('min-w-0 flex-1', isDragging && 'opacity-80')}>{children}</div>
 
-      <div className="flex shrink-0 flex-col justify-center">
+      <div className="flex shrink-0 flex-col justify-center gap-1">
         <button
           type="button"
           className={BOTON_FLECHA}

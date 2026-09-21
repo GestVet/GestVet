@@ -33,12 +33,21 @@ export default function DashboardAccesoCard({
   const cuerpo = (
     <>
       {accion === undefined ? null : <div className="absolute top-3 right-3">{accion}</div>}
+      {oculto ? (
+        <span className="absolute top-3 left-3 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground ring-1 ring-foreground/10">
+          Oculta
+        </span>
+      ) : null}
       <Icon className="text-primary" name={acceso.icon} size={28} />
       <h2 className="m-0 font-heading text-lg font-semibold text-primary">{acceso.title}</h2>
       <p className="m-0 text-sm leading-relaxed text-muted-foreground">{acceso.description}</p>
     </>
   )
-  const clases = cn(TARJETA, oculto && 'opacity-60')
+  const clases = cn(
+    TARJETA,
+    oculto &&
+      'bg-muted/50 outline-2 outline-dashed outline-offset-[-2px] outline-input',
+  )
 
   if (estatica) {
     return <div className={clases}>{cuerpo}</div>

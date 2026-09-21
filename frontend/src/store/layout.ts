@@ -39,8 +39,11 @@ interface LayoutState {
   clearSaveError: () => void
 }
 
-// La cola serializa los PUT: el estado que viaja en cada uno es el que habia al
-// encolarlo, asi que dos peticiones nunca se pisan por llegar desordenadas.
+// La cola serializa las escrituras: el estado que viaja en cada PUT es el que
+// habia al encolarlo, asi que dos peticiones nunca se pisan por llegar
+// desordenadas. El DELETE de "Restablecer" tambien entra a la cola: asi el
+// servidor recibe siempre la ultima palabra, sin que un PUT demorado reviva lo
+// que se acaba de borrar.
 let cola: Promise<void> = Promise.resolve()
 const temporizador: { id: ReturnType<typeof setTimeout> | undefined } = { id: undefined }
 let pendiente = false
@@ -128,15 +131,31 @@ export const useLayoutStore = create<LayoutState>((set, get) => ({
   },
 
   reset: async () => {
+    // Primero se cancela el envio programado: un cambio reciente todavia no
+    // salio y no tiene por que salir. Despues, el DELETE se encola detras de
+    // lo que ya esta en vuelo para que el servidor lo aplique al final.
     cancelarPendiente()
     // Optimista: la pantalla vuelve a los valores por defecto y despues se
     // borra lo guardado. Si la API falla, lo local se mantiene y se avisa.
     set({ sidebarOrder: [], dashboardBlocks: [], hasSaved: false, saveError: null })
-    try {
-      await deleteLayout()
-    } catch (error) {
-      set({ saveError: noGuardar(error, 'No se pudo restablecer la personalización.', 'layout.reset_failed') })
-    }
+    const borrado = cola.then(async () => {
+      set({ saving: true })
+      try {
+        await deleteLayout()
+        set({ saving: false, hasSaved: false, saveError: null })
+      } catch (error) {
+        set({
+          saving: false,
+          saveError: noGuardar(
+            error,
+            'No se pudo restablecer la personalización.',
+            'layout.reset_failed',
+          ),
+        })
+      }
+    })
+    cola = borrado
+    await borrado
   },
 
   load: async () => {
