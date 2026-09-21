@@ -23,6 +23,9 @@ PERMISSIONS_TOPIC = "permissions"
 SCHEDULE_TOPIC = "schedule"
 # Cambió el catálogo de especies y razas: los formularios vuelven a pedirlo.
 PET_CATALOG_TOPIC = "pet-catalog"
+# Se pidió, respondió o registró un consentimiento: el dueño ve el pedido y el
+# veterinario la respuesta sin recargar.
+CONSENTS_TOPIC = "consents"
 
 
 @dataclass(frozen=True, slots=True)

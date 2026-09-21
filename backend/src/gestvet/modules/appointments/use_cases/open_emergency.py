@@ -18,6 +18,7 @@ from gestvet.modules.appointments.domain.exceptions import (
     NoEmergencyVeterinarian,
     PetNotOwned,
 )
+from gestvet.modules.appointments.domain.risk_consent import ensure_risk_consent_usable
 from gestvet.modules.appointments.ports.repositories import (
     AppointmentQuery,
     AppointmentRepository,
@@ -25,12 +26,14 @@ from gestvet.modules.appointments.ports.repositories import (
     PetDirectory,
     ScheduleDirectory,
 )
+from gestvet.modules.appointments.ports.risk_consent_directory import RiskConsentDirectory
 
 
 @dataclass(frozen=True, slots=True)
 class OpenEmergencyCommand:
     client_id: int
     pet_id: int
+    risk_consent_id: int
     description: str = ""
 
 
@@ -41,12 +44,14 @@ class OpenEmergency:
         types: AppointmentTypeRepository,
         pets: PetDirectory,
         schedule: ScheduleDirectory,
+        consents: RiskConsentDirectory,
         activity: ActivityRecorder,
     ) -> None:
         self._appointments = appointments
         self._types = types
         self._pets = pets
         self._schedule = schedule
+        self._consents = consents
         self._activity = activity
 
     async def __call__(self, command: OpenEmergencyCommand) -> Appointment:
@@ -58,6 +63,15 @@ class OpenEmergency:
             raise PetNotOwned(command.pet_id)
 
         now = datetime.now(UTC)
+        # Lo único que se le pide al dueño antes de atender: saber que el
+        # animal puede estar grave y que el costo se conoce al final. Nada más
+        # frena una emergencia.
+        ensure_risk_consent_usable(
+            await self._consents.find(command.risk_consent_id),
+            client_id=command.client_id,
+            pet_id=command.pet_id,
+            now=now,
+        )
         veterinarian_id = await self._pick_veterinarian(now)
 
         abierta = await self._appointments.add(
@@ -69,6 +83,7 @@ class OpenEmergency:
                 veterinarian_id=veterinarian_id,
                 appointment_type_id=emergency_type.id or 0,
                 description=command.description or "Cita de emergencia",
+                risk_consent_id=command.risk_consent_id,
             )
         )
         await self._activity.record(command.client_id, ActivityKind.EMERGENCY_OPENED)

@@ -21,16 +21,18 @@ from gestvet.core.database import Base
 from gestvet.modules.accounts.adapters.persistence import models as accounts_models
 from gestvet.modules.appointments.adapters.persistence import models as appointments_models
 from gestvet.modules.availability.adapters.persistence import models as availability_models
+from gestvet.modules.consents.adapters.persistence import models as consents_models
 from gestvet.modules.pets.adapters.persistence import models as pets_models
 
 # Los modelos se importan para que sus tablas queden registradas en
 # `Base.metadata`. La tupla existe para que la intención sea explícita: sin
-# ella son cuatro importaciones aparentemente sin uso, y hacen falta las cuatro.
+# ella son importaciones aparentemente sin uso, y hacen falta todas.
 REGISTERED_MODELS = (
     ActivityRow,
     accounts_models,
     appointments_models,
     availability_models,
+    consents_models,
     pets_models,
 )
 

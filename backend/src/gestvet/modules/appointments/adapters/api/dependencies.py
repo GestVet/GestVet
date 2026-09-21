@@ -12,6 +12,7 @@ from gestvet.modules.appointments.adapters.persistence.directories import (
     SqlAppointmentLabelDirectory,
     SqlClientDirectory,
     SqlPetDirectory,
+    SqlRiskConsentDirectory,
     SqlScheduleDirectory,
 )
 from gestvet.modules.appointments.adapters.persistence.repositories import (
@@ -26,6 +27,7 @@ from gestvet.modules.appointments.ports.repositories import (
     PetDirectory,
     ScheduleDirectory,
 )
+from gestvet.modules.appointments.ports.risk_consent_directory import RiskConsentDirectory
 from gestvet.modules.appointments.use_cases.change_status import ChangeAppointmentStatus
 
 
@@ -53,6 +55,10 @@ def get_appointment_label_directory(session: SessionDep) -> AppointmentLabelDire
     return SqlAppointmentLabelDirectory(session)
 
 
+def get_risk_consent_directory(session: SessionDep) -> RiskConsentDirectory:
+    return SqlRiskConsentDirectory(session)
+
+
 def get_whatsapp_sender() -> WhatsAppSender:
     return ConsoleWhatsAppSender()
 
@@ -64,6 +70,7 @@ AppointmentTypeRepositoryDep = Annotated[
 PetDirectoryDep = Annotated[PetDirectory, Depends(get_pet_directory)]
 ScheduleDirectoryDep = Annotated[ScheduleDirectory, Depends(get_schedule_directory)]
 ClientDirectoryDep = Annotated[ClientDirectory, Depends(get_client_directory)]
+RiskConsentDirectoryDep = Annotated[RiskConsentDirectory, Depends(get_risk_consent_directory)]
 WhatsAppSenderDep = Annotated[WhatsAppSender, Depends(get_whatsapp_sender)]
 AppointmentLabelsDep = Annotated[
     AppointmentLabelDirectory, Depends(get_appointment_label_directory)

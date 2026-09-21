@@ -7,6 +7,7 @@ from fastapi import Depends
 from gestvet.core.auth import SessionDep
 from gestvet.modules.hospitalizations.adapters.persistence.directories import (
     SqlAppointmentDirectory,
+    SqlConsentDirectory,
     SqlPetDirectory,
 )
 from gestvet.modules.hospitalizations.adapters.persistence.repositories import (
@@ -14,6 +15,7 @@ from gestvet.modules.hospitalizations.adapters.persistence.repositories import (
     SqlAlchemyNoteRepository,
 )
 from gestvet.modules.hospitalizations.ports.appointment_directory import AppointmentDirectory
+from gestvet.modules.hospitalizations.ports.consent_directory import ConsentDirectory
 from gestvet.modules.hospitalizations.ports.hospitalization_repository import (
     HospitalizationRepository,
 )
@@ -33,6 +35,10 @@ def get_appointment_directory(session: SessionDep) -> AppointmentDirectory:
     return SqlAppointmentDirectory(session)
 
 
+def get_consent_directory(session: SessionDep) -> ConsentDirectory:
+    return SqlConsentDirectory(session)
+
+
 def get_pet_directory(session: SessionDep) -> PetDirectory:
     return SqlPetDirectory(session)
 
@@ -43,3 +49,4 @@ HospitalizationRepositoryDep = Annotated[
 NoteRepositoryDep = Annotated[NoteRepository, Depends(get_note_repository)]
 AppointmentDirectoryDep = Annotated[AppointmentDirectory, Depends(get_appointment_directory)]
 PetDirectoryDep = Annotated[PetDirectory, Depends(get_pet_directory)]
+ConsentDirectoryDep = Annotated[ConsentDirectory, Depends(get_consent_directory)]

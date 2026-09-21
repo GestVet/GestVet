@@ -20,6 +20,8 @@ from gestvet.modules.appointments.adapters.persistence.repositories import (
     SqlAlchemyAppointmentRepository,
 )
 from gestvet.modules.appointments.domain.entities import Appointment
+from gestvet.modules.consents.adapters.persistence.models import ConsentRow
+from gestvet.modules.consents.domain.entities import fingerprint
 from gestvet.modules.pets.adapters.persistence.sqlalchemy_pet_repository import (
     SqlAlchemyPetRepository,
 )
@@ -39,7 +41,39 @@ class Escenario:
         self.cita_id = cita_id
 
 
-async def montar(session: AsyncSession) -> Escenario:
+async def consentir(
+    session: AsyncSession,
+    escenario: Escenario,
+    *,
+    kind: str = "hospitalization",
+    status: str = "accepted",
+) -> None:
+    """Un consentimiento ya resuelto sobre la cita, escrito directo en la tabla."""
+    texto = "Consentimiento informado para internación"
+    session.add(
+        ConsentRow(
+            template_id=1,
+            kind=kind,
+            pet_id=escenario.pet_id,
+            client_id=escenario.cliente.id,
+            appointment_id=escenario.cita_id,
+            status=status,
+            channel="online" if status in ("accepted", "declined") else None,
+            text_snapshot=texto,
+            text_sha256=fingerprint(texto),
+            signer_name="Ana Quispe" if status == "accepted" else None,
+            requested_by=escenario.veterinario.id,
+            decision_reason=None,
+            ip="",
+            user_agent="",
+            decided_at=HORA,
+            created_at=HORA,
+        )
+    )
+    await session.commit()
+
+
+async def montar(session: AsyncSession, *, con_consentimiento: bool = True) -> Escenario:
     users = SqlAlchemyUserRepository(session)
     cliente = await users.add(build_user("ana@example.com"))
     veterinario = await users.add(build_user("vet@example.com", role=Role.VETERINARIAN))
@@ -59,7 +93,10 @@ async def montar(session: AsyncSession) -> Escenario:
         )
     )
     await session.commit()
-    return Escenario(cliente, veterinario, mascota.id or 0, cita.id or 0)
+    escenario = Escenario(cliente, veterinario, mascota.id or 0, cita.id or 0)
+    if con_consentimiento:
+        await consentir(session, escenario)
+    return escenario
 
 
 async def _abrir(client: AsyncClient, escenario: Escenario) -> str:
@@ -229,3 +266,51 @@ async def test_sin_credencial_no_se_llega_a_ninguna_parte(client: AsyncClient) -
     assert (await client.get(URL, params={"pet_id": 1})).status_code == 401
     assert (await client.post(f"{URL}/1/notes", json={"note": "x"})).status_code == 401
     assert (await client.post(f"{URL}/1/discharge", json={})).status_code == 401
+
+
+async def test_sin_consentimiento_de_internacion_no_se_interna(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session, con_consentimiento=False)
+
+    response = await client.post(
+        URL,
+        json={**INTERNACION, "appointment_id": escenario.cita_id},
+        headers=authorization_for(escenario.veterinario),
+    )
+
+    assert response.status_code == 409
+    detalle = response.json()["detail"]
+    assert "consentimiento de internación" in detalle
+    assert "urgencia vital" in detalle
+
+
+async def test_un_consentimiento_rechazado_no_habilita_la_internacion(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session, con_consentimiento=False)
+    await consentir(session, escenario, status="declined")
+    await consentir(session, escenario, kind="procedure")
+
+    response = await client.post(
+        URL,
+        json={**INTERNACION, "appointment_id": escenario.cita_id},
+        headers=authorization_for(escenario.veterinario),
+    )
+
+    assert response.status_code == 409
+
+
+async def test_la_urgencia_vital_habilita_la_internacion(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session, con_consentimiento=False)
+    await consentir(session, escenario, status="waived_emergency")
+
+    response = await client.post(
+        URL,
+        json={**INTERNACION, "appointment_id": escenario.cita_id},
+        headers=authorization_for(escenario.veterinario),
+    )
+
+    assert response.status_code == 201

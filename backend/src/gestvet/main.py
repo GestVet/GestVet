@@ -49,6 +49,10 @@ from gestvet.modules.appointments.use_cases.send_upcoming_reminders import SendU
 from gestvet.modules.availability.adapters.api.router import router as availability_router
 from gestvet.modules.billing.adapters.api.router import router as billing_router
 from gestvet.modules.complaints.adapters.api.router import router as complaints_router
+from gestvet.modules.consents.adapters.api.requests_router import (
+    router as consent_requests_router,
+)
+from gestvet.modules.consents.adapters.api.router import router as consents_router
 from gestvet.modules.hospitalizations.adapters.api.router import (
     router as hospitalizations_router,
 )
@@ -283,6 +287,8 @@ def create_app() -> FastAPI:
     app.include_router(billing_router, prefix=f"{API_PREFIX}/payments", tags=["billing"])
     app.include_router(reviews_router, prefix=f"{API_PREFIX}/reviews", tags=["reviews"])
     app.include_router(complaints_router, prefix=f"{API_PREFIX}/complaints", tags=["complaints"])
+    app.include_router(consent_requests_router, prefix=f"{API_PREFIX}/consents", tags=["consents"])
+    app.include_router(consents_router, prefix=f"{API_PREFIX}/consents", tags=["consents"])
     app.include_router(
         hospitalizations_router,
         prefix=f"{API_PREFIX}/hospitalizations",

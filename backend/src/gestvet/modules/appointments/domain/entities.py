@@ -141,6 +141,9 @@ class Appointment:
     # `None` significa "todavía no". No es un estado de la cita: convive con
     # cualquiera de los de arriba.
     reminder_sent_at: datetime | None = None
+    # La aceptación del riesgo que habilitó una emergencia. Las citas normales
+    # y las emergencias anteriores a que se pidiera no tienen.
+    risk_consent_id: int | None = None
     id: int | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
