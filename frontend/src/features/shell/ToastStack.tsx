@@ -8,9 +8,14 @@ export default function ToastStack() {
     return null
   }
 
+  // La columna se corre a la izquierda del botón de accesibilidad, que vive
+  // fijo en la esquina inferior derecha (ver index.html): por más avisos que
+  // se apilen, ninguno queda debajo del botón ni de su "Descartar". La
+  // separación es horizontal y no vertical, así no depende de cuántos avisos
+  // haya en pantalla.
   return (
     <div
-      className="fixed right-4 bottom-4 z-50 flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-2"
+      className="fixed right-24 bottom-4 z-50 flex w-[min(22rem,calc(100vw-8rem))] flex-col gap-2"
       role="status"
       aria-live="polite"
     >

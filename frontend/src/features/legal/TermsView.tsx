@@ -1,5 +1,6 @@
 import PageHeader from '../../components/PageHeader'
 import SectionCard from '../../components/SectionCard'
+import { useScrollToHash } from '../../hooks/useScrollToHash'
 
 const ACTUALIZADO = '14 de septiembre de 2026'
 
@@ -11,6 +12,10 @@ const ACTUALIZADO = '14 de septiembre de 2026'
  * versión revisada por un abogado antes de operar con clientes reales.
  */
 export default function TermsView() {
+  // "Política de privacidad" llega como /terminos#privacidad: sin esto la
+  // página queda arriba en vez de bajar a la sección 6.
+  useScrollToHash()
+
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 py-8">
       <PageHeader
