@@ -97,3 +97,28 @@ class IdentityMismatch(AccountsError):
             "El nombre o el apellido no coinciden con los de tu DNI. "
             "Escríbelos como figuran en el documento."
         )
+
+
+class InvalidLayoutPreferences(AccountsError):
+    """Raíz de errores de validación en las preferencias de interfaz."""
+
+
+class InvalidLayoutIdentifier(InvalidLayoutPreferences):
+    def __init__(self, value: str) -> None:
+        super().__init__(
+            f"El identificador {value!r} no es válido. "
+            "Debe coincidir con el patrón ^[a-z0-9/_-]{1,64}$."
+        )
+        self.value = value
+
+
+class DuplicateLayoutIdentifier(InvalidLayoutPreferences):
+    def __init__(self, value: str) -> None:
+        super().__init__(f"El identificador {value!r} está duplicado.")
+        self.value = value
+
+
+class LayoutLimitExceeded(InvalidLayoutPreferences):
+    def __init__(self, limit: int = 50) -> None:
+        super().__init__(f"La lista no puede superar el límite de {limit} elementos.")
+        self.limit = limit
