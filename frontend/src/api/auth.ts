@@ -3,6 +3,7 @@ import type {
   AccessTokenResponse,
   CurrentUserResponse,
   ForgotPasswordRequest,
+  IdentityCheckResponse,
   LoginRequest,
   MessageResponse,
   RegisterClientRequest,
@@ -12,6 +13,7 @@ import type {
 } from './types'
 
 export const currentUserQueryKey = ['auth', 'me'] as const
+export const identityCheckQueryKey = ['auth', 'identity-check'] as const
 
 export async function login(payload: LoginRequest): Promise<AccessTokenResponse> {
   const { data } = await api.post<AccessTokenResponse>('/auth/login', payload)
@@ -27,6 +29,12 @@ export async function forgotPassword(
 
 export async function resetPassword(payload: ResetPasswordRequest): Promise<MessageResponse> {
   const { data } = await api.post<MessageResponse>('/auth/reset-password', payload)
+  return data
+}
+
+/** Si la verificación de DNI está en uso. Hoy no: falta el convenio con RENIEC. */
+export async function fetchIdentityCheck(): Promise<IdentityCheckResponse> {
+  const { data } = await api.get<IdentityCheckResponse>('/auth/identity-check')
   return data
 }
 

@@ -35,6 +35,7 @@ from gestvet.modules.accounts.adapters.api.schemas import (
     AccessTokenResponse,
     CurrentUserResponse,
     ForgotPasswordRequest,
+    IdentityCheckResponse,
     LayoutPreferencesRequest,
     LayoutPreferencesResponse,
     LoginRequest,
@@ -85,6 +86,16 @@ logger = get_logger("gestvet.auth")
 # resultado, cualquiera podría usar el formulario para averiguar qué correos
 # están registrados.
 FORGOT_PASSWORD_MESSAGE = "Si el correo está registrado, te enviamos instrucciones."
+
+
+@router.get(
+    "/identity-check",
+    response_model=IdentityCheckResponse,
+    summary="Si la verificación de DNI está en uso",
+)
+async def read_identity_check(identity: IdentityRegistryDep) -> IdentityCheckResponse:
+    # Público: el registro lo pregunta para decidir si pide la autorización.
+    return IdentityCheckResponse(available=identity.available)
 
 
 @router.post(

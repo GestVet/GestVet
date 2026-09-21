@@ -279,6 +279,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/identity-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Si la verificación de DNI está en uso */
+        get: operations["read_identity_check_api_v1_auth_identity_check_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -2195,6 +2212,11 @@ export interface components {
             /** Status Label */
             status_label: string;
         };
+        /** IdentityCheckResponse */
+        IdentityCheckResponse: {
+            /** Available */
+            available: boolean;
+        };
         /** LayoutPreferencesRequest */
         LayoutPreferencesRequest: {
             /** Dashboard Blocks */
@@ -2642,9 +2664,9 @@ export interface components {
         RegisterClientRequest: {
             /**
              * Accepts Identity Check
-             * @constant
+             * @default false
              */
-            accepts_identity_check: true;
+            accepts_identity_check: boolean;
             /**
              * Accepts Terms
              * @constant
@@ -3862,6 +3884,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_identity_check_api_v1_auth_identity_check_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityCheckResponse"];
                 };
             };
         };

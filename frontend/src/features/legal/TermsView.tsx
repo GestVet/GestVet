@@ -36,8 +36,9 @@ export default function TermsView() {
           <li>Eres responsable de mantener tu contraseña en secreto y de la actividad de tu cuenta.</li>
           <li>Los datos que registras (nombre, DNI, teléfono, mascotas) deben ser reales y tuyos.</li>
           <li>
-            Verificamos tu DNI contra fuentes oficiales solo para confirmar tu identidad, con tu
-            autorización expresa en el registro.
+            Tu DNI sirve para identificarte en la clínica. Por ahora no lo verificamos: la consulta
+            a RENIEC requiere un convenio. Cuando esté disponible, solo se hará con tu autorización
+            expresa.
           </li>
           <li>Podemos suspender una cuenta si detectamos datos falsos o uso indebido del sistema.</li>
         </ul>
