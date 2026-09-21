@@ -38,3 +38,13 @@ class PetNotFound(HospitalizationsError):
     def __init__(self, pet_id: int) -> None:
         super().__init__(f"No existe la mascota {pet_id}.")
         self.pet_id = pet_id
+
+
+class HospitalizationConsentMissing(HospitalizationsError):
+    def __init__(self) -> None:
+        super().__init__(
+            "Para internar hace falta el consentimiento de internación aceptado por el "
+            "responsable. Pedíselo desde la pestaña Consentimientos de la cita. Si es una "
+            "emergencia, la vida de la mascota corre peligro y no hay forma de ubicarlo, "
+            "registrá ahí la atención sin consentimiento por urgencia vital."
+        )

@@ -3,7 +3,17 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from gestvet.core.database import Base
@@ -51,6 +61,10 @@ class AppointmentRow(Base):
     reminder_sent_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    risk_consent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("consents.id", name="fk_appointments_risk_consent", ondelete="RESTRICT"),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
@@ -59,4 +73,7 @@ class AppointmentRow(Base):
     # ventana de tiempo. Sin este índice recorre la tabla entera en cada alta.
     __table_args__ = (
         Index("ix_appointments_veterinarian_window", "veterinarian_id", "scheduled_at"),
+        # Una misma firma no abre dos emergencias, aunque dos pedidos lleguen a
+        # la vez y los dos pasen la comprobación previa.
+        UniqueConstraint("risk_consent_id", name="uq_appointments_risk_consent_id"),
     )

@@ -1,4 +1,4 @@
-"""Adaptadores de lectura hacia `appointments` y `pets`.
+"""Adaptadores de lectura hacia `appointments`, `pets` y `consents`.
 
 Consultas crudas contra tablas ajenas, igual que hacen los lectores de otros
 módulos hacia esas mismas tablas.
@@ -10,6 +10,13 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 _FIND_PET_ID = text("SELECT pet_id FROM appointments WHERE id = :appointment_id")
+
+# Los valores que guarda `consents`, repetidos a mano porque su dominio no se
+# puede importar. Las pruebas del flujo completo notan si allá cambian.
+_HOSPITALIZATION_CONSENT = text(
+    "SELECT 1 FROM consents WHERE appointment_id = :appointment_id "
+    "AND kind = 'hospitalization' AND status IN ('accepted', 'waived_emergency')"
+)
 
 _PET_EXISTS = text("SELECT 1 FROM pets WHERE id = :pet_id")
 
@@ -38,5 +45,18 @@ class SqlPetDirectory:
     async def is_owned_by(self, pet_id: int, owner_id: int) -> bool:
         row = (
             await self._session.execute(_PET_IS_OWNED, {"pet_id": pet_id, "owner_id": owner_id})
+        ).first()
+        return row is not None
+
+
+class SqlConsentDirectory:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def allows_hospitalization(self, appointment_id: int) -> bool:
+        row = (
+            await self._session.execute(
+                _HOSPITALIZATION_CONSENT, {"appointment_id": appointment_id}
+            )
         ).first()
         return row is not None

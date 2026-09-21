@@ -46,6 +46,8 @@ class Permission(StrEnum):
     CLINICAL_RECORDS_WRITE = "clinical_records.write"
     HOSPITALIZATIONS_READ = "hospitalizations.read"
     HOSPITALIZATIONS_MANAGE = "hospitalizations.manage"
+    CONSENTS_REQUEST = "consents.request"
+    CONSENTS_RESPOND = "consents.respond"
     PAYMENTS_READ = "payments.read"
     PAYMENTS_QR = "payments.qr"
     PAYMENTS_REGISTER = "payments.register"
@@ -160,6 +162,14 @@ CATALOG: dict[Permission, PermissionInfo] = {
     Permission.HOSPITALIZATIONS_MANAGE: PermissionInfo(
         "Abrir internaciones, anotar y dar de alta", _CLINICA, VETERINARIAN_ROLES
     ),
+    Permission.CONSENTS_REQUEST: PermissionInfo(
+        "Pedir consentimientos, tomarlos en persona y atender sin ellos en una urgencia vital",
+        _CLINICA,
+        VETERINARIAN_ROLES,
+    ),
+    Permission.CONSENTS_RESPOND: PermissionInfo(
+        "Aceptar o rechazar los consentimientos de sus mascotas", _CLINICA, CLIENT_KIND
+    ),
     Permission.PAYMENTS_READ: PermissionInfo("Ver pagos", _PAGOS, ALL_KINDS),
     Permission.PAYMENTS_QR: PermissionInfo("Pagar o cobrar con QR", _PAGOS, ALL_KINDS),
     Permission.PAYMENTS_REGISTER: PermissionInfo("Registrar pagos", _PAGOS, STAFF_ROLES),
@@ -229,6 +239,7 @@ _VETERINARY = (
         Permission.SCHEDULE_READ_OWN,
         Permission.SCHEDULE_REQUEST_CHANGE,
         Permission.HOSPITALIZATIONS_MANAGE,
+        Permission.CONSENTS_REQUEST,
         Permission.CLINICAL_RECORDS_WRITE,
         Permission.PETS_EDIT_CLINICAL_PROFILE,
         Permission.PETS_OVERVIEW_READ,
@@ -244,6 +255,7 @@ SYSTEM_ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
         Permission.PETS_MANAGE_OWN,
         Permission.APPOINTMENTS_BOOK,
         Permission.EMERGENCIES_OPEN,
+        Permission.CONSENTS_RESPOND,
         Permission.COMPLAINTS_FILE,
         Permission.REVIEWS_SUBMIT,
     },

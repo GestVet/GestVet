@@ -19,6 +19,7 @@ from gestvet.core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from gestvet.core.permissions import Permission
 from gestvet.modules.hospitalizations.adapters.api.dependencies import (
     AppointmentDirectoryDep,
+    ConsentDirectoryDep,
     HospitalizationRepositoryDep,
     NoteRepositoryDep,
     PetDirectoryDep,
@@ -34,6 +35,7 @@ from gestvet.modules.hospitalizations.adapters.api.schemas import (
 from gestvet.modules.hospitalizations.domain.exceptions import (
     AppointmentNotFound,
     HospitalizationAlreadyDischarged,
+    HospitalizationConsentMissing,
     HospitalizationNotFound,
     PetNotFound,
 )
@@ -72,10 +74,13 @@ async def open_hospitalization(
     veterinarian: HospitalizationManagerDep,
     hospitalizations: HospitalizationRepositoryDep,
     appointments: AppointmentDirectoryDep,
+    consents: ConsentDirectoryDep,
     activity: ActivityRecorderDep,
 ) -> HospitalizationResponse:
     try:
-        hospitalization = await OpenHospitalization(hospitalizations, appointments, activity)(
+        hospitalization = await OpenHospitalization(
+            hospitalizations, appointments, consents, activity
+        )(
             OpenHospitalizationCommand(
                 appointment_id=payload.appointment_id,
                 opened_by=veterinarian.user_id,
@@ -84,6 +89,8 @@ async def open_hospitalization(
         )
     except AppointmentNotFound as error:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
+    except HospitalizationConsentMissing as error:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
     return HospitalizationResponse.from_entity(hospitalization)
 
 

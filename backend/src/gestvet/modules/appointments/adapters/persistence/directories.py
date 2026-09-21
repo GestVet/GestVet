@@ -1,8 +1,9 @@
 """Lectores hacia datos que posee otro módulo.
 
-Una cita necesita dos cosas que no son suyas: saber si la mascota es del
-cliente y si el veterinario tiene turno a esa hora. `pets` y `availability` son
-módulos de dominio independientes y este no puede importarlos.
+Una cita necesita cosas que no son suyas: saber si la mascota es del cliente,
+si el veterinario tiene turno a esa hora y, en una emergencia, si el dueño
+aceptó el riesgo. `pets`, `availability` y `consents` son módulos de dominio
+independientes y este no puede importarlos.
 
 La salida es la misma que usa `gestvet.core.auth` para la identidad: una
 proyección de solo lectura, escrita a mano contra la tabla del otro módulo y
@@ -10,18 +11,19 @@ declarada como puerto para que el negocio no sepa de dónde sale la respuesta.
 El acoplamiento es al nombre de la tabla, está acotado a estas consultas y lo
 cubren las pruebas.
 
-La regla es estricta: se lee, nunca se escribe. Modificar una mascota o un
-turno sigue siendo competencia exclusiva de su módulo.
+La regla es estricta: se lee, nunca se escribe. Modificar una mascota, un
+turno o un consentimiento sigue siendo competencia exclusiva de su módulo.
 """
 
 from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, Integer, bindparam, column, text
+from sqlalchemy import Boolean, DateTime, Integer, String, bindparam, column, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from gestvet.core.identity import Role
+from gestvet.modules.appointments.domain.risk_consent import RiskConsentFacts
 from gestvet.modules.appointments.ports.appointment_labels import AppointmentLabels
 from gestvet.modules.appointments.ports.client_directory import ClientContact
 from gestvet.modules.appointments.ports.repositories import ScheduleSlot
@@ -98,6 +100,20 @@ _LABELS = text(
     "WHERE a.id IN :ids"
 ).bindparams(bindparam("ids", expanding=True))
 
+# El uso previo se mira en la tabla propia; el resto, en la de `consents`.
+_RISK_CONSENT = text(
+    "SELECT c.kind, c.status, c.client_id, c.pet_id, c.decided_at, "
+    "EXISTS (SELECT 1 FROM appointments a WHERE a.risk_consent_id = c.id) AS used "
+    "FROM consents c WHERE c.id = :consent_id"
+).columns(
+    column("kind", String),
+    column("status", String),
+    column("client_id", Integer),
+    column("pet_id", Integer),
+    column("decided_at", _MOMENT),
+    column("used", Boolean),
+)
+
 _IS_BOOKABLE = text(
     "SELECT 1 FROM users WHERE id = :veterinarian_id AND role = :role AND is_active = :active"
 )
@@ -143,6 +159,24 @@ class SqlAppointmentLabelDirectory:
             )
             for row in rows
         }
+
+
+class SqlRiskConsentDirectory:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def find(self, consent_id: int) -> RiskConsentFacts | None:
+        row = (await self._session.execute(_RISK_CONSENT, {"consent_id": consent_id})).first()
+        if row is None:
+            return None
+        return RiskConsentFacts(
+            kind=row.kind,
+            status=row.status,
+            client_id=int(row.client_id),
+            pet_id=int(row.pet_id),
+            decided_at=_as_utc(row.decided_at),
+            used_by_appointment=bool(row.used),
+        )
 
 
 class SqlClientDirectory:
