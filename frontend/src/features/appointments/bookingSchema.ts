@@ -16,6 +16,9 @@ import { textoOpcional } from '../../components/formRules'
 export const bookingSchema = z.object({
   pet_id: z.string().min(1, 'Elige una mascota'),
   appointment_type_id: z.string().min(1, 'Elige el tipo de atención'),
+  // Solo filtra con quién reservar; no viaja al servidor. Quien reserva es
+  // responsable de a quién elige, tenga o no la especialidad marcada acá.
+  specialty_id: z.string(),
   veterinarian_id: z.string().min(1, 'Elige un día y una hora'),
   scheduled_at: z.string().min(1, 'Elige un día y una hora'),
   description: textoOpcional(500),

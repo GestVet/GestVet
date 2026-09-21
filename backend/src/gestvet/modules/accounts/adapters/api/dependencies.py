@@ -26,6 +26,9 @@ from gestvet.modules.accounts.adapters.persistence.sqlalchemy_layout_repository 
 from gestvet.modules.accounts.adapters.persistence.sqlalchemy_password_reset_repository import (
     SqlAlchemyPasswordResetRepository,
 )
+from gestvet.modules.accounts.adapters.persistence.sqlalchemy_specialty_repository import (
+    SqlAlchemySpecialtyRepository,
+)
 from gestvet.modules.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
@@ -33,6 +36,7 @@ from gestvet.modules.accounts.ports.email_sender import EmailSender
 from gestvet.modules.accounts.ports.layout_repository import LayoutRepository
 from gestvet.modules.accounts.ports.password_reset_repository import PasswordResetRepository
 from gestvet.modules.accounts.ports.reviews_directory import ReviewsDirectory
+from gestvet.modules.accounts.ports.specialty_repository import SpecialtyRepository
 from gestvet.modules.accounts.ports.user_repository import PasswordHasher, UserRepository
 
 
@@ -60,6 +64,10 @@ def get_reviews_directory(session: SessionDep) -> ReviewsDirectory:
     return SqlReviewsDirectory(session)
 
 
+def get_specialty_repository(session: SessionDep) -> SpecialtyRepository:
+    return SqlAlchemySpecialtyRepository(session)
+
+
 UserRepositoryDep = Annotated[UserRepository, Depends(get_user_repository)]
 PasswordHasherDep = Annotated[PasswordHasher, Depends(get_password_hasher)]
 PasswordResetRepositoryDep = Annotated[
@@ -68,4 +76,5 @@ PasswordResetRepositoryDep = Annotated[
 LayoutRepositoryDep = Annotated[LayoutRepository, Depends(get_layout_repository)]
 EmailSenderDep = Annotated[EmailSender, Depends(get_email_sender)]
 ReviewsDirectoryDep = Annotated[ReviewsDirectory, Depends(get_reviews_directory)]
+SpecialtyRepositoryDep = Annotated[SpecialtyRepository, Depends(get_specialty_repository)]
 IdentityRegistryDep = Annotated[IdentityRegistry, Depends(get_identity_registry)]

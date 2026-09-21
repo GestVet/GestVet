@@ -99,6 +99,38 @@ class IdentityMismatch(AccountsError):
         )
 
 
+class InvalidSpecialty(AccountsError):
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
+
+
+class SpecialtyNotFound(AccountsError):
+    def __init__(self, specialty_id: int) -> None:
+        super().__init__(f"No existe la especialidad {specialty_id}.")
+        self.specialty_id = specialty_id
+
+
+class SpecialtyNameTaken(AccountsError):
+    def __init__(self, name: str) -> None:
+        super().__init__(f"Ya existe «{name}» en el catálogo de especialidades.")
+        self.name = name
+
+
+class SpecialtiesRequired(AccountsError):
+    def __init__(self) -> None:
+        super().__init__("Elige al menos una especialidad para el veterinario.")
+
+
+class UnknownSpecialties(AccountsError):
+    """Alguno de los identificadores no corresponde a una especialidad que exista."""
+
+    def __init__(self, specialty_ids: frozenset[int]) -> None:
+        listado = ", ".join(str(entry_id) for entry_id in sorted(specialty_ids))
+        super().__init__(f"Estas especialidades no existen: {listado}.")
+        self.specialty_ids = specialty_ids
+
+
 class InvalidLayoutPreferences(AccountsError):
     """Raíz de errores de validación en las preferencias de interfaz."""
 

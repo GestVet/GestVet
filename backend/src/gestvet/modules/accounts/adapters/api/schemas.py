@@ -16,6 +16,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from gestvet.core.permissions import Permission
 from gestvet.modules.accounts.domain.entities import LayoutPreferences, Role, User
+from gestvet.modules.accounts.domain.specialties import Specialty, SpecialtyCategory
 
 MIN_PASSWORD_LENGTH = 10
 MAX_PASSWORD_LENGTH = 128
@@ -47,6 +48,9 @@ class RegisterStaffRequest(BaseModel):
     # asignables no incluye ADMIN, así que esta pantalla no fabrica
     # administradores por más que se le pida.
     role: Role
+    # Con qué atiende: al menos una, para que el veterinario pueda encontrarse
+    # desde el filtro de especialidad al reservar.
+    specialty_ids: list[int] = Field(min_length=1)
     phone: str = Field(default="", max_length=32)
 
 
@@ -155,6 +159,58 @@ class AccessTokenResponse(BaseModel):
     user: CurrentUserResponse
 
 
+class SpecialtyResponse(BaseModel):
+    id: int
+    name: str
+    category: SpecialtyCategory
+    category_label: str
+    description: str
+    is_active: bool
+
+    @classmethod
+    def from_entity(cls, specialty: Specialty) -> SpecialtyResponse:
+        return cls(
+            id=specialty.id or 0,
+            name=specialty.name,
+            category=specialty.category,
+            category_label=specialty.category.label,
+            description=specialty.description,
+            is_active=specialty.is_active,
+        )
+
+
+class SpecialtyListResponse(BaseModel):
+    items: list[SpecialtyResponse]
+
+
+class AddSpecialtyRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    category: SpecialtyCategory
+    description: str = Field(default="", max_length=240)
+
+
+class UpdateSpecialtyRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    category: SpecialtyCategory
+    description: str = Field(default="", max_length=240)
+    is_active: bool
+
+
+class AssignVeterinarianSpecialtiesRequest(BaseModel):
+    specialty_ids: list[int] = Field(min_length=1)
+
+
+class VeterinarianSpecialtiesResponse(BaseModel):
+    """Especialidades asignadas a un veterinario, para la pantalla de personal."""
+
+    user_id: int
+    specialties: list[SpecialtyResponse]
+
+
+class VeterinarianSpecialtiesListResponse(BaseModel):
+    items: list[VeterinarianSpecialtiesResponse]
+
+
 class VeterinarianResponse(BaseModel):
     """Proyección mínima para elegir veterinario al reservar.
 
@@ -167,6 +223,7 @@ class VeterinarianResponse(BaseModel):
     role: Role
     average_rating: Decimal | None
     review_count: int
+    specialties: list[SpecialtyResponse]
 
     @classmethod
     def from_entity(
@@ -174,6 +231,7 @@ class VeterinarianResponse(BaseModel):
         user: User,
         average_rating: Decimal | None = None,
         review_count: int = 0,
+        specialties: list[Specialty] | None = None,
     ) -> VeterinarianResponse:
         return cls(
             id=user.id or 0,
@@ -181,6 +239,7 @@ class VeterinarianResponse(BaseModel):
             role=user.role,
             average_rating=average_rating,
             review_count=review_count,
+            specialties=[SpecialtyResponse.from_entity(item) for item in specialties or []],
         )
 
 

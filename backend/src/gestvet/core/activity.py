@@ -35,6 +35,7 @@ class ActivityKind(StrEnum):
     CLIENT_REGISTERED = "client_registered"
     PROFILE_UPDATED = "profile_updated"
     STAFF_REGISTERED = "staff_registered"
+    STAFF_SPECIALTIES_UPDATED = "staff_specialties_updated"
     USER_STATUS_CHANGED = "user_status_changed"
     GUARD_DUTY_TOGGLED = "guard_duty_toggled"
     PET_REGISTERED = "pet_registered"
@@ -82,6 +83,7 @@ _KIND_LABELS: dict[ActivityKind, str] = {
     ActivityKind.CLIENT_REGISTERED: "Se registró como cliente",
     ActivityKind.PROFILE_UPDATED: "Actualizó su perfil",
     ActivityKind.STAFF_REGISTERED: "Dio de alta a un veterinario",
+    ActivityKind.STAFF_SPECIALTIES_UPDATED: "Actualizó las especialidades de un veterinario",
     ActivityKind.USER_STATUS_CHANGED: "Cambió el estado de una cuenta",
     ActivityKind.GUARD_DUTY_TOGGLED: "Cambió el turno de guardia",
     ActivityKind.PET_REGISTERED: "Registró una mascota",

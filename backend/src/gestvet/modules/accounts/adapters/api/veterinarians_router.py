@@ -15,6 +15,7 @@ from gestvet.core.pagination import MAX_PAGE_SIZE
 from gestvet.core.permissions import Permission
 from gestvet.modules.accounts.adapters.api.dependencies import (
     ReviewsDirectoryDep,
+    SpecialtyRepositoryDep,
     UserRepositoryDep,
 )
 from gestvet.modules.accounts.adapters.api.schemas import (
@@ -30,14 +31,16 @@ router = APIRouter(dependencies=[Depends(require_permission(Permission.VETERINAR
 
 @router.get("", response_model=VeterinarianListResponse, summary="Veterinarios que atienden")
 async def list_veterinarians(
-    users: UserRepositoryDep, reviews: ReviewsDirectoryDep
+    users: UserRepositoryDep, reviews: ReviewsDirectoryDep, specialties: SpecialtyRepositoryDep
 ) -> VeterinarianListResponse:
     # El de guardia no aparece acá: HU09 lo reserva para el reparto automático
     # de emergencias, no para que un cliente lo elija a mano.
     page = await ListUsers(users, BOOKABLE_VETERINARIAN_ROLES)(
         UserQuery(is_active=True, limit=MAX_PAGE_SIZE)
     )
-    summaries = await reviews.summaries_for([user.id for user in page.items if user.id])
+    ids = [user.id for user in page.items if user.id]
+    summaries = await reviews.summaries_for(ids)
+    by_user = await specialties.specialties_for(frozenset(ids))
     vacio = RatingSummary(average=None, count=0)
     return VeterinarianListResponse(
         items=[
@@ -45,6 +48,7 @@ async def list_veterinarians(
                 user,
                 summaries.get(user.id or 0, vacio).average,
                 summaries.get(user.id or 0, vacio).count,
+                by_user.get(user.id or 0, []),
             )
             for user in page.items
         ],

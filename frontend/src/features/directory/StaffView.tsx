@@ -7,8 +7,8 @@ import {
   fetchRoleAssignments,
   roleAssignmentsQueryKey,
 } from '../../api/access'
-import { fetchStaff, staffQueryKey } from '../../api/directory'
-import type { AccessRoleResponse, UserResponse, UserRole } from '../../api/types'
+import { fetchStaff, fetchStaffSpecialties, staffQueryKey, staffSpecialtiesQueryKey } from '../../api/directory'
+import type { AccessRoleResponse, SpecialtyResponse, UserResponse, UserRole } from '../../api/types'
 import DataTable, { type DataColumn } from '../../components/DataTable'
 import FormDialog from '../../components/FormDialog'
 import Icon from '../../components/Icon'
@@ -20,6 +20,7 @@ import { useCan } from '../../store/session'
 import StaffAccessRole from './StaffAccessRole'
 import StaffForm from './StaffForm'
 import StaffRowActions from './StaffRowActions'
+import StaffSpecialties from './StaffSpecialties'
 
 const ETIQUETA_DE_ROL: Record<UserRole, string> = {
   admin: 'Administración',
@@ -50,11 +51,33 @@ function columnaDeRol(accesos: Accesos | null): DataColumn<UserResponse> {
   }
 }
 
-function columnas(accesos: Accesos | null): DataColumn<UserResponse>[] {
+function columnaDeEspecialidades(
+  especialidades: ReadonlyMap<number, readonly SpecialtyResponse[]>,
+  editable: boolean,
+): DataColumn<UserResponse> {
+  return {
+    id: 'especialidades',
+    header: 'Especialidades',
+    cell: (cuenta) => (
+      <StaffSpecialties
+        account={cuenta}
+        assigned={especialidades.get(cuenta.id) ?? []}
+        editable={editable}
+      />
+    ),
+  }
+}
+
+function columnas(
+  accesos: Accesos | null,
+  especialidades: ReadonlyMap<number, readonly SpecialtyResponse[]>,
+  puedeEditarEspecialidades: boolean,
+): DataColumn<UserResponse>[] {
   return [
     { id: 'nombre', header: 'Nombre', cell: (cuenta) => `${cuenta.first_name} ${cuenta.last_name}` },
     { id: 'correo', header: 'Correo', cell: (cuenta) => cuenta.email },
     columnaDeRol(accesos),
+    columnaDeEspecialidades(especialidades, puedeEditarEspecialidades),
     {
       id: 'estado',
       header: 'Estado',
@@ -90,9 +113,19 @@ function useAccesos(): Accesos | null {
   }
 }
 
+function useEspecialidades(): ReadonlyMap<number, readonly SpecialtyResponse[]> {
+  const especialidades = useQuery({
+    queryKey: staffSpecialtiesQueryKey,
+    queryFn: fetchStaffSpecialties,
+  })
+  return new Map(especialidades.data?.items.map((item) => [item.user_id, item.specialties]) ?? [])
+}
+
 export default function StaffView() {
   const personal = useQuery({ queryKey: staffQueryKey, queryFn: fetchStaff })
   const accesos = useAccesos()
+  const especialidades = useEspecialidades()
+  const puedeEditarEspecialidades = useCan('staff.manage')
   const [dandoDeAlta, setDandoDeAlta] = useState(false)
 
   return (
@@ -131,7 +164,7 @@ export default function StaffView() {
 
       <SectionCard title="Equipo">
         <DataTable
-          columns={columnas(accesos)}
+          columns={columnas(accesos, especialidades, puedeEditarEspecialidades)}
           data={personal.data?.items ?? []}
           isLoading={personal.isPending}
           emptyMessage="Todavía no hay veterinarios registrados."
