@@ -14,6 +14,7 @@ import MyShiftsView from '../features/availability/MyShiftsView'
 import RosterView from '../features/availability/RosterView'
 import PaymentsReportView from '../features/billing/PaymentsReportView'
 import ComplaintsView from '../features/complaints/ComplaintsView'
+import ConsentsView from '../features/consents/ConsentsView'
 import ActivityView from '../features/directory/ActivityView'
 import ClientsView from '../features/directory/ClientsView'
 import StaffView from '../features/directory/StaffView'
@@ -70,6 +71,7 @@ const router = createBrowserRouter(
         conPermiso('citas', AppointmentsView, 'appointments.read'),
         conPermiso('mascotas', PetsView, 'pets.manage_own'),
         conPermiso('reservar', BookingView, 'appointments.book'),
+        conPermiso('consentimientos', ConsentsView, 'consents.respond'),
         conPermiso('agenda', MyShiftsView, 'schedule.read_own'),
         conPermiso('clientes', ClientsView, 'clients.read'),
         conPermiso('emergencia-cliente-nuevo', WalkInEmergencyView, 'emergencies.open_walk_in'),

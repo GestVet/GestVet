@@ -16,6 +16,7 @@ import NavList from './NavList'
 import SessionActions from './SessionActions'
 import ToastStack from './ToastStack'
 import { useClientAppointmentAlerts } from './useClientAppointmentAlerts'
+import { useClientConsentAlerts } from './useClientConsentAlerts'
 import { useLayoutPreferences } from './useLayoutPreferences'
 import { useRealtimeUpdates } from './useRealtimeUpdates'
 import { useVeterinarianEmergencyAlerts } from './useVeterinarianEmergencyAlerts'
@@ -55,6 +56,7 @@ export default function AppShell() {
   useLayoutPreferences()
   useRealtimeUpdates()
   useClientAppointmentAlerts()
+  useClientConsentAlerts()
   useVeterinarianEmergencyAlerts()
 
   const invitados = user === null
