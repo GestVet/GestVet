@@ -8,17 +8,20 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import secrets
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Annotated, Any
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, Header, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from gestvet.core.config import get_settings
-from gestvet.core.database import SessionFactory, engine
+from gestvet.core.database import SessionFactory, engine, get_session_factory
 from gestvet.core.events_router import router as events_router
 from gestvet.core.logs import configure_logging, get_logger
 from gestvet.core.realtime_broker import get_broker
@@ -101,8 +104,8 @@ class HealthResponse(BaseModel):
     version: str
 
 
-async def _send_due_reminders() -> None:
-    async with SessionFactory() as session:
+async def _send_due_reminders(factory: async_sessionmaker[AsyncSession]) -> None:
+    async with factory() as session:
         use_case = SendUpcomingReminders(
             SqlAlchemyAppointmentRepository(session),
             SqlAppointmentClientDirectory(session),
@@ -113,8 +116,8 @@ async def _send_due_reminders() -> None:
         await session.commit()
 
 
-async def _send_due_vaccine_reminders() -> None:
-    async with SessionFactory() as session:
+async def _send_due_vaccine_reminders(factory: async_sessionmaker[AsyncSession]) -> None:
+    async with factory() as session:
         use_case = SendVaccineReminders(
             SqlAlchemyVaccinationRepository(session),
             SqlOwnerContactDirectory(session),
@@ -124,18 +127,29 @@ async def _send_due_vaccine_reminders() -> None:
         await session.commit()
 
 
+async def run_reminder_round(
+    factory: async_sessionmaker[AsyncSession] | None = None,
+) -> dict[str, str]:
+    """Ejecuta una ronda de comprobación y envío de recordatorios pendientes."""
+    session_factory = factory or SessionFactory
+    results: dict[str, str] = {}
+    for job in (_send_due_reminders, _send_due_vaccine_reminders):
+        try:
+            await job(session_factory)
+            results[job.__name__] = "ok"
+        except Exception:
+            # Un fallo en una vuelta (por ejemplo, la base momentáneamente
+            # inalcanzable) no debe tumbar el proceso: se reintenta en la
+            # siguiente, con lo pendiente todavía sin `reminder_sent_at`.
+            logger.exception("whatsapp.reminders_failed", job=job.__name__)
+            results[job.__name__] = "error"
+    return results
+
+
 async def _reminder_loop() -> None:
     while True:
         await asyncio.sleep(REMINDER_POLL_INTERVAL_SECONDS)
-        # Cada recordatorio va por separado: si uno falla, el otro igual sale.
-        for job in (_send_due_reminders, _send_due_vaccine_reminders):
-            try:
-                await job()
-            except Exception:
-                # Un fallo en una vuelta (por ejemplo, la base momentáneamente
-                # inalcanzable) no debe tumbar el proceso: se reintenta en la
-                # siguiente, con lo pendiente todavía sin `reminder_sent_at`.
-                logger.exception("whatsapp.reminders_failed", job=job.__name__)
+        await run_reminder_round(SessionFactory)
 
 
 @asynccontextmanager
@@ -204,6 +218,38 @@ def create_app() -> FastAPI:
             service=settings.app_name,
             version=settings.app_version,
         )
+
+    @app.post(
+        f"{API_PREFIX}/internal/reminders/run",
+        tags=["system"],
+        summary="Disparador del cron de recordatorios",
+        # Solo lo llama el cron de GitHub Actions: no es parte del contrato del frontend.
+        include_in_schema=False,
+    )
+    async def trigger_reminders(
+        session_factory: Annotated[async_sessionmaker[AsyncSession], Depends(get_session_factory)],
+        x_reminders_token: Annotated[str | None, Header(alias="X-Reminders-Token")] = None,
+        authorization: Annotated[str | None, Header()] = None,
+    ) -> dict[str, Any]:
+        cron_token = get_settings().reminders_cron_token.strip()
+        if not cron_token:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Endpoint no habilitado.",
+            )
+
+        token = x_reminders_token
+        if not token and authorization and authorization.startswith("Bearer "):
+            token = authorization[7:].strip()
+
+        if not token or not secrets.compare_digest(token, cron_token):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token de recordatorios inválido.",
+            )
+
+        jobs = await run_reminder_round(session_factory)
+        return {"status": "ok", "jobs": jobs}
 
     app.include_router(events_router, prefix=f"{API_PREFIX}/events", tags=["system"])
     app.include_router(access_router, prefix=f"{API_PREFIX}/access", tags=["access"])
