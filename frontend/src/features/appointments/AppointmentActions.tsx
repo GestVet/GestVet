@@ -45,7 +45,7 @@ export default function AppointmentActions({ appointment }: AppointmentActionsPr
     <div className="flex flex-col items-start gap-2 whitespace-normal">
       <div className="flex flex-wrap gap-2">
         <AppointmentActionButtons
-          status={appointment.status}
+          cita={appointment}
           atiende={atiende}
           ocupado={ocupado}
           onConfirm={() => {

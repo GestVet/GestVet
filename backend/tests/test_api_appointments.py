@@ -18,6 +18,7 @@ from gestvet.core.identity import Role
 from gestvet.modules.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
+from gestvet.modules.appointments.adapters.persistence.models import AppointmentRow
 from gestvet.modules.appointments.adapters.persistence.repositories import (
     SqlAlchemyAppointmentRepository,
 )
@@ -43,6 +44,14 @@ URL = "/api/v1/appointments"
 # cuanto llega ese día, y la inasistencia se calcula sola contra el reloj real.
 JORNADA = (datetime.now(UTC) + timedelta(days=1)).replace(hour=9, minute=0, second=0, microsecond=0)
 HORA = JORNADA + timedelta(hours=1)
+
+
+async def _ya_empezo(session: AsyncSession, cita_id: int) -> None:
+    """Lleva la cita a hace diez minutos, para poder cerrarla."""
+    fila = await session.get(AppointmentRow, cita_id)
+    assert fila is not None
+    fila.scheduled_at = datetime.now(UTC) - timedelta(minutes=10)
+    await session.commit()
 
 
 class Escenario:
@@ -242,6 +251,7 @@ async def test_el_veterinario_confirma_y_completa(
     cabeceras = authorization_for(escenario.veterinario)
 
     confirmada = await client.post(f"{URL}/{cita_id}/confirm", headers=cabeceras)
+    await _ya_empezo(session, cita_id)
     completada = await client.post(f"{URL}/{cita_id}/complete", headers=cabeceras)
 
     assert confirmada.json()["status"] == "confirmed"
@@ -259,6 +269,7 @@ async def test_el_veterinario_marca_la_inasistencia(
     cita_id = creada.json()["id"]
     cabeceras = authorization_for(escenario.veterinario)
     await client.post(f"{URL}/{cita_id}/confirm", headers=cabeceras)
+    await _ya_empezo(session, cita_id)
 
     respuesta = await client.post(f"{URL}/{cita_id}/no-show", headers=cabeceras)
 
@@ -310,6 +321,7 @@ async def test_una_cita_completada_no_se_cancela(
     cita_id = creada.json()["id"]
     vet = authorization_for(escenario.veterinario)
     await client.post(f"{URL}/{cita_id}/confirm", headers=vet)
+    await _ya_empezo(session, cita_id)
     await client.post(f"{URL}/{cita_id}/complete", headers=vet)
 
     response = await client.post(
@@ -596,3 +608,38 @@ async def test_un_veterinario_fuera_de_turno_no_atiende_emergencias(
     )
 
     assert response.status_code == 409
+
+
+async def test_no_se_completa_una_cita_de_manana(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+    creada = await client.post(
+        URL, json=escenario.reserva(), headers=authorization_for(escenario.cliente)
+    )
+    cita_id = creada.json()["id"]
+    cabeceras = authorization_for(escenario.veterinario)
+    await client.post(f"{URL}/{cita_id}/confirm", headers=cabeceras)
+
+    completar = await client.post(f"{URL}/{cita_id}/complete", headers=cabeceras)
+    inasistencia = await client.post(f"{URL}/{cita_id}/no-show", headers=cabeceras)
+
+    assert completar.status_code == 409
+    assert "todavía no empezó" in completar.json()["detail"]
+    assert inasistencia.status_code == 409
+    listado = await client.get(URL, headers=cabeceras)
+    assert listado.json()["items"][0]["status"] == "confirmed"
+
+
+async def test_la_cita_dice_desde_cuando_se_puede_cerrar(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    escenario = await montar(session)
+
+    creada = await client.post(
+        URL, json=escenario.reserva(), headers=authorization_for(escenario.cliente)
+    )
+
+    body = creada.json()
+    assert datetime.fromisoformat(body["completable_from"]) == HORA - timedelta(minutes=30)
+    assert datetime.fromisoformat(body["no_show_from"]) == HORA

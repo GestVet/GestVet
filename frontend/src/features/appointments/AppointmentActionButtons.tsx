@@ -1,9 +1,12 @@
-import type { AppointmentStatus } from '../../api/types'
+import type { AppointmentResponse } from '../../api/types'
 import Icon from '../../components/Icon'
 import { Button } from '../../components/ui/button'
+import { resumenDeCita } from './appointmentSummary'
+import CloseAppointmentButton from './CloseAppointmentButton'
+import { useNow } from './useNow'
 
 interface AppointmentActionButtonsProps {
-  readonly status: AppointmentStatus
+  readonly cita: AppointmentResponse
   readonly atiende: boolean
   readonly ocupado: boolean
   readonly onConfirm: () => void
@@ -13,39 +16,55 @@ interface AppointmentActionButtonsProps {
 
 /** Los botones de quien atiende una cita, ya resueltos según su estado. */
 export default function AppointmentActionButtons({
-  status,
+  cita,
   atiende,
   ocupado,
   onConfirm,
   onComplete,
   onMarkNoShow,
 }: AppointmentActionButtonsProps) {
+  const ahora = useNow()
   if (!atiende) {
     return null
   }
-  const abierta = status === 'pending' || status === 'confirmed'
+  const abierta = cita.status === 'pending' || cita.status === 'confirmed'
+  const resumen = resumenDeCita(cita)
 
   return (
     <>
-      {status === 'pending' ? (
+      {cita.status === 'pending' ? (
         <Button type="button" size="sm" disabled={ocupado} onClick={onConfirm}>
           <Icon name="confirmar" size={14} />
           <span>Confirmar</span>
         </Button>
       ) : null}
 
-      {status === 'confirmed' ? (
-        <Button type="button" size="sm" variant="success" disabled={ocupado} onClick={onComplete}>
-          <Icon name="confirmar" size={14} />
-          <span>Completar</span>
-        </Button>
+      {cita.status === 'confirmed' ? (
+        <CloseAppointmentButton
+          label="Completar"
+          icon="confirmar"
+          variant="success"
+          availableFrom={cita.completable_from}
+          now={ahora}
+          busy={ocupado}
+          dialogTitle="¿Dar la cita por completada?"
+          dialogDescription={`Vas a marcar como completada ${resumen}. Después no se puede deshacer.`}
+          onConfirm={onComplete}
+        />
       ) : null}
 
       {abierta ? (
-        <Button type="button" size="sm" variant="outline" disabled={ocupado} onClick={onMarkNoShow}>
-          <Icon name="alerta" size={14} />
-          <span>No asistió</span>
-        </Button>
+        <CloseAppointmentButton
+          label="No asistió"
+          icon="alerta"
+          variant="outline"
+          availableFrom={cita.no_show_from}
+          now={ahora}
+          busy={ocupado}
+          dialogTitle="¿Marcar la inasistencia?"
+          dialogDescription={`Vas a registrar que nadie se presentó a ${resumen}. Después no se puede deshacer.`}
+          onConfirm={onMarkNoShow}
+        />
       ) : null}
     </>
   )

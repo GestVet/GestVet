@@ -1536,6 +1536,11 @@ export interface components {
             /** Client Id */
             client_id: number;
             /**
+             * Completable From
+             * Format: date-time
+             */
+            completable_from: string;
+            /**
              * Created At
              * Format: date-time
              */
@@ -1551,6 +1556,11 @@ export interface components {
             ends_at: string;
             /** Id */
             id: number;
+            /**
+             * No Show From
+             * Format: date-time
+             */
+            no_show_from: string;
             /** Pet Id */
             pet_id: number;
             /**

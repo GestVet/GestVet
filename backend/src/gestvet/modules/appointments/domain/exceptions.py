@@ -58,6 +58,14 @@ class NoEmergencyVeterinarian(AppointmentsError):
         )
 
 
+class StatusChangeTooEarly(AppointmentsError):
+    """El cambio de estado es válido, pero todavía no llegó su momento."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
+
+
 class IllegalStatusChange(AppointmentsError):
     def __init__(self, current: str, target: str) -> None:
         super().__init__(f"Una cita {current} no puede pasar a {target}.")

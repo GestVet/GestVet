@@ -88,6 +88,10 @@ class AppointmentResponse(BaseModel):
     cancellation_reason: str
     updated_by: int | None
     created_at: datetime
+    # Desde cuándo el servidor acepta completarla o marcar la inasistencia. La
+    # interfaz los usa para no ofrecer antes de tiempo lo que igual rechazaría.
+    completable_from: datetime
+    no_show_from: datetime
 
     @classmethod
     def from_entity(cls, appointment: Appointment) -> AppointmentResponse:
@@ -107,6 +111,8 @@ class AppointmentResponse(BaseModel):
             cancellation_reason=appointment.cancellation_reason,
             updated_by=appointment.updated_by,
             created_at=appointment.created_at,
+            completable_from=appointment.completable_from,
+            no_show_from=appointment.no_show_from,
         )
 
 

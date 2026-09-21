@@ -9,13 +9,18 @@ import pytest
 
 from gestvet.core.clinic_time import clinic_day_window
 from gestvet.modules.appointments.domain.entities import (
+    EARLY_COMPLETION_WINDOW,
     NO_SHOW_GRACE,
     TURNAROUND,
     Appointment,
     AppointmentStatus,
     AppointmentType,
 )
-from gestvet.modules.appointments.domain.exceptions import IllegalStatusChange, InvalidAppointment
+from gestvet.modules.appointments.domain.exceptions import (
+    IllegalStatusChange,
+    InvalidAppointment,
+    StatusChangeTooEarly,
+)
 
 BASE = datetime(2026, 9, 14, 10, 0, tzinfo=UTC)
 CLIENTE = 10
@@ -235,3 +240,59 @@ def test_la_ventana_del_dia_dura_veinticuatro_horas_y_excluye_los_vecinos() -> N
     assert inicio <= momento < fin
     assert momento - timedelta(days=1) < inicio
     assert momento + timedelta(days=1) >= fin
+
+
+def test_no_se_completa_una_cita_que_todavia_no_empezo() -> None:
+    cita = _cita()
+    cita.confirm(VETERINARIO)
+    momento = BASE - EARLY_COMPLETION_WINDOW - timedelta(minutes=1)
+
+    with pytest.raises(StatusChangeTooEarly, match="todavía no empezó"):
+        cita.complete(VETERINARIO, now=momento)
+    assert cita.status is AppointmentStatus.CONFIRMED
+
+
+@pytest.mark.parametrize("minutos_antes", [30, 10, 0])
+def test_se_completa_desde_media_hora_antes(minutos_antes: int) -> None:
+    cita = _cita()
+    cita.confirm(VETERINARIO)
+
+    cita.complete(VETERINARIO, now=BASE - timedelta(minutes=minutos_antes))
+
+    assert cita.status is AppointmentStatus.COMPLETED
+
+
+def test_no_se_marca_la_inasistencia_antes_de_la_hora() -> None:
+    cita = _cita()
+    cita.confirm(VETERINARIO)
+
+    with pytest.raises(StatusChangeTooEarly):
+        cita.mark_no_show(VETERINARIO, now=BASE - timedelta(minutes=1))
+    assert cita.status is AppointmentStatus.CONFIRMED
+
+
+def test_la_inasistencia_se_marca_desde_la_hora_de_la_cita() -> None:
+    cita = _cita()
+    cita.confirm(VETERINARIO)
+
+    cita.mark_no_show(VETERINARIO, now=BASE)
+
+    assert cita.status is AppointmentStatus.NO_SHOW
+
+
+def test_una_emergencia_se_completa_apenas_se_abre() -> None:
+    apertura = datetime.now(UTC)
+    cita = _cita(inicio=apertura)
+    cita.confirm(VETERINARIO)
+
+    cita.complete(VETERINARIO, now=apertura)
+
+    assert cita.status is AppointmentStatus.COMPLETED
+
+
+def test_una_cancelada_futura_dice_que_no_puede_y_no_que_todavia_no() -> None:
+    cita = _cita()
+    cita.cancel(CLIENTE, "Se me cruzo un viaje")
+
+    with pytest.raises(IllegalStatusChange):
+        cita.complete(VETERINARIO, now=BASE - timedelta(days=1))

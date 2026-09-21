@@ -51,6 +51,7 @@ from gestvet.modules.appointments.domain.exceptions import (
     OutsideAvailability,
     OverlappingAppointment,
     PetNotOwned,
+    StatusChangeTooEarly,
     VeterinarianUnavailable,
 )
 from gestvet.modules.appointments.ports.repositories import AppointmentQuery
@@ -312,7 +313,7 @@ async def _change_status(
         )
     except AppointmentNotFound as error:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
-    except IllegalStatusChange as error:
+    except (IllegalStatusChange, StatusChangeTooEarly) as error:
         raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
     except InvalidAppointment as error:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
