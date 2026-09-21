@@ -1053,23 +1053,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/payments/qr-charges/{charge_id}/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Simular la confirmación del banco (modo de prueba) */
-        post: operations["confirm_qr_charge_api_v1_payments_qr_charges__charge_id__confirm_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/payments/report": {
         parameters: {
             query?: never;
@@ -5353,37 +5336,6 @@ export interface operations {
         };
     };
     get_qr_charge_api_v1_payments_qr_charges__charge_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                charge_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QrChargeResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    confirm_qr_charge_api_v1_payments_qr_charges__charge_id__confirm_post: {
         parameters: {
             query?: never;
             header?: never;
