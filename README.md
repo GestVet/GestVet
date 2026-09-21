@@ -487,10 +487,14 @@ Detalles:
 
 ## Verificación de DNI
 
-- **Registro público.** Pide una autorización explícita (casilla sin marcar) y, al enviar, comprueba que el primer nombre y el primer apellido escritos correspondan al DNI. Nunca devuelve el nombre registrado: el formulario es público y no puede servir para averiguar a quién pertenece un DNI. Si el proveedor no está configurado o no responde, el registro sigue.
-- **Alta exprés de emergencia.** Con la autorización del cliente, el personal completa nombre y apellido desde el DNI con un botón. Cada consulta queda en *Movimientos* con quién la hizo y el DNI enmascarado.
-- **Proveedor.** Hoy Factiliza (`FACTILIZA_API_KEY`, 100 consultas gratis para empezar). De su respuesta se usan solo nombres y apellidos; dirección y ubigeo se descartan en el adaptador y no llegan a los logs. Apis.net.pe y Decolecta dejaron de ofrecer DNI al público por la Ley 29733.
-- **Para producción.** Conviene el convenio con RENIEC (servicio de verificación de identidad, S/ 0.40 a S/ 1.60 por consulta): los proveedores privados no documentan el origen de los datos y el riesgo legal es de la clínica. Cambiar de proveedor es un adaptador nuevo que satisfaga `core/identity_registry.py` y una línea en `get_identity_registry`; ningún caso de uso cambia.
+**Hoy no está en uso.** La única fuente prevista es RENIEC, y consultarla requiere un convenio con la entidad que la clínica todavía no tiene. Mientras tanto el DNI se registra tal como lo escribe la persona, sin comprobarlo. Cuando el convenio exista se integra RENIEC y la verificación entra en uso sin cambiar pantallas ni casos de uso.
+
+- **Por qué solo RENIEC.** Un proveedor privado no documenta de dónde saca los datos y el riesgo legal sería de la clínica (Ley 29733). Apis.net.pe y Decolecta, además, dejaron de ofrecer DNI al público.
+- **Cómo se enciende.** `core/identity_registry.py` es el puerto; `core/dni_reniec.py` devuelve hoy un registro apagado. Integrar RENIEC es escribir ahí el adaptador con el acceso que entregue el convenio y devolverlo desde `get_identity_registry`. De la respuesta se usan solo nombres y apellidos; lo demás se descarta en el adaptador y no llega a los logs.
+- **Qué cambia al encenderla.** La interfaz pregunta a `GET /api/v1/auth/identity-check` si la verificación está en uso, y con eso se activa lo que ya está construido:
+  - **Registro público.** Pide una autorización explícita (casilla sin marcar) y comprueba que el primer nombre y el primer apellido correspondan al DNI. Nunca devuelve el nombre registrado: el formulario es público y no puede servir para averiguar a quién pertenece un DNI. Si RENIEC no responde, el registro sigue.
+  - **Alta exprés de emergencia.** Con la autorización del cliente, el personal completa nombre y apellido desde el DNI con un botón. Cada consulta queda en *Movimientos* con quién la hizo y el DNI enmascarado.
+- **Mientras está apagada.** El registro no pide esa autorización, porque no habría consulta que autorizar, y el alta exprés no muestra el botón.
 
 ## Adjuntos
 

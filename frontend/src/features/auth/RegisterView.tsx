@@ -8,12 +8,17 @@ import FormMessage from '../../components/FormMessage'
 import Icon from '../../components/Icon'
 import { Button } from '../../components/ui/button'
 import { onSubmit } from '../../hooks/formSubmit'
+import { useIdentityCheck } from '../../hooks/useIdentityCheck'
 import { errorMessage } from '../../services/api'
 import { useSession } from '../../store/session'
 import AuthAside from './AuthAside'
 import AuthCard from './AuthCard'
 import RegisterFields from './RegisterFields'
-import { type RegisterForm, registerSchema } from './registerSchema'
+import {
+  type RegisterForm,
+  registerSchema,
+  registerSchemaWithIdentityCheck,
+} from './registerSchema'
 
 const PANEL = (
   <AuthAside
@@ -24,15 +29,16 @@ const PANEL = (
       { icon: 'emergencia', text: 'Abrir una emergencia a cualquier hora del día.' },
       { icon: 'carpeta', text: 'Seguir la historia clínica de cada mascota.' },
     ]}
-    note="Verificamos tu DNI para confirmar que eres tú. Con él te identificamos al llegar a la clínica."
+    note="Con tu DNI te identificamos al llegar a la clínica."
   />
 )
 
 export default function RegisterView() {
   const signIn = useSession((state) => state.signIn)
   const navigate = useNavigate()
+  const verificaDni = useIdentityCheck()
   const { register, handleSubmit, formState, control } = useForm<RegisterForm>({
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(verificaDni ? registerSchemaWithIdentityCheck : registerSchema),
     mode: 'onTouched',
     defaultValues: {
       first_name: '',
@@ -48,7 +54,7 @@ export default function RegisterView() {
 
   const crear = useMutation({
     mutationFn: async (valores: RegisterForm) => {
-      await registerClient({ ...valores, accepts_identity_check: true, accepts_terms: true })
+      await registerClient({ ...valores, accepts_terms: true })
       // El alta no devuelve token: se entra con las mismas credenciales.
       return login({ email: valores.email, password: valores.password })
     },

@@ -25,7 +25,7 @@ from gestvet.core.activity import ActivityKind
 from gestvet.core.activity_log import ActivityRow
 from gestvet.core.auth import get_token_service
 from gestvet.core.database import Base, get_session, get_session_factory
-from gestvet.core.dni_factiliza import get_identity_registry
+from gestvet.core.dni_reniec import get_identity_registry
 from gestvet.core.identity import Role
 from gestvet.core.identity_registry import IdentityRegistryUnavailable, PersonName
 from gestvet.core.llm import JsonCompletion, JsonCompletionRequest, LlmUnavailable
@@ -274,6 +274,10 @@ class FakeIdentityRegistry:
     def __init__(self) -> None:
         self.people: dict[str, PersonName] | None = None
         self.lookups: list[str] = []
+
+    @property
+    def available(self) -> bool:
+        return self.people is not None
 
     async def lookup(self, document_id: str) -> PersonName | None:
         if self.people is None:
