@@ -13,7 +13,7 @@ from gestvet.core.identity import Role
 from gestvet.modules.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
-from tests.conftest import VALID_PASSWORD, authorization_for, build_user
+from tests.conftest import DEFAULT_SPECIALTY_ID, VALID_PASSWORD, authorization_for, build_user
 
 STAFF_URL = "/api/v1/staff"
 USERS_URL = "/api/v1/users"
@@ -25,6 +25,7 @@ NUEVO_VETERINARIO = {
     "first_name": "Carla",
     "last_name": "Blanco",
     "role": Role.VETERINARIAN.value,
+    "specialty_ids": [DEFAULT_SPECIALTY_ID],
     "phone": "987654321",
 }
 
@@ -205,6 +206,7 @@ async def test_un_cliente_ve_los_veterinarios_para_reservar(
         "role",
         "average_rating",
         "review_count",
+        "specialties",
     }
     assert body["items"][0]["average_rating"] is None
     assert body["items"][0]["review_count"] == 0

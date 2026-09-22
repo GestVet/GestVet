@@ -14,11 +14,14 @@ import {
   formatearHora,
 } from '../../services/clinicTime'
 import DayStrip, { type DiaDeReserva } from './DayStrip'
-import VeterinarianTimes, { type OfertaDeVeterinario } from './VeterinarianTimes'
+import SpecialtyFilteredTimes from './SpecialtyFilteredTimes'
+import type { OfertaDeVeterinario } from './VeterinarianTimes'
 
 interface BookingSlotPickerProps {
   readonly appointmentTypeId: number
   readonly durationMinutes: number
+  /** Con qué elige filtrar; `null` cuando no marcó ninguna. */
+  readonly specialtyId: number | null
 }
 
 function ofertasDelDia(
@@ -31,6 +34,7 @@ function ofertasDelDia(
       veterinarianId: oferta.veterinarian_id,
       nombre: perfil?.full_name ?? 'Veterinario',
       calificacion: perfil?.average_rating ?? null,
+      especialidades: perfil?.specialties ?? [],
       windows: oferta.windows,
       slots: oferta.slots,
     }
@@ -73,6 +77,7 @@ function textoDeEleccion(scheduledAt: string, elegido: OfertaDeVeterinario | und
 export default function BookingSlotPicker({
   appointmentTypeId,
   durationMinutes,
+  specialtyId,
 }: BookingSlotPickerProps) {
   const { control, setValue, formState } = useFormContext<BookingForm>()
   const [veterinarianId, scheduledAt] = useWatch({
@@ -125,8 +130,10 @@ export default function BookingSlotPicker({
         La cita dura {durationMinutes} min. Las horas tachadas no se pueden elegir: están ocupadas, ya
         pasaron o no alcanzan antes de que termine el turno.
       </p>
-      <VeterinarianTimes
+      <SpecialtyFilteredTimes
+        key={specialtyId}
         ofertas={ofertas}
+        specialtyId={specialtyId}
         dia={dia}
         durationMinutes={durationMinutes}
         veterinarianId={Number(veterinarianId)}

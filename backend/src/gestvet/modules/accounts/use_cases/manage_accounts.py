@@ -23,7 +23,9 @@ from gestvet.modules.accounts.domain.exceptions import (
     EmailAlreadyRegistered,
     UserNotFound,
 )
+from gestvet.modules.accounts.ports.specialty_repository import SpecialtyRepository
 from gestvet.modules.accounts.ports.user_repository import PasswordHasher, UserRepository
+from gestvet.modules.accounts.use_cases.manage_specialties import ensure_specialties_exist
 
 # Dominio reservado, nunca resuelve de verdad: nadie puede recibir un correo
 # a esta dirección, así que no hay forma de que alguien "reclame" la cuenta
@@ -39,6 +41,10 @@ class RegisterStaffCommand:
     first_name: str
     last_name: str
     role: Role
+    # Cada alta de personal es hoy un veterinario, y uno sin especialidad no
+    # aparecería nunca en el filtro de reserva por especialidad: la pantalla
+    # de alta la exige desde el primer momento.
+    specialty_ids: frozenset[int]
     phone: str = ""
 
 
@@ -48,10 +54,12 @@ class RegisterStaff:
     def __init__(
         self,
         users: UserRepository,
+        specialties: SpecialtyRepository,
         hasher: PasswordHasher,
         activity: ActivityRecorder,
     ) -> None:
         self._users = users
+        self._specialties = specialties
         self._hasher = hasher
         self._activity = activity
 
@@ -59,6 +67,7 @@ class RegisterStaff:
         # El rol llega del cuerpo, pero acotado: la lista no incluye ADMIN, así
         # que esta pantalla no puede fabricar administradores.
         ensure_role_is_staff_assignable(command.role)
+        await ensure_specialties_exist(self._specialties, command.specialty_ids)
 
         candidate = User(
             email=command.email,
@@ -73,6 +82,7 @@ class RegisterStaff:
             raise EmailAlreadyRegistered(candidate.email)
 
         creado = await self._users.add(candidate)
+        await self._specialties.assign(creado.id or 0, command.specialty_ids)
         # El asiento lo firma quien da el alta, no la cuenta recien creada.
         await self._activity.record(command.actor_id, ActivityKind.STAFF_REGISTERED, creado.email)
         return creado

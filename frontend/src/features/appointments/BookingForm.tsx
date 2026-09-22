@@ -15,6 +15,7 @@ import { bookingSchema, type BookingForm as Valores } from './bookingSchema'
 const VACIO: Valores = {
   pet_id: '',
   appointment_type_id: '',
+  specialty_id: '',
   veterinarian_id: '',
   scheduled_at: '',
   description: '',
