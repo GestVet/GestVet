@@ -96,9 +96,10 @@ services:
       - key: ACCESS_TOKEN_TTL_SECONDS
         value: "3600"
 
-      # Asistente de IA (OpenRouter) y verificación de DNI (Factiliza) son
-      # opcionales: sin clave, esas features quedan apagadas y el resto de la
-      # app funciona igual (ver backend/src/gestvet/core/config.py).
+      # El asistente de IA (OpenRouter) es opcional: sin clave queda apagado y el
+      # resto de la app funciona igual (ver backend/src/gestvet/core/config.py).
+      # La verificación de DNI no se configura acá: espera el convenio con
+      # RENIEC (ver README, "Verificación de DNI").
       - key: OPENROUTER_API_KEY
         sync: false
       - key: OPENROUTER_MODEL
@@ -107,5 +108,3 @@ services:
         value: deepseek/deepseek-v4-flash-0731
       - key: OPENROUTER_TIMEOUT_SECONDS
         value: "45"
-      - key: FACTILIZA_API_KEY
-        sync: false

@@ -3,6 +3,7 @@ import type { Control, FieldErrors, UseFormRegister } from 'react-hook-form'
 import PasswordField from '../../components/PasswordField'
 import PhoneField from '../../components/PhoneField'
 import TextField from '../../components/TextField'
+import { useIdentityCheck } from '../../hooks/useIdentityCheck'
 import {
   LARGO_DNI,
   MAX_APELLIDO,
@@ -30,6 +31,8 @@ interface RegisterFieldsProps {
  * nombre o una letra en el DNI no llegan a mostrarse como error.
  */
 export default function RegisterFields({ register, control, errors }: RegisterFieldsProps) {
+  const verificaDni = useIdentityCheck()
+
   return (
     <>
       <div className="grid gap-5 sm:grid-cols-2">
@@ -103,7 +106,9 @@ export default function RegisterFields({ register, control, errors }: RegisterFi
       />
 
       <TermsConsentField control={control} error={errors.accepts_terms?.message} />
-      <IdentityConsentField control={control} error={errors.accepts_identity_check?.message} />
+      {verificaDni ? (
+        <IdentityConsentField control={control} error={errors.accepts_identity_check?.message} />
+      ) : null}
     </>
   )
 }

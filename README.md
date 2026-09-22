@@ -14,7 +14,9 @@ Por módulo, lo que el sistema resuelve hoy:
 
 **Citas** (`appointments`) — reserva, confirmación, finalización, cancelación (con motivo obligatorio) y marca de inasistencia, a mano o calculada sola al leer una cita que quedó vencida sin cerrar (no hace falta un proceso en segundo plano para eso). Completar una cita se acepta desde 30 minutos antes de su hora (quien llega temprano) y la inasistencia a mano, desde la hora misma; antes el servidor responde 409 y la interfaz muestra el botón deshabilitado con la hora en que se habilita. Las dos acciones piden confirmación. Apertura de emergencias sin elegir veterinario ni hora: el sistema asigna al veterinario de guardia menos cargado o, si no hay ninguno libre, a uno en turno de atención con el resto del día libre. El motivo de consulta muestra un aviso de "precio estimado, sujeto a variar según la atención".
 
-**Historia clínica** (`medical_records`) — entradas por tipo (consulta, vacuna, cirugía, control, carta de consentimiento, otro), adjuntos por entrada (ver "Adjuntos" más abajo), reporte en PDF de la historia completa de una mascota. La carta de consentimiento o el acuerdo de responsabilidad firmado en papel se escanea y se sube como un adjunto más: no hace falta ninguna pantalla aparte.
+**Historia clínica** (`medical_records`) — entradas por tipo (consulta, vacuna, cirugía, control, carta de consentimiento, otro), adjuntos por entrada (ver "Adjuntos" más abajo), reporte en PDF de la historia completa de una mascota. El consentimiento de una emergencia ya es digital (ver `consents`); la carta firmada en papel sigue sirviendo de respaldo y se escanea y se sube como un adjunto más, sin pantalla aparte.
+
+**Consentimientos** (`consents`) — textos versionados que el dueño acepta con una casilla y su nombre completo. El de riesgo de emergencia se firma al abrir la emergencia y nunca la frena. Después de evaluar a la mascota, el veterinario pide uno específico (pronóstico reservado, cirugía, anestesia, internación o eutanasia) con el detalle de lo que propone; el dueño lo acepta o rechaza desde su cuenta, avisado al instante, o lo firma en la pantalla del veterinario. Si la vida de la mascota corre peligro en una emergencia y no se ubica al responsable, el veterinario deja constancia de que atiende sin consentimiento, con su justificación. Lo que puede esperar sí espera: sin consentimiento de internación no se interna.
 
 **Pagos** (`billing`) — registro manual de pagos (efectivo, Yape, transferencia, otro), anulación con motivo, cobro por QR con el monto de catálogo o un monto libre que fija el personal (con un margen acotado sobre citas normales, sin margen en emergencias, porque el costo real recién se sabe al terminar la atención), reporte de ingresos por medio de pago. La confirmación de un cobro por QR avisa al cliente por WhatsApp. Mientras no haya un banco conectado, la pantalla del QR ofrece "Simular confirmación del banco" solo si `QR_SIMULATION_ENABLED` está encendida; sin definirla vale lo mismo que `DEBUG`. Apagada, `POST /api/v1/payments/qr-charges/{id}/confirm` responde 404 y el botón no aparece (`simulation_available` del cobro). En producción debe quedar apagada: con ella un cliente marcaría como pagado su propio cobro.
 
@@ -22,7 +24,7 @@ Por módulo, lo que el sistema resuelve hoy:
 
 **Reclamos** (`complaints`) — un cliente reclama sobre una cita propia, con el veterinario reclamado derivado de la cita (nunca elegido a mano), y puede adjuntar evidencia. La administración los revisa.
 
-**Internaciones** (`hospitalizations`) — apertura desde una cita completada, con notas de seguimiento y alta médica; el cliente ve el historial de internación de su mascota en modo lectura desde su propia ficha.
+**Internaciones** (`hospitalizations`) — apertura desde una cita completada, solo con el consentimiento de internación aceptado o la constancia de urgencia vital, con notas de seguimiento y alta médica; el cliente ve el historial de internación de su mascota en modo lectura desde su propia ficha.
 
 **Panel de indicadores** (`insights`, solo administración) — cuatro señales calculadas con reglas fijas sobre datos que el sistema ya registra, sin ningún modelo de inteligencia artificial de por medio: recordatorios de cuidado vencido (vacuna o control), riesgo de inasistencia (un cliente con historial de citas sin cerrar y una cita próxima), pagos que se alejan del monto típico de su tipo de cita, y veterinarios con reseñas bajas o reclamos recientes.
 
@@ -85,6 +87,7 @@ backend/
         ├── billing/              # pagos, cobros por QR y reportes
         ├── reviews/              # reseñas de veterinarios
         ├── complaints/           # reclamos de clientes
+        ├── consents/             # consentimientos informados
         ├── hospitalizations/     # internaciones
         └── insights/             # panel de indicadores (BI con reglas fijas)
             ├── domain/           # Python puro: entidades y reglas
@@ -95,7 +98,7 @@ backend/
                 └── persistence/  # SQLAlchemy
 ```
 
-Los diez módulos comparten exactamente esa misma forma de cuatro capas; se muestra una sola vez para no repetirla diez veces.
+Los once módulos comparten exactamente esa misma forma de cuatro capas; se muestra una sola vez para no repetirla once veces.
 
 Los módulos de dominio cuelgan de `modules/` y no de la raíz del paquete. Es lo que permite que los contratos los nombren con un comodín exacto y no lleven ni una excepción: el núcleo compartido y la raíz de composición quedan fuera por estar en otro sitio del árbol, no por estar exentos.
 
@@ -390,6 +393,7 @@ La identidad visual viene del proyecto original: el azul institucional, el verde
 | Panel y perfil | cuenta autenticada |
 | Citas | cuenta autenticada, recortado por rol |
 | Mis mascotas y reservar | cliente |
+| Consentimientos | cliente |
 | Mi agenda | veterinarios |
 | Clientes | personal de la clínica |
 | Emergencia (cliente nuevo) | personal de la clínica |
@@ -487,10 +491,14 @@ Detalles:
 
 ## Verificación de DNI
 
-- **Registro público.** Pide una autorización explícita (casilla sin marcar) y, al enviar, comprueba que el primer nombre y el primer apellido escritos correspondan al DNI. Nunca devuelve el nombre registrado: el formulario es público y no puede servir para averiguar a quién pertenece un DNI. Si el proveedor no está configurado o no responde, el registro sigue.
-- **Alta exprés de emergencia.** Con la autorización del cliente, el personal completa nombre y apellido desde el DNI con un botón. Cada consulta queda en *Movimientos* con quién la hizo y el DNI enmascarado.
-- **Proveedor.** Hoy Factiliza (`FACTILIZA_API_KEY`, 100 consultas gratis para empezar). De su respuesta se usan solo nombres y apellidos; dirección y ubigeo se descartan en el adaptador y no llegan a los logs. Apis.net.pe y Decolecta dejaron de ofrecer DNI al público por la Ley 29733.
-- **Para producción.** Conviene el convenio con RENIEC (servicio de verificación de identidad, S/ 0.40 a S/ 1.60 por consulta): los proveedores privados no documentan el origen de los datos y el riesgo legal es de la clínica. Cambiar de proveedor es un adaptador nuevo que satisfaga `core/identity_registry.py` y una línea en `get_identity_registry`; ningún caso de uso cambia.
+**Hoy no está en uso.** La única fuente prevista es RENIEC, y consultarla requiere un convenio con la entidad que la clínica todavía no tiene. Mientras tanto el DNI se registra tal como lo escribe la persona, sin comprobarlo. Cuando el convenio exista se integra RENIEC y la verificación entra en uso sin cambiar pantallas ni casos de uso.
+
+- **Por qué solo RENIEC.** Un proveedor privado no documenta de dónde saca los datos y el riesgo legal sería de la clínica (Ley 29733). Apis.net.pe y Decolecta, además, dejaron de ofrecer DNI al público.
+- **Cómo se enciende.** `core/identity_registry.py` es el puerto; `core/dni_reniec.py` devuelve hoy un registro apagado. Integrar RENIEC es escribir ahí el adaptador con el acceso que entregue el convenio y devolverlo desde `get_identity_registry`. De la respuesta se usan solo nombres y apellidos; lo demás se descarta en el adaptador y no llega a los logs.
+- **Qué cambia al encenderla.** La interfaz pregunta a `GET /api/v1/auth/identity-check` si la verificación está en uso, y con eso se activa lo que ya está construido:
+  - **Registro público.** Pide una autorización explícita (casilla sin marcar) y comprueba que el primer nombre y el primer apellido correspondan al DNI. Nunca devuelve el nombre registrado: el formulario es público y no puede servir para averiguar a quién pertenece un DNI. Si RENIEC no responde, el registro sigue.
+  - **Alta exprés de emergencia.** Con la autorización del cliente, el personal completa nombre y apellido desde el DNI con un botón. Cada consulta queda en *Movimientos* con quién la hizo y el DNI enmascarado.
+- **Mientras está apagada.** El registro no pide esa autorización, porque no habría consulta que autorizar, y el alta exprés no muestra el botón.
 
 ## Adjuntos
 
@@ -506,6 +514,39 @@ Un archivo ajeno responde 404, igual que uno inexistente. La respuesta lleva el 
 El token vive en el navegador y un enlace común no lo manda, así que el frontend pide el archivo por el cliente HTTP y lo abre desde memoria (`services/descargas.ts`).
 
 **Paso manual en producción:** si el bucket de Supabase se creó público, hay que pasarlo a privado desde el Dashboard (Storage → `attachments` → Edit bucket → desmarcar *Public bucket*). El backend lo lee con la clave de servicio, así que nada deja de funcionar.
+
+## Consentimientos informados
+
+El módulo `consents` guarda qué texto aceptó quién, cuándo y por qué vía. Cubre dos momentos: la aceptación del riesgo antes de abrir una emergencia, y los consentimientos específicos que pide el veterinario después de evaluar a la mascota.
+
+- **Textos versionados** (`consent_templates`). Cada tipo (`ConsentKind`) tiene su línea de versiones. Una versión no se edita nunca: corregir el texto es sembrar una nueva en una migración y desactivar la anterior, porque hay firmas que apuntan a ella. La migración 0026 siembra la versión 1 de `emergency_risk`; la 0027, la de `high_risk` (pronóstico reservado), `procedure` (cirugía o procedimiento invasivo), `anesthesia`, `hospitalization` y `euthanasia`. Son borradores que debe revisar un médico veterinario o un abogado.
+- **Firmas** (`consents`). Cada una copia el texto tal como se mostró (`text_snapshot`) con su huella SHA-256, el nombre de quien firma, el canal (`online` o `in_person`), el testigo si fue en persona, la IP y el navegador. La IP y el navegador no salen en ninguna respuesta.
+- **Cómo se firma.** Casilla marcada y nombre completo, las dos cosas: sin la casilla el servidor ni acepta el cuerpo, y el nombre necesita al menos dos palabras. Rechazar no pide nombre, porque no firma nada; admite un motivo opcional.
+- **Emergencias.** `POST /api/v1/appointments/emergency` y `/emergency/walk-in` exigen `risk_consent_id`: una aceptación del mismo cliente y la misma mascota, firmada hace menos de 30 minutos y que ninguna otra cita haya usado. `appointments` la lee de la tabla ajena con un puerto de lectura. Es lo único que se pide para abrirla: la atención que salva la vida no espera ningún otro papel.
+
+### Pedidos del veterinario
+
+- **Pedir.** Desde la pestaña *Consentimientos* de una cita propia (no cancelada), el veterinario elige el tipo y completa el detalle: procedimiento (obligatorio en cirugía, anestesia y eutanasia), pronóstico, costo estimado en soles y observaciones. El detalle se copia debajo del texto de la plantilla, así que lo que se firma es exactamente lo que el dueño leyó. No puede haber dos pedidos del mismo tipo esperando respuesta en la misma cita.
+- **Responder en línea.** El dueño recibe el aviso al instante por el tema `consents` del canal en tiempo real y responde en *Consentimientos* (`/consentimientos`): pendientes primero, con el texto completo, y después el historial. Aceptar pide la casilla y el nombre, que viene del perfil y se puede corregir. Rechazar pide confirmación y recuerda llamar a la clínica. El veterinario ve la respuesta sin recargar.
+- **Firmar en persona.** Sobre un pedido pendiente, *Firmar en presencia del responsable* muestra el texto en la pantalla del veterinario para que el responsable marque la casilla y escriba su nombre. El canal queda `in_person` y el veterinario, como testigo.
+- **Vencimiento.** Un pedido sin respuesta vence a las 24 horas. No hay proceso en segundo plano: el estado efectivo se calcula al leer, igual que la inasistencia de una cita. Vencido, no se responde; se pide de nuevo.
+- **Urgencia vital.** Nunca se frena la atención que salva la vida. Solo en una cita de emergencia, si el responsable no está y no se lo puede ubicar, el veterinario registra *Continuar sin consentimiento (urgencia vital)*: queda un consentimiento `waived_emergency` con su justificación obligatoria (de 20 a 1000 caracteres), a su nombre y a la vista del dueño. En una cita común no se ofrece y el servidor lo rechaza.
+- **Lo que puede esperar, espera.** Abrir una internación exige, para esa cita, un consentimiento `hospitalization` aceptado o eximido por urgencia vital. `hospitalizations` lo pregunta con un puerto de lectura sobre la tabla de `consents`. Si falta, responde 409 con el camino a seguir, y la pantalla ofrece pedirlo en un clic.
+- **Bitácora.** Cada paso deja su asiento en *Movimientos*: `consent_requested`, `consent_accepted`, `consent_declined` y `consent_waived`.
+
+| Endpoint | Quién |
+| --- | --- |
+| `GET /api/v1/consents/templates/current?kind=` | permiso `emergencies.open`, `emergencies.open_walk_in` o `consents.request` |
+| `POST /api/v1/consents/emergency-risk` | permiso `emergencies.open` |
+| `POST /api/v1/consents/emergency-risk/in-person` | permiso `emergencies.open_walk_in` |
+| `POST /api/v1/consents` | permiso `consents.request`, sobre una cita propia |
+| `POST /api/v1/consents/{id}/accept-in-person` | permiso `consents.request` |
+| `POST /api/v1/consents/waive` | permiso `consents.request`, solo en emergencias |
+| `POST /api/v1/consents/{id}/accept` y `/decline` | permiso `consents.respond`, solo el dueño |
+| `GET /api/v1/consents?appointment_id=&status=` | el cliente ve los suyos; el personal, los de una cita que atiende |
+| `GET /api/v1/consents/{id}` | su dueño o el personal |
+
+Un consentimiento o una cita ajenos responden 404, igual que en el resto de la API. `consents.request` es del veterinario y `consents.respond` del cliente; la migración 0028 los siembra en los roles de sistema.
 
 ## Carnet de vacunas
 

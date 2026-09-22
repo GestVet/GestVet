@@ -30,6 +30,7 @@ import {
   Download,
   Eye,
   EyeOff,
+  FilePenLine,
   FolderHeart,
   GripVertical,
   Hash,
@@ -123,6 +124,7 @@ export const ICONS = {
   carpeta: FolderHeart,
   engranaje: Settings,
   permisos: ShieldCheck,
+  consentimiento: FilePenLine,
 
   // Campos de formulario: acompañan a la etiqueta, no la reemplazan.
   telefono: Phone,

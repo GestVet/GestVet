@@ -53,7 +53,8 @@ class RegisterClient:
             raise DocumentIdRequired()
         if not command.accepts_terms:
             raise TermsNotAccepted()
-        if not command.accepts_identity_check:
+        # Sin verificación en uso no hay nada que autorizar.
+        if self._identity.available and not command.accepts_identity_check:
             raise IdentityCheckConsentRequired()
 
         candidate = User(

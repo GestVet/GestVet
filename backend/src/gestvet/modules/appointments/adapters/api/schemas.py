@@ -32,6 +32,8 @@ class BookAppointmentRequest(BaseModel):
 class OpenEmergencyRequest(BaseModel):
     pet_id: int = Field(ge=1)
     description: str = Field(default="", max_length=MAX_DESCRIPTION_LENGTH)
+    # La aceptación del riesgo que el dueño acaba de firmar en `/consents`.
+    risk_consent_id: int = Field(ge=1)
 
 
 class OpenWalkInEmergencyRequest(BaseModel):
@@ -44,6 +46,7 @@ class OpenWalkInEmergencyRequest(BaseModel):
     client_id: int = Field(ge=1)
     pet_id: int = Field(ge=1)
     description: str = Field(default="", max_length=MAX_DESCRIPTION_LENGTH)
+    risk_consent_id: int = Field(ge=1)
 
 
 class CancelAppointmentRequest(BaseModel):
@@ -88,6 +91,7 @@ class AppointmentResponse(BaseModel):
     status_label: str
     cancellation_reason: str
     updated_by: int | None
+    risk_consent_id: int | None
     created_at: datetime
     # Desde cuándo el servidor acepta completarla o marcar la inasistencia. La
     # interfaz los usa para no ofrecer antes de tiempo lo que igual rechazaría.
@@ -119,6 +123,7 @@ class AppointmentResponse(BaseModel):
             status_label=status.label,
             cancellation_reason=appointment.cancellation_reason,
             updated_by=appointment.updated_by,
+            risk_consent_id=appointment.risk_consent_id,
             created_at=appointment.created_at,
             completable_from=appointment.completable_from,
             no_show_from=appointment.no_show_from,

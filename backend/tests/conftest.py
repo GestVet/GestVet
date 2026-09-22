@@ -25,7 +25,7 @@ from gestvet.core.activity import ActivityKind
 from gestvet.core.activity_log import ActivityRow
 from gestvet.core.auth import get_token_service
 from gestvet.core.database import Base, get_session, get_session_factory
-from gestvet.core.dni_factiliza import get_identity_registry
+from gestvet.core.dni_reniec import get_identity_registry
 from gestvet.core.identity import Role
 from gestvet.core.identity_registry import IdentityRegistryUnavailable, PersonName
 from gestvet.core.llm import JsonCompletion, JsonCompletionRequest, LlmUnavailable
@@ -58,6 +58,8 @@ from gestvet.modules.availability.adapters.persistence import (
 from gestvet.modules.billing.adapters.persistence import models as billing_models
 from gestvet.modules.complaints.adapters.api.dependencies import get_evidence_storage
 from gestvet.modules.complaints.adapters.persistence import models as complaints_models
+from gestvet.modules.consents.adapters.persistence import models as consents_models
+from gestvet.modules.consents.adapters.persistence.models import ConsentTemplateRow
 from gestvet.modules.hospitalizations.adapters.persistence import (
     models as hospitalizations_models,
 )
@@ -88,6 +90,7 @@ REGISTERED_MODELS = (
     availability_models,
     billing_models,
     complaints_models,
+    consents_models,
     hospitalizations_models,
     medical_records_models,
     pets_models,
@@ -153,17 +156,41 @@ CATALOG_MIGRATION = (
     / "versions"
     / "0020_crear_el_catalogo_de_especies_y_razas.py"
 )
+CONSENTS_MIGRATION = CATALOG_MIGRATION.with_name("0026_crear_los_consentimientos_informados.py")
+CONSENT_REQUESTS_MIGRATION = CATALOG_MIGRATION.with_name(
+    "0027_pedir_consentimientos_especificos.py"
+)
 
 
-def load_catalog_migration() -> ModuleType:
-    """La migración que siembra el catálogo: se lee de ahí para no copiar la lista."""
-    spec = importlib.util.spec_from_file_location("catalog_migration", CATALOG_MIGRATION)
+def load_migration(path: Path) -> ModuleType:
+    """Una migración que siembra datos: se lee de ahí para no copiarlos."""
+    spec = importlib.util.spec_from_file_location(path.stem, path)
     if spec is None or spec.loader is None:
-        raise RuntimeError(f"No se pudo cargar {CATALOG_MIGRATION}.")
+        raise RuntimeError(f"No se pudo cargar {path}.")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
+
+def load_catalog_migration() -> ModuleType:
+    return load_migration(CATALOG_MIGRATION)
+
+
+# El texto de riesgo de emergencia que siembra la migración 0026, con su id.
+EMERGENCY_RISK_TEMPLATE_ID = 1
+EMERGENCY_RISK_TEMPLATE = {
+    "id": EMERGENCY_RISK_TEMPLATE_ID,
+    **load_migration(CONSENTS_MIGRATION).plantilla_de_riesgo_de_emergencia(),
+}
+
+# Los textos específicos que siembra la migración 0027, con ids a continuación.
+SPECIFIC_CONSENT_TEMPLATES = [
+    {"id": index, **row}
+    for index, row in enumerate(
+        load_migration(CONSENT_REQUESTS_MIGRATION).plantillas_especificas(),
+        start=EMERGENCY_RISK_TEMPLATE_ID + 1,
+    )
+]
 
 _catalog_migration = load_catalog_migration()
 CATALOG_SPECIES_ROWS = [
@@ -220,6 +247,11 @@ async def session() -> AsyncIterator[AsyncSession]:
         await connection.execute(insert(PetBreedRow), CATALOG_BREED_ROWS)
         # Y el de especialidades: sin él no se puede dar de alta a un veterinario.
         await connection.execute(insert(SpecialtyRow), CATALOG_SPECIALTY_ROWS)
+        # Y los textos de consentimiento: sin el de riesgo no se abre ninguna
+        # emergencia, y sin los específicos el veterinario no pide ninguno.
+        await connection.execute(
+            insert(ConsentTemplateRow), [EMERGENCY_RISK_TEMPLATE, *SPECIFIC_CONSENT_TEMPLATES]
+        )
 
     factory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     async with factory() as open_session:
@@ -274,6 +306,10 @@ class FakeIdentityRegistry:
     def __init__(self) -> None:
         self.people: dict[str, PersonName] | None = None
         self.lookups: list[str] = []
+
+    @property
+    def available(self) -> bool:
+        return self.people is not None
 
     async def lookup(self, document_id: str) -> PersonName | None:
         if self.people is None:

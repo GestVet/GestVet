@@ -279,6 +279,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/identity-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Si la verificación de DNI está en uso */
+        get: operations["read_identity_check_api_v1_auth_identity_check_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -635,6 +652,160 @@ export interface paths {
         put?: never;
         /** Adjuntar evidencia a un reclamo propio */
         post: operations["upload_evidence_api_v1_complaints__complaint_id__evidence_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/consents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consentimientos de una cita o del cliente */
+        get: operations["list_consents_api_v1_consents_get"];
+        put?: never;
+        /** Pedir un consentimiento específico sobre una cita */
+        post: operations["request_consent_api_v1_consents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/consents/emergency-risk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Aceptar en línea el riesgo de una emergencia */
+        post: operations["accept_emergency_risk_api_v1_consents_emergency_risk_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/consents/emergency-risk/in-person": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Registrar en el mostrador que el responsable aceptó el riesgo */
+        post: operations["record_in_person_emergency_risk_api_v1_consents_emergency_risk_in_person_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/consents/templates/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Texto vigente de un tipo de consentimiento */
+        get: operations["current_template_api_v1_consents_templates_current_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/consents/waive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Registrar la atención sin consentimiento por urgencia vital */
+        post: operations["waive_consent_api_v1_consents_waive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/consents/{consent_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ver un consentimiento */
+        get: operations["get_consent_api_v1_consents__consent_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/consents/{consent_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Aceptar en línea un consentimiento pedido */
+        post: operations["accept_consent_api_v1_consents__consent_id__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/consents/{consent_id}/accept-in-person": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Registrar que el responsable firmó el pedido en presencia del veterinario */
+        post: operations["accept_consent_in_person_api_v1_consents__consent_id__accept_in_person_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/consents/{consent_id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rechazar un consentimiento pedido */
+        post: operations["decline_consent_api_v1_consents__consent_id__decline_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1486,6 +1657,30 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AcceptConsentRequest */
+        AcceptConsentRequest: {
+            /**
+             * Accepted
+             * @constant
+             */
+            accepted: true;
+            /** Signer Name */
+            signer_name: string;
+        };
+        /** AcceptEmergencyRiskRequest */
+        AcceptEmergencyRiskRequest: {
+            /**
+             * Accepted
+             * @constant
+             */
+            accepted: true;
+            /** Pet Id */
+            pet_id: number;
+            /** Signer Name */
+            signer_name: string;
+            /** Template Id */
+            template_id: number;
+        };
         /** AccessRoleListResponse */
         AccessRoleListResponse: {
             /** Items */
@@ -1531,7 +1726,7 @@ export interface components {
          *     historial.
          * @enum {string}
          */
-        ActivityKind: "signed_in" | "client_registered" | "profile_updated" | "staff_registered" | "staff_specialties_updated" | "user_status_changed" | "guard_duty_toggled" | "pet_registered" | "pet_status_changed" | "pet_status_corrected" | "pet_profile_updated" | "pet_clinical_profile_updated" | "slot_published" | "slot_withdrawn" | "shift_assigned" | "shift_removed" | "weekly_plan_applied" | "shift_change_requested" | "shift_change_resolved" | "appointment_booked" | "emergency_opened" | "appointment_confirmed" | "appointment_completed" | "appointment_cancelled" | "appointment_no_show" | "clinical_entry_added" | "attachment_uploaded" | "attachment_deleted" | "payment_registered" | "payment_voided" | "review_submitted" | "complaint_filed" | "hospitalization_opened" | "hospitalization_note_added" | "hospitalization_discharged" | "access_role_created" | "access_role_updated" | "access_role_deleted" | "access_role_assigned" | "document_looked_up";
+        ActivityKind: "signed_in" | "client_registered" | "profile_updated" | "staff_registered" | "staff_specialties_updated" | "user_status_changed" | "guard_duty_toggled" | "pet_registered" | "pet_status_changed" | "pet_status_corrected" | "pet_profile_updated" | "pet_clinical_profile_updated" | "slot_published" | "slot_withdrawn" | "shift_assigned" | "shift_removed" | "weekly_plan_applied" | "shift_change_requested" | "shift_change_resolved" | "appointment_booked" | "emergency_opened" | "appointment_confirmed" | "appointment_completed" | "appointment_cancelled" | "appointment_no_show" | "clinical_entry_added" | "attachment_uploaded" | "attachment_deleted" | "payment_registered" | "payment_voided" | "review_submitted" | "complaint_filed" | "consent_accepted" | "consent_requested" | "consent_declined" | "consent_waived" | "hospitalization_opened" | "hospitalization_note_added" | "hospitalization_discharged" | "access_role_created" | "access_role_updated" | "access_role_deleted" | "access_role_assigned" | "document_looked_up";
         /** ActivityPageResponse */
         ActivityPageResponse: {
             /** Items */
@@ -1651,6 +1846,8 @@ export interface components {
             pet_id: number;
             /** Pet Name */
             pet_name: string;
+            /** Risk Consent Id */
+            risk_consent_id: number | null;
             /**
              * Scheduled At
              * Format: date-time
@@ -1971,6 +2168,133 @@ export interface components {
             /** Veterinarian Name */
             veterinarian_name: string;
         };
+        /**
+         * ConsentChannel
+         * @enum {string}
+         */
+        ConsentChannel: "online" | "in_person";
+        /**
+         * ConsentDetailsPayload
+         * @description Lo que el veterinario agrega al texto. Qué es obligatorio lo decide el dominio por tipo.
+         */
+        "ConsentDetailsPayload-Input": {
+            /** Estimated Cost */
+            estimated_cost?: number | string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Procedure */
+            procedure?: string | null;
+            /** Prognosis */
+            prognosis?: string | null;
+        };
+        /**
+         * ConsentDetailsPayload
+         * @description Lo que el veterinario agrega al texto. Qué es obligatorio lo decide el dominio por tipo.
+         */
+        "ConsentDetailsPayload-Output": {
+            /** Estimated Cost */
+            estimated_cost?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Procedure */
+            procedure?: string | null;
+            /** Prognosis */
+            prognosis?: string | null;
+        };
+        /**
+         * ConsentKind
+         * @description Para qué se pide el consentimiento.
+         *
+         *     Cada tipo tiene su propia línea de versiones del texto. Sumar uno es
+         *     agregar el valor acá y sembrar su primera versión en una migración: las
+         *     tablas guardan el tipo como texto y no cambian.
+         * @enum {string}
+         */
+        ConsentKind: "emergency_risk" | "high_risk" | "procedure" | "anesthesia" | "hospitalization" | "euthanasia";
+        /** ConsentListResponse */
+        ConsentListResponse: {
+            /** Appointment Is Emergency */
+            appointment_is_emergency?: boolean | null;
+            /** Items */
+            items: components["schemas"]["ConsentResponse"][];
+        };
+        /** ConsentResponse */
+        ConsentResponse: {
+            /** Appointment Id */
+            appointment_id: number | null;
+            channel: components["schemas"]["ConsentChannel"] | null;
+            /** Channel Label */
+            channel_label: string | null;
+            /** Client Id */
+            client_id: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decided At */
+            decided_at: string | null;
+            /** Decision Reason */
+            decision_reason: string | null;
+            details: components["schemas"]["ConsentDetailsPayload-Output"] | null;
+            /** Expires At */
+            expires_at: string | null;
+            /** Id */
+            id: number;
+            kind: components["schemas"]["ConsentKind"];
+            /** Kind Label */
+            kind_label: string;
+            /** Pet Id */
+            pet_id: number;
+            /** Pet Name */
+            pet_name: string | null;
+            /** Requested By */
+            requested_by: number | null;
+            /** Requested By Name */
+            requested_by_name: string | null;
+            /** Signer Name */
+            signer_name: string | null;
+            /** Signer User Id */
+            signer_user_id: number | null;
+            status: components["schemas"]["ConsentStatus"];
+            /** Status Label */
+            status_label: string;
+            /** Template Id */
+            template_id: number;
+            /** Text Sha256 */
+            text_sha256: string;
+            /** Text Snapshot */
+            text_snapshot: string;
+            /** Witness Id */
+            witness_id: number | null;
+            /** Witness Name */
+            witness_name: string | null;
+        };
+        /**
+         * ConsentStatus
+         * @description Estado de un consentimiento.
+         *
+         *     `expired` no se guarda nunca: un pedido pendiente vence solo, y el estado
+         *     se calcula al leerlo (ver `Consent.effective_status`).
+         * @enum {string}
+         */
+        ConsentStatus: "pending" | "accepted" | "declined" | "expired" | "waived_emergency";
+        /** ConsentTemplateResponse */
+        ConsentTemplateResponse: {
+            /** Body */
+            body: string;
+            /** Id */
+            id: number;
+            kind: components["schemas"]["ConsentKind"];
+            /** Kind Label */
+            kind_label: string;
+            /** Text */
+            text: string;
+            /** Title */
+            title: string;
+            /** Version */
+            version: number;
+        };
         /** CorrectPetStatusRequest */
         CorrectPetStatusRequest: {
             /** Is Active */
@@ -2062,6 +2386,11 @@ export interface components {
             day: string;
             /** Veterinarians */
             veterinarians: components["schemas"]["VeterinarianOpenTimesResponse"][];
+        };
+        /** DeclineConsentRequest */
+        DeclineConsentRequest: {
+            /** Reason */
+            reason?: string | null;
         };
         /** DischargeRequest */
         DischargeRequest: {
@@ -2195,6 +2524,11 @@ export interface components {
             /** Status Label */
             status_label: string;
         };
+        /** IdentityCheckResponse */
+        IdentityCheckResponse: {
+            /** Available */
+            available: boolean;
+        };
         /** LayoutPreferencesRequest */
         LayoutPreferencesRequest: {
             /** Dashboard Blocks */
@@ -2292,6 +2626,8 @@ export interface components {
             description: string;
             /** Pet Id */
             pet_id: number;
+            /** Risk Consent Id */
+            risk_consent_id: number;
         };
         /** OpenHospitalizationRequest */
         OpenHospitalizationRequest: {
@@ -2325,6 +2661,8 @@ export interface components {
             description: string;
             /** Pet Id */
             pet_id: number;
+            /** Risk Consent Id */
+            risk_consent_id: number;
         };
         /** PaymentAnomalyListResponse */
         PaymentAnomalyListResponse: {
@@ -2431,7 +2769,7 @@ export interface components {
          * Permission
          * @enum {string}
          */
-        Permission: "pets.manage_own" | "pets.register_for_owner" | "pets.read_any" | "pets.correct_status" | "pets.edit_clinical_profile" | "pets.manage_catalog" | "pets.overview_read" | "appointments.read" | "appointments.book" | "appointments.attend" | "appointments.cancel" | "emergencies.open" | "emergencies.open_walk_in" | "schedule.read" | "schedule.read_own" | "schedule.request_change" | "schedule.manage" | "veterinarians.read" | "specialties.manage_catalog" | "clinical_records.read" | "clinical_records.write" | "hospitalizations.read" | "hospitalizations.manage" | "payments.read" | "payments.qr" | "payments.register" | "payments.void" | "payments.report" | "complaints.read" | "complaints.file" | "reviews.read" | "reviews.submit" | "clients.read" | "clients.register_walk_in" | "clients.update_contact" | "staff.read" | "staff.manage" | "users.change_status" | "activity.read" | "insights.read" | "roles.manage";
+        Permission: "pets.manage_own" | "pets.register_for_owner" | "pets.read_any" | "pets.correct_status" | "pets.edit_clinical_profile" | "pets.manage_catalog" | "pets.overview_read" | "appointments.read" | "appointments.book" | "appointments.attend" | "appointments.cancel" | "emergencies.open" | "emergencies.open_walk_in" | "schedule.read" | "schedule.read_own" | "schedule.request_change" | "schedule.manage" | "veterinarians.read" | "specialties.manage_catalog" | "clinical_records.read" | "clinical_records.write" | "hospitalizations.read" | "hospitalizations.manage" | "consents.request" | "consents.respond" | "payments.read" | "payments.qr" | "payments.register" | "payments.void" | "payments.report" | "complaints.read" | "complaints.file" | "reviews.read" | "reviews.submit" | "clients.read" | "clients.register_walk_in" | "clients.update_contact" | "staff.read" | "staff.manage" | "users.change_status" | "activity.read" | "insights.read" | "roles.manage";
         /** PermissionCatalogResponse */
         PermissionCatalogResponse: {
             /** Groups */
@@ -2608,6 +2946,25 @@ export interface components {
             /** Count */
             count: number;
         };
+        /**
+         * RecordInPersonEmergencyRiskRequest
+         * @description Acá sí viaja `client_id`: firma el responsable, no la cuenta que lo registra.
+         */
+        RecordInPersonEmergencyRiskRequest: {
+            /**
+             * Accepted
+             * @constant
+             */
+            accepted: true;
+            /** Client Id */
+            client_id: number;
+            /** Pet Id */
+            pet_id: number;
+            /** Signer Name */
+            signer_name: string;
+            /** Template Id */
+            template_id: number;
+        };
         /** RecordVaccinationRequest */
         RecordVaccinationRequest: {
             /**
@@ -2642,9 +2999,9 @@ export interface components {
         RegisterClientRequest: {
             /**
              * Accepts Identity Check
-             * @constant
+             * @default false
              */
-            accepts_identity_check: true;
+            accepts_identity_check: boolean;
             /**
              * Accepts Terms
              * @constant
@@ -2752,6 +3109,13 @@ export interface components {
              * @default
              */
             phone: string;
+        };
+        /** RequestConsentRequest */
+        RequestConsentRequest: {
+            /** Appointment Id */
+            appointment_id: number;
+            details?: components["schemas"]["ConsentDetailsPayload-Input"];
+            kind: components["schemas"]["ConsentKind"];
         };
         /** ResetPasswordRequest */
         ResetPasswordRequest: {
@@ -3239,6 +3603,14 @@ export interface components {
         VoidPaymentRequest: {
             /** Reason */
             reason: string;
+        };
+        /** WaiveConsentRequest */
+        WaiveConsentRequest: {
+            /** Appointment Id */
+            appointment_id: number;
+            /** Justification */
+            justification: string;
+            kind: components["schemas"]["ConsentKind"];
         };
         /** WeeklyPlanRequest */
         WeeklyPlanRequest: {
@@ -3862,6 +4234,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_identity_check_api_v1_auth_identity_check_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityCheckResponse"];
                 };
             };
         };
@@ -4666,6 +5058,339 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EvidenceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_consents_api_v1_consents_get: {
+        parameters: {
+            query?: {
+                /** @description Cita consultada; obligatoria para el personal */
+                appointment_id?: number | null;
+                /** @description Estado efectivo: `pending` no trae los vencidos */
+                status?: components["schemas"]["ConsentStatus"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_consent_api_v1_consents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestConsentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_emergency_risk_api_v1_consents_emergency_risk_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptEmergencyRiskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_in_person_emergency_risk_api_v1_consents_emergency_risk_in_person_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordInPersonEmergencyRiskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    current_template_api_v1_consents_templates_current_get: {
+        parameters: {
+            query?: {
+                kind?: components["schemas"]["ConsentKind"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentTemplateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    waive_consent_api_v1_consents_waive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WaiveConsentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_consent_api_v1_consents__consent_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                consent_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_consent_api_v1_consents__consent_id__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                consent_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptConsentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_consent_in_person_api_v1_consents__consent_id__accept_in_person_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                consent_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptConsentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decline_consent_api_v1_consents__consent_id__decline_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                consent_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeclineConsentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentResponse"];
                 };
             };
             /** @description Validation Error */

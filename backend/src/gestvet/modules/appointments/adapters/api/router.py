@@ -29,6 +29,7 @@ from gestvet.modules.appointments.adapters.api.dependencies import (
     AppointmentTypeRepositoryDep,
     ChangeStatusDep,
     PetDirectoryDep,
+    RiskConsentDirectoryDep,
     ScheduleDirectoryDep,
 )
 from gestvet.modules.appointments.adapters.api.schemas import (
@@ -52,6 +53,7 @@ from gestvet.modules.appointments.domain.exceptions import (
     OutsideAvailability,
     OverlappingAppointment,
     PetNotOwned,
+    RiskConsentRejected,
     StatusChangeTooEarly,
     VeterinarianUnavailable,
 )
@@ -213,16 +215,18 @@ async def open_emergency(
     types: AppointmentTypeRepositoryDep,
     pets: PetDirectoryDep,
     schedule: ScheduleDirectoryDep,
+    consents: RiskConsentDirectoryDep,
     activity: ActivityRecorderDep,
     events: EventPublisherDep,
     labels: AppointmentLabelsDep,
 ) -> AppointmentResponse:
-    use_case = OpenEmergency(appointments, types, pets, schedule, activity)
+    use_case = OpenEmergency(appointments, types, pets, schedule, consents, activity)
     try:
         appointment = await use_case(
             OpenEmergencyCommand(
                 client_id=client.user_id,
                 pet_id=payload.pet_id,
+                risk_consent_id=payload.risk_consent_id,
                 description=payload.description,
             )
         )
@@ -230,6 +234,8 @@ async def open_emergency(
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
     except NoEmergencyVeterinarian as error:
         raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
+    except RiskConsentRejected as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
     return await _notify_change(events, appointment, labels)
 
 
@@ -246,16 +252,18 @@ async def open_walk_in_emergency(
     types: AppointmentTypeRepositoryDep,
     pets: PetDirectoryDep,
     schedule: ScheduleDirectoryDep,
+    consents: RiskConsentDirectoryDep,
     activity: ActivityRecorderDep,
     events: EventPublisherDep,
     labels: AppointmentLabelsDep,
 ) -> AppointmentResponse:
-    use_case = OpenEmergency(appointments, types, pets, schedule, activity)
+    use_case = OpenEmergency(appointments, types, pets, schedule, consents, activity)
     try:
         appointment = await use_case(
             OpenEmergencyCommand(
                 client_id=payload.client_id,
                 pet_id=payload.pet_id,
+                risk_consent_id=payload.risk_consent_id,
                 description=payload.description,
             )
         )
@@ -263,6 +271,8 @@ async def open_walk_in_emergency(
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(error)) from error
     except NoEmergencyVeterinarian as error:
         raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
+    except RiskConsentRejected as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
     return await _notify_change(events, appointment, labels)
 
 

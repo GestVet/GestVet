@@ -9,6 +9,7 @@ import {
 import PhoneField from '../../components/PhoneField'
 import SectionHeading from '../../components/SectionHeading'
 import TextField from '../../components/TextField'
+import { useIdentityCheck } from '../../hooks/useIdentityCheck'
 import {
   LARGO_DNI,
   MAX_APELLIDO,
@@ -34,6 +35,7 @@ export default function WalkInClientFields({
   setValue,
 }: WalkInClientFieldsProps) {
   const dni = useWatch({ control, name: 'document_id' })
+  const verificaDni = useIdentityCheck()
   // Lo que llega del DNI se escribe en los campos y se sigue pudiendo corregir.
   const completarNombre = (nombres: string, apellidos: string) => {
     setValue('first_name', nombres, { shouldValidate: true, shouldDirty: true })
@@ -64,7 +66,7 @@ export default function WalkInClientFields({
           name="phone"
           error={errors.phone?.message}
         />
-        <DocumentLookup documentId={dni} onFound={completarNombre} />
+        {verificaDni ? <DocumentLookup documentId={dni} onFound={completarNombre} /> : null}
         <TextField
           id="first_name"
           label="Nombre"

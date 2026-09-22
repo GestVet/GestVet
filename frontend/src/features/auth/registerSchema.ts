@@ -17,12 +17,19 @@ export const registerSchema = z.object({
   phone: telefonoRule,
   document_id: dniRule,
   password: passwordRule,
-  accepts_identity_check: z
-    .boolean()
-    .refine((autorizado) => autorizado, 'Necesitamos tu autorización para verificar tu DNI'),
+  accepts_identity_check: z.boolean(),
   accepts_terms: z
     .boolean()
     .refine((aceptados) => aceptados, 'Debes aceptar los términos y condiciones'),
 })
 
 export type RegisterForm = z.infer<typeof registerSchema>
+
+/** Con la verificación de DNI en uso, la autorización es obligatoria; sin ella no se pide. */
+export const registerSchemaWithIdentityCheck = registerSchema.refine(
+  (valores) => valores.accepts_identity_check,
+  {
+    message: 'Necesitamos tu autorización para verificar tu DNI',
+    path: ['accepts_identity_check'],
+  },
+)

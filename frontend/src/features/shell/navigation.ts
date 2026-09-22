@@ -24,6 +24,12 @@ export const NAV_ENTRIES: readonly NavEntry[] = [
   { to: '/mascotas', label: 'Mis mascotas', icon: 'mascota', permission: 'pets.manage_own' },
   { to: '/reservar', label: 'Reservar cita', icon: 'agenda', permission: 'appointments.book' },
   { to: '/citas', label: 'Citas', icon: 'cita', permission: 'appointments.read' },
+  {
+    to: '/consentimientos',
+    label: 'Consentimientos',
+    icon: 'consentimiento',
+    permission: 'consents.respond',
+  },
   { to: '/agenda', label: 'Mis turnos', icon: 'agenda', permission: 'schedule.read_own' },
   { to: '/clientes', label: 'Clientes', icon: 'cliente', permission: 'clients.read' },
   {

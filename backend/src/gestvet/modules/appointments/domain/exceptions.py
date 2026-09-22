@@ -61,6 +61,10 @@ class NoEmergencyVeterinarian(AppointmentsError):
 class StatusChangeTooEarly(AppointmentsError):
     """El cambio de estado es válido, pero todavía no llegó su momento."""
 
+
+class RiskConsentRejected(AppointmentsError):
+    """La aceptación del riesgo no habilita esta emergencia: falta, es vieja o ya se usó."""
+
     def __init__(self, reason: str) -> None:
         super().__init__(reason)
         self.reason = reason

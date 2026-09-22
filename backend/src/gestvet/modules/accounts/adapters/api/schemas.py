@@ -33,8 +33,9 @@ class RegisterClientRequest(BaseModel):
     last_name: str = Field(min_length=1, max_length=120)
     document_id: str = Field(pattern=DOCUMENT_ID_PATTERN)
     phone: str = Field(default="", max_length=32)
-    # La persona autorizó verificar su DNI; el formulario no deja enviarlo sin marcarlo.
-    accepts_identity_check: Literal[True]
+    # La persona autorizó verificar su DNI. Solo se exige mientras la verificación
+    # está en uso; hoy no lo está, falta el convenio con RENIEC.
+    accepts_identity_check: bool = False
     # La persona aceptó los términos y condiciones; el formulario no deja enviarlo sin marcarlo.
     accepts_terms: Literal[True]
 
@@ -99,6 +100,10 @@ class ResetPasswordRequest(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+
+
+class IdentityCheckResponse(BaseModel):
+    available: bool
 
 
 class UserResponse(BaseModel):

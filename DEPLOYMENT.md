@@ -97,10 +97,9 @@ OPENROUTER_API_KEY=tu_openrouter_api_key_aqui
 OPENROUTER_MODEL=deepseek/deepseek-v4.1-flash
 OPENROUTER_FALLBACK_MODEL=deepseek/deepseek-v4-flash-0731
 OPENROUTER_TIMEOUT_SECONDS=45
-
-# Verificación DNI Factiliza (opcional)
-FACTILIZA_API_KEY=tu_factiliza_key
 ```
+
+La verificación de DNI no tiene variables por ahora: requiere un convenio con RENIEC. Ver README, "Verificación de DNI".
 
 ---
 

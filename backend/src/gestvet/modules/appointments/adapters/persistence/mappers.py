@@ -50,6 +50,7 @@ def row_to_entity(row: AppointmentRow) -> Appointment:
         cancellation_reason=row.cancellation_reason,
         updated_by=row.updated_by,
         reminder_sent_at=as_utc(row.reminder_sent_at) if row.reminder_sent_at else None,
+        risk_consent_id=row.risk_consent_id,
         created_at=as_utc(row.created_at),
     )
 
@@ -67,5 +68,6 @@ def entity_to_row(appointment: Appointment) -> AppointmentRow:
         cancellation_reason=appointment.cancellation_reason,
         updated_by=appointment.updated_by,
         reminder_sent_at=appointment.reminder_sent_at,
+        risk_consent_id=appointment.risk_consent_id,
         created_at=appointment.created_at,
     )

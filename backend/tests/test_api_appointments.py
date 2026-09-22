@@ -18,6 +18,7 @@ from gestvet.core.identity import Role
 from gestvet.modules.accounts.adapters.persistence.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
+from gestvet.modules.accounts.domain.entities import User
 from gestvet.modules.appointments.adapters.persistence.models import AppointmentRow
 from gestvet.modules.appointments.adapters.persistence.repositories import (
     SqlAlchemyAppointmentRepository,
@@ -31,6 +32,7 @@ from gestvet.modules.pets.adapters.persistence.sqlalchemy_pet_repository import 
     SqlAlchemyPetRepository,
 )
 from tests.conftest import (
+    EMERGENCY_RISK_TEMPLATE_ID,
     EMERGENCY_TYPE_ID,
     GENERAL_TYPE_ID,
     SURGERY_TYPE_ID,
@@ -52,6 +54,31 @@ async def _ya_empezo(session: AsyncSession, cita_id: int) -> None:
     assert fila is not None
     fila.scheduled_at = datetime.now(UTC) - timedelta(minutes=10)
     await session.commit()
+
+
+async def firmar_riesgo(client: AsyncClient, cliente: User, mascota_id: int | None) -> int:
+    """El dueño acepta el riesgo, que es lo que habilita abrir la emergencia."""
+    firma = await client.post(
+        "/api/v1/consents/emergency-risk",
+        json={
+            "pet_id": mascota_id,
+            "template_id": EMERGENCY_RISK_TEMPLATE_ID,
+            "signer_name": "Ana Quispe",
+            "accepted": True,
+        },
+        headers=authorization_for(cliente),
+    )
+    assert firma.status_code == 201, firma.text
+    return int(firma.json()["id"])
+
+
+async def emergencia(
+    client: AsyncClient, cliente: User, mascota_id: int | None
+) -> dict[str, object]:
+    return {
+        "pet_id": mascota_id,
+        "risk_consent_id": await firmar_riesgo(client, cliente, mascota_id),
+    }
 
 
 class Escenario:
@@ -439,7 +466,7 @@ async def test_la_emergencia_asigna_al_veterinario_de_guardia(
 
     response = await client.post(
         f"{URL}/emergency",
-        json={"pet_id": escenario.mascota.id},
+        json=await emergencia(client, escenario.cliente, escenario.mascota.id),
         headers=authorization_for(escenario.cliente),
     )
 
@@ -456,7 +483,7 @@ async def test_sin_nadie_de_guardia_ni_en_turno_la_emergencia_lo_dice(
 
     response = await client.post(
         f"{URL}/emergency",
-        json={"pet_id": escenario.mascota.id},
+        json=await emergencia(client, escenario.cliente, escenario.mascota.id),
         headers=authorization_for(escenario.cliente),
     )
 
@@ -500,7 +527,9 @@ async def test_con_la_guardia_ocupada_cubre_un_veterinario_de_turno_libre(
     cabeceras = authorization_for(escenario.cliente)
 
     primera = await client.post(
-        f"{URL}/emergency", json={"pet_id": escenario.mascota.id}, headers=cabeceras
+        f"{URL}/emergency",
+        json=await emergencia(client, escenario.cliente, escenario.mascota.id),
+        headers=cabeceras,
     )
     assert primera.status_code == 201
     assert primera.json()["veterinarian_id"] == escenario.veterinario.id
@@ -513,7 +542,7 @@ async def test_con_la_guardia_ocupada_cubre_un_veterinario_de_turno_libre(
 
     segunda = await client.post(
         f"{URL}/emergency",
-        json={"pet_id": otra_mascota.id},
+        json=await emergencia(client, otro_cliente, otra_mascota.id),
         headers=authorization_for(otro_cliente),
     )
 
@@ -571,7 +600,7 @@ async def test_quien_cubre_una_emergencia_no_recibe_citas_normales_ese_dia(
 
     abierta = await client.post(
         f"{URL}/emergency",
-        json={"pet_id": escenario.mascota.id},
+        json=await emergencia(client, escenario.cliente, escenario.mascota.id),
         headers=authorization_for(escenario.cliente),
     )
     assert abierta.status_code == 201
@@ -603,7 +632,7 @@ async def test_un_veterinario_fuera_de_turno_no_atiende_emergencias(
 
     response = await client.post(
         f"{URL}/emergency",
-        json={"pet_id": escenario.mascota.id},
+        json=await emergencia(client, escenario.cliente, escenario.mascota.id),
         headers=authorization_for(escenario.cliente),
     )
 
@@ -690,7 +719,7 @@ async def test_la_emergencia_se_muestra_como_tal(
 
     response = await client.post(
         f"{URL}/emergency",
-        json={"pet_id": escenario.mascota.id},
+        json=await emergencia(client, escenario.cliente, escenario.mascota.id),
         headers=authorization_for(escenario.cliente),
     )
 

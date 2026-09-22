@@ -5,9 +5,10 @@ proveedor se usan solo los nombres y los apellidos; la dirección, el ubigeo o
 cualquier otro dato se descarta en el adaptador, porque la clínica no lo
 necesita y guardarlo sería tratar datos personales sin motivo (Ley 29733).
 
-Hoy lo responde un proveedor privado (`dni_factiliza`). El día que haya
-convenio con RENIEC se agrega un adaptador que la satisfaga y ningún caso de
-uso cambia.
+La única fuente prevista es RENIEC (`dni_reniec`). Consultarla exige un
+convenio que la clínica todavía no tiene, así que hoy la verificación está
+apagada. Cuando exista, el adaptador de RENIEC satisface este puerto y ningún
+caso de uso cambia.
 
 Python puro: lo importan los casos de uso.
 """
@@ -34,6 +35,11 @@ class PersonName:
 
 
 class IdentityRegistry(Protocol):
+    @property
+    def available(self) -> bool:
+        """Si la verificación está en uso: sin ella no se pide autorización para consultar."""
+        ...
+
     async def lookup(self, document_id: str) -> PersonName | None:
         """Los nombres del DNI, o `None` si el DNI no existe."""
         ...
@@ -41,6 +47,10 @@ class IdentityRegistry(Protocol):
 
 class DisabledIdentityRegistry:
     """Sin proveedor configurado: la consulta no está disponible y nada se bloquea por eso."""
+
+    @property
+    def available(self) -> bool:
+        return False
 
     async def lookup(self, document_id: str) -> PersonName | None:
         raise IdentityRegistryUnavailable(

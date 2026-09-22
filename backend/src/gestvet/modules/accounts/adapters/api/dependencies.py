@@ -13,7 +13,7 @@ from typing import Annotated
 from fastapi import Depends
 
 from gestvet.core.auth import SessionDep
-from gestvet.core.dni_factiliza import get_identity_registry
+from gestvet.core.dni_reniec import get_identity_registry
 from gestvet.core.email import ConsoleEmailSender
 from gestvet.core.identity_registry import IdentityRegistry
 from gestvet.core.security import BcryptPasswordHasher

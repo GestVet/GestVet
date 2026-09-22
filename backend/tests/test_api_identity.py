@@ -19,6 +19,7 @@ from tests.conftest import (
 
 REGISTER_URL = "/api/v1/auth/register"
 LOOKUP_URL = "/api/v1/clients/document-lookup"
+IDENTITY_CHECK_URL = "/api/v1/auth/identity-check"
 DNI = "44556677"
 MARIA = PersonName(first_names="Maria Elena", paternal_surname="Quispe", maternal_surname="Rojas")
 REGISTRO = {
@@ -70,6 +71,24 @@ async def test_sin_proveedor_disponible_el_registro_sigue(client: AsyncClient) -
     response = await client.post(REGISTER_URL, json=REGISTRO)
 
     assert response.status_code == 201
+
+
+async def test_sin_verificacion_en_uso_no_se_pide_autorizacion(client: AsyncClient) -> None:
+    estado = await client.get(IDENTITY_CHECK_URL)
+    response = await client.post(REGISTER_URL, json={**REGISTRO, "accepts_identity_check": False})
+
+    assert estado.json() == {"available": False}
+    assert response.status_code == 201
+
+
+async def test_con_verificacion_en_uso_el_registro_lo_anuncia(
+    client: AsyncClient, identity_registry: FakeIdentityRegistry
+) -> None:
+    identity_registry.people = {}
+
+    response = await client.get(IDENTITY_CHECK_URL)
+
+    assert response.json() == {"available": True}
 
 
 async def test_sin_autorizacion_no_hay_registro(

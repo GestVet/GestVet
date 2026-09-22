@@ -80,3 +80,23 @@ export const passwordRule = z
   .string()
   .min(MIN_PASSWORD, `Usa al menos ${String(MIN_PASSWORD)} caracteres`)
   .max(MAX_PASSWORD, `Usa como máximo ${String(MAX_PASSWORD)} caracteres`)
+
+/** El mismo tope que el servidor para el nombre de quien firma un consentimiento. */
+export const MAX_FIRMA = 120
+
+/**
+ * El nombre completo de quien firma: nombre y apellido como mínimo.
+ *
+ * Un nombre de pila solo no identifica a nadie, y la firma escrita vale lo que
+ * vale el nombre. El servidor aplica la misma regla.
+ */
+export const firmaRule = z
+  .string()
+  .transform((valor) => valor.trim().split(/\s+/u).filter(Boolean).join(' '))
+  .pipe(
+    z
+      .string()
+      .min(1, 'Escribe el nombre completo de quien firma')
+      .max(MAX_FIRMA, `Usa como máximo ${String(MAX_FIRMA)} caracteres`)
+      .refine((valor) => valor.split(' ').length >= 2, 'Escribe nombre y apellido de quien firma'),
+  )

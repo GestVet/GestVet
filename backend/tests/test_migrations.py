@@ -24,6 +24,7 @@ from sqlalchemy import create_engine, text
 from gestvet.core.config import get_settings
 from gestvet.core.database import Base
 from gestvet.core.permissions import SYSTEM_ROLE_PERMISSIONS
+from gestvet.modules.consents.domain.entities import ConsentKind
 from tests.conftest import REGISTERED_MODELS
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
@@ -88,3 +89,50 @@ def test_la_migracion_siembra_los_roles_de_sistema_del_codigo(migrated_database:
         for kind, permissions in SYSTEM_ROLE_PERMISSIONS.items()
     }
     assert dict(sembrado) == esperado
+
+
+def test_la_migracion_siembra_el_texto_de_riesgo_de_emergencia(migrated_database: Path) -> None:
+    engine = create_engine(f"sqlite:///{migrated_database.as_posix()}")
+    try:
+        with engine.connect() as connection:
+            filas = connection.execute(
+                text(
+                    "SELECT kind, version, is_active, body FROM consent_templates "
+                    "WHERE kind = 'emergency_risk'"
+                )
+            ).all()
+    finally:
+        engine.dispose()
+
+    assert [(kind, version, bool(activa)) for kind, version, activa, _ in filas] == [
+        ("emergency_risk", 1, True)
+    ]
+    cuerpo = filas[0][3]
+    for idea in ("morir", "estabilizar", "costo", "consentimiento específico", "responsable"):
+        assert idea in cuerpo
+
+
+def test_la_migracion_siembra_los_textos_especificos(migrated_database: Path) -> None:
+    engine = create_engine(f"sqlite:///{migrated_database.as_posix()}")
+    try:
+        with engine.connect() as connection:
+            filas = dict(
+                connection.execute(
+                    text(
+                        "SELECT kind, body FROM consent_templates "
+                        "WHERE version = 1 AND is_active = 1 AND kind != 'emergency_risk'"
+                    )
+                ).all()
+            )
+    finally:
+        engine.dispose()
+
+    assert set(filas) == {
+        kind.value for kind in ConsentKind if kind is not ConsentKind.EMERGENCY_RISK
+    }
+    for cuerpo in filas.values():
+        assert "responsable" in cuerpo
+        assert "Declaración." in cuerpo
+    assert "irreversible" in filas["euthanasia"] or "revertir" in filas["euthanasia"]
+    assert "voluntaria" in filas["euthanasia"]
+    assert "muera" in filas["high_risk"]

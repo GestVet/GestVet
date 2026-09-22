@@ -63,6 +63,10 @@ class ActivityKind(StrEnum):
     PAYMENT_VOIDED = "payment_voided"
     REVIEW_SUBMITTED = "review_submitted"
     COMPLAINT_FILED = "complaint_filed"
+    CONSENT_ACCEPTED = "consent_accepted"
+    CONSENT_REQUESTED = "consent_requested"
+    CONSENT_DECLINED = "consent_declined"
+    CONSENT_WAIVED = "consent_waived"
     HOSPITALIZATION_OPENED = "hospitalization_opened"
     HOSPITALIZATION_NOTE_ADDED = "hospitalization_note_added"
     HOSPITALIZATION_DISCHARGED = "hospitalization_discharged"
@@ -111,6 +115,10 @@ _KIND_LABELS: dict[ActivityKind, str] = {
     ActivityKind.PAYMENT_VOIDED: "Anuló un pago",
     ActivityKind.REVIEW_SUBMITTED: "Dejó una reseña",
     ActivityKind.COMPLAINT_FILED: "Presentó un reclamo",
+    ActivityKind.CONSENT_ACCEPTED: "Registró un consentimiento informado",
+    ActivityKind.CONSENT_REQUESTED: "Pidió un consentimiento informado",
+    ActivityKind.CONSENT_DECLINED: "Rechazó un consentimiento informado",
+    ActivityKind.CONSENT_WAIVED: "Atendió sin consentimiento por urgencia vital",
     ActivityKind.HOSPITALIZATION_OPENED: "Abrió una internación",
     ActivityKind.HOSPITALIZATION_NOTE_ADDED: "Agregó una nota de seguimiento",
     ActivityKind.HOSPITALIZATION_DISCHARGED: "Dio de alta una internación",
