@@ -719,7 +719,7 @@ async def test_la_emergencia_se_muestra_como_tal(
 
     response = await client.post(
         f"{URL}/emergency",
-        json={"pet_id": escenario.mascota.id},
+        json=await emergencia(client, escenario.cliente, escenario.mascota.id),
         headers=authorization_for(escenario.cliente),
     )
 
