@@ -1,18 +1,45 @@
 import { api } from '../services/api'
 import type {
   ActivityPageResponse,
+  AssignVeterinarianSpecialtiesRequest,
   ClientPageResponse,
   DocumentLookupResponse,
   RegisterStaffRequest,
   RegisterWalkInClientRequest,
+  SpecialtyListResponse,
   UpdateClientContactRequest,
   UserResponse,
   VeterinarianListResponse,
+  VeterinarianSpecialtiesListResponse,
+  VeterinarianSpecialtiesResponse,
 } from './types'
 
 export const clientsQueryKey = ['clients'] as const
 export const staffQueryKey = ['staff'] as const
 export const veterinariansQueryKey = ['veterinarians'] as const
+export const specialtiesQueryKey = ['specialties'] as const
+export const staffSpecialtiesQueryKey = ['staff', 'specialties'] as const
+
+export async function fetchSpecialties(): Promise<SpecialtyListResponse> {
+  const { data } = await api.get<SpecialtyListResponse>('/specialties')
+  return data
+}
+
+export async function fetchStaffSpecialties(): Promise<VeterinarianSpecialtiesListResponse> {
+  const { data } = await api.get<VeterinarianSpecialtiesListResponse>('/staff/specialties')
+  return data
+}
+
+export async function assignVeterinarianSpecialties(
+  userId: number,
+  payload: AssignVeterinarianSpecialtiesRequest,
+): Promise<VeterinarianSpecialtiesResponse> {
+  const { data } = await api.put<VeterinarianSpecialtiesResponse>(
+    `/staff/${String(userId)}/specialties`,
+    payload,
+  )
+  return data
+}
 
 export function activityQueryKey(role: string) {
   return ['activity', role] as const

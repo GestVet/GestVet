@@ -25,6 +25,7 @@ from gestvet.modules.pets.adapters.persistence.sqlalchemy_pet_repository import 
     SqlAlchemyPetRepository,
 )
 from tests.conftest import (
+    DEFAULT_SPECIALTY_ID,
     GENERAL_TYPE_ID,
     VALID_PASSWORD,
     authorization_for,
@@ -198,6 +199,7 @@ async def test_las_acciones_de_la_administracion_tambien_quedan(
             "first_name": "Carla",
             "last_name": "Blanco",
             "role": Role.VETERINARIAN.value,
+            "specialty_ids": [DEFAULT_SPECIALTY_ID],
         },
         headers=authorization_for(jefa),
     )

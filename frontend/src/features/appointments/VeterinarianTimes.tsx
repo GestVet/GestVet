@@ -1,4 +1,4 @@
-import type { GridSlotResponse, ScheduleWindowResponse } from '../../api/types'
+import type { GridSlotResponse, ScheduleWindowResponse, SpecialtyResponse } from '../../api/types'
 import { formatearHora24 } from '../../services/clinicTime'
 import CustomTimeInput from './CustomTimeInput'
 import TimeSlotGroup from './TimeSlotGroup'
@@ -7,6 +7,7 @@ export interface OfertaDeVeterinario {
   readonly veterinarianId: number
   readonly nombre: string
   readonly calificacion: string | null
+  readonly especialidades: readonly SpecialtyResponse[]
   readonly windows: readonly ScheduleWindowResponse[]
   readonly slots: readonly GridSlotResponse[]
 }
@@ -92,13 +93,27 @@ export default function VeterinarianTimes({
               >
                 {iniciales(oferta.nombre)}
               </span>
-              <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-sm">
-                <span className="font-semibold text-foreground">{oferta.nombre}</span>
-                {oferta.calificacion === null ? null : (
-                  <span className="text-muted-foreground">★ {oferta.calificacion}</span>
+              <div className="flex flex-col gap-1">
+                <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-sm">
+                  <span className="font-semibold text-foreground">{oferta.nombre}</span>
+                  {oferta.calificacion === null ? null : (
+                    <span className="text-muted-foreground">★ {oferta.calificacion}</span>
+                  )}
+                  <span className="text-muted-foreground">{textoDeDisponibles(libres)}</span>
+                </p>
+                {oferta.especialidades.length === 0 ? null : (
+                  <ul className="m-0 flex list-none flex-wrap gap-1 p-0">
+                    {oferta.especialidades.map((especialidad) => (
+                      <li
+                        key={especialidad.id}
+                        className="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground"
+                      >
+                        {especialidad.name}
+                      </li>
+                    ))}
+                  </ul>
                 )}
-                <span className="text-muted-foreground">{textoDeDisponibles(libres)}</span>
-              </p>
+              </div>
             </div>
             {porFranja(oferta.slots).map((franja) => (
               <TimeSlotGroup

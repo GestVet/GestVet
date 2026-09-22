@@ -44,6 +44,33 @@ class PasswordResetTokenRow(Base):
     )
 
 
+class SpecialtyRow(Base):
+    __tablename__ = "specialties"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(80))
+    # El nombre sin tildes ni mayúsculas: lo que impide cargar dos veces lo mismo.
+    name_key: Mapped[str] = mapped_column(String(80), unique=True, index=True)
+    category: Mapped[str] = mapped_column(String(20), index=True)
+    description: Mapped[str] = mapped_column(String(240), default="")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class VeterinarianSpecialtyRow(Base):
+    __tablename__ = "veterinarian_specialties"
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", name="fk_veterinarian_specialties_user", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    specialty_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "specialties.id", name="fk_veterinarian_specialties_specialty", ondelete="RESTRICT"
+        ),
+        primary_key=True,
+    )
+
+
 class UserLayoutPreferenceRow(Base):
     __tablename__ = "user_layout_preferences"
 

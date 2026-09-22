@@ -1344,6 +1344,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/specialties": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Especialidades que se ofrecen */
+        get: operations["list_specialties_api_v1_specialties_get"];
+        put?: never;
+        /** Agregar una especialidad */
+        post: operations["add_specialty_api_v1_specialties_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/specialties/manage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** El catálogo completo, con lo desactivado */
+        get: operations["list_managed_specialties_api_v1_specialties_manage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/specialties/{specialty_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Corregir, activar o desactivar una especialidad */
+        patch: operations["update_specialty_api_v1_specialties__specialty_id__patch"];
+        trace?: never;
+    };
     "/api/v1/staff": {
         parameters: {
             query?: never;
@@ -1356,6 +1408,40 @@ export interface paths {
         put?: never;
         /** Dar de alta un veterinario */
         post: operations["register_staff_api_v1_staff_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/specialties": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Especialidades asignadas a cada veterinario */
+        get: operations["list_staff_specialties_api_v1_staff_specialties_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/{user_id}/specialties": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Asignar las especialidades de un veterinario */
+        put: operations["assign_veterinarian_specialties_api_v1_staff__user_id__specialties_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1445,7 +1531,7 @@ export interface components {
          *     historial.
          * @enum {string}
          */
-        ActivityKind: "signed_in" | "client_registered" | "profile_updated" | "staff_registered" | "user_status_changed" | "guard_duty_toggled" | "pet_registered" | "pet_status_changed" | "pet_status_corrected" | "pet_profile_updated" | "pet_clinical_profile_updated" | "slot_published" | "slot_withdrawn" | "shift_assigned" | "shift_removed" | "weekly_plan_applied" | "shift_change_requested" | "shift_change_resolved" | "appointment_booked" | "emergency_opened" | "appointment_confirmed" | "appointment_completed" | "appointment_cancelled" | "appointment_no_show" | "clinical_entry_added" | "attachment_uploaded" | "attachment_deleted" | "payment_registered" | "payment_voided" | "review_submitted" | "complaint_filed" | "hospitalization_opened" | "hospitalization_note_added" | "hospitalization_discharged" | "access_role_created" | "access_role_updated" | "access_role_deleted" | "access_role_assigned" | "document_looked_up";
+        ActivityKind: "signed_in" | "client_registered" | "profile_updated" | "staff_registered" | "staff_specialties_updated" | "user_status_changed" | "guard_duty_toggled" | "pet_registered" | "pet_status_changed" | "pet_status_corrected" | "pet_profile_updated" | "pet_clinical_profile_updated" | "slot_published" | "slot_withdrawn" | "shift_assigned" | "shift_removed" | "weekly_plan_applied" | "shift_change_requested" | "shift_change_resolved" | "appointment_booked" | "emergency_opened" | "appointment_confirmed" | "appointment_completed" | "appointment_cancelled" | "appointment_no_show" | "clinical_entry_added" | "attachment_uploaded" | "attachment_deleted" | "payment_registered" | "payment_voided" | "review_submitted" | "complaint_filed" | "hospitalization_opened" | "hospitalization_note_added" | "hospitalization_discharged" | "access_role_created" | "access_role_updated" | "access_role_deleted" | "access_role_assigned" | "document_looked_up";
         /** ActivityPageResponse */
         ActivityPageResponse: {
             /** Items */
@@ -1502,6 +1588,17 @@ export interface components {
         AddNoteRequest: {
             /** Note */
             note: string;
+        };
+        /** AddSpecialtyRequest */
+        AddSpecialtyRequest: {
+            category: components["schemas"]["SpecialtyCategory"];
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Name */
+            name: string;
         };
         /** AppointmentPageResponse */
         AppointmentPageResponse: {
@@ -1618,6 +1715,11 @@ export interface components {
             starts_at: string;
             /** Veterinarian Id */
             veterinarian_id: number;
+        };
+        /** AssignVeterinarianSpecialtiesRequest */
+        AssignVeterinarianSpecialtiesRequest: {
+            /** Specialty Ids */
+            specialty_ids: number[];
         };
         /** AttachmentResponse */
         AttachmentResponse: {
@@ -2329,7 +2431,7 @@ export interface components {
          * Permission
          * @enum {string}
          */
-        Permission: "pets.manage_own" | "pets.register_for_owner" | "pets.read_any" | "pets.correct_status" | "pets.edit_clinical_profile" | "pets.manage_catalog" | "pets.overview_read" | "appointments.read" | "appointments.book" | "appointments.attend" | "appointments.cancel" | "emergencies.open" | "emergencies.open_walk_in" | "schedule.read" | "schedule.read_own" | "schedule.request_change" | "schedule.manage" | "veterinarians.read" | "clinical_records.read" | "clinical_records.write" | "hospitalizations.read" | "hospitalizations.manage" | "payments.read" | "payments.qr" | "payments.register" | "payments.void" | "payments.report" | "complaints.read" | "complaints.file" | "reviews.read" | "reviews.submit" | "clients.read" | "clients.register_walk_in" | "clients.update_contact" | "staff.read" | "staff.manage" | "users.change_status" | "activity.read" | "insights.read" | "roles.manage";
+        Permission: "pets.manage_own" | "pets.register_for_owner" | "pets.read_any" | "pets.correct_status" | "pets.edit_clinical_profile" | "pets.manage_catalog" | "pets.overview_read" | "appointments.read" | "appointments.book" | "appointments.attend" | "appointments.cancel" | "emergencies.open" | "emergencies.open_walk_in" | "schedule.read" | "schedule.read_own" | "schedule.request_change" | "schedule.manage" | "veterinarians.read" | "specialties.manage_catalog" | "clinical_records.read" | "clinical_records.write" | "hospitalizations.read" | "hospitalizations.manage" | "payments.read" | "payments.qr" | "payments.register" | "payments.void" | "payments.report" | "complaints.read" | "complaints.file" | "reviews.read" | "reviews.submit" | "clients.read" | "clients.register_walk_in" | "clients.update_contact" | "staff.read" | "staff.manage" | "users.change_status" | "activity.read" | "insights.read" | "roles.manage";
         /** PermissionCatalogResponse */
         PermissionCatalogResponse: {
             /** Groups */
@@ -2634,6 +2736,8 @@ export interface components {
              */
             phone: string;
             role: components["schemas"]["Role"];
+            /** Specialty Ids */
+            specialty_ids: number[];
         };
         /** RegisterWalkInClientRequest */
         RegisterWalkInClientRequest: {
@@ -2778,6 +2882,30 @@ export interface components {
          * @enum {string}
          */
         SlotStatus: "available" | "taken" | "too_short" | "past" | "emergency";
+        /**
+         * SpecialtyCategory
+         * @enum {string}
+         */
+        SpecialtyCategory: "discipline" | "animal_type" | "industry";
+        /** SpecialtyListResponse */
+        SpecialtyListResponse: {
+            /** Items */
+            items: components["schemas"]["SpecialtyResponse"][];
+        };
+        /** SpecialtyResponse */
+        SpecialtyResponse: {
+            category: components["schemas"]["SpecialtyCategory"];
+            /** Category Label */
+            category_label: string;
+            /** Description */
+            description: string;
+            /** Id */
+            id: number;
+            /** Is Active */
+            is_active: boolean;
+            /** Name */
+            name: string;
+        };
         /** SpeciesResponse */
         SpeciesResponse: {
             /** Breeds */
@@ -2901,6 +3029,19 @@ export interface components {
              * @default
              */
             phone: string;
+        };
+        /** UpdateSpecialtyRequest */
+        UpdateSpecialtyRequest: {
+            category: components["schemas"]["SpecialtyCategory"];
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Name */
+            name: string;
         };
         /** UserResponse */
         UserResponse: {
@@ -3068,6 +3209,8 @@ export interface components {
             /** Review Count */
             review_count: number;
             role: components["schemas"]["Role"];
+            /** Specialties */
+            specialties: components["schemas"]["SpecialtyResponse"][];
         };
         /** VeterinarianReviewsResponse */
         VeterinarianReviewsResponse: {
@@ -3076,6 +3219,21 @@ export interface components {
             summary: components["schemas"]["RatingSummaryResponse"];
             /** Total */
             total: number;
+        };
+        /** VeterinarianSpecialtiesListResponse */
+        VeterinarianSpecialtiesListResponse: {
+            /** Items */
+            items: components["schemas"]["VeterinarianSpecialtiesResponse"][];
+        };
+        /**
+         * VeterinarianSpecialtiesResponse
+         * @description Especialidades asignadas a un veterinario, para la pantalla de personal.
+         */
+        VeterinarianSpecialtiesResponse: {
+            /** Specialties */
+            specialties: components["schemas"]["SpecialtyResponse"][];
+            /** User Id */
+            user_id: number;
         };
         /** VoidPaymentRequest */
         VoidPaymentRequest: {
@@ -5988,6 +6146,114 @@ export interface operations {
             };
         };
     };
+    list_specialties_api_v1_specialties_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecialtyListResponse"];
+                };
+            };
+        };
+    };
+    add_specialty_api_v1_specialties_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddSpecialtyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecialtyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_managed_specialties_api_v1_specialties_manage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecialtyListResponse"];
+                };
+            };
+        };
+    };
+    update_specialty_api_v1_specialties__specialty_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                specialty_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSpecialtyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecialtyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_staff_api_v1_staff_get: {
         parameters: {
             query?: {
@@ -6046,6 +6312,61 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_staff_specialties_api_v1_staff_specialties_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VeterinarianSpecialtiesListResponse"];
+                };
+            };
+        };
+    };
+    assign_veterinarian_specialties_api_v1_staff__user_id__specialties_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignVeterinarianSpecialtiesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VeterinarianSpecialtiesResponse"];
                 };
             };
             /** @description Validation Error */
